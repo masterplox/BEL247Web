@@ -1,25 +1,30 @@
-FROM debian:bookworm-slim
+# ---------- Stage 1: Build Flutter Web App ----------
+# Use a prebuilt Flutter image that includes the SDK and dependencies
+FROM ghcr.io/cirruslabs/flutter:stable AS build
 
-# Install dependencies
-RUN apt-get update && apt-get install -y curl unzip git xz-utils zip libglu1-mesa
+# Set working directory inside the container
+WORKDIR /app
 
-# Install Flutter
-RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
-ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+# Copy all Flutter project files into the container
+COPY . .
 
-# Enable Flutter web
+# Ensure Flutter web is enabled (just in case)
 RUN flutter config --enable-web
 
-# Pre-download dependencies
-WORKDIR /app
-COPY . .
+# Get dependencies
 RUN flutter pub get
 
-# Build the web app
-RUN flutter build web
+# Build the Flutter web release
+RUN flutter build web --release
 
-# Serve with a simple web server
-RUN apt-get install -y nginx
-RUN cp -r build/web/* /var/www/html/
+# ---------- Stage 2: Serve Using Nginx ----------
+FROM nginx:alpine
 
+# Copy the compiled Flutter web app from the build stage
+COPY --from=build /app/build/web /usr/share/nginx/html
+
+# Expose port 80 for Render
+EXPOSE 80
+
+# Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]
