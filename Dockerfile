@@ -15,7 +15,18 @@ RUN flutter config --enable-web
 RUN flutter pub get
 
 # Build the Flutter web release
-RUN flutter build web --release
+RUN flutter build web --release \
+--dart-define=API_BASE_URL=$API_BASE_URL \
+--dart-define=USE_MOCK=$USE_MOCK \
+--dart-define=ENCRYPTION_KEY=$ENCRYPTION_KEY \
+--dart-define=ENVIRONMENT=$ENVIRONMENT \
+--dart-define=MOCK_API_BASE_URL=$MOCK_API_BASE_URL \
+--dart-define=PROD_API_BASE_URL=$PROD_API_BASE_URL \
+--dart-define=JWT_ACCESS_TOKEN_DURATION=$JWT_ACCESS_TOKEN_DURATION \
+--dart-define=JWT_REFRESH_TOKEN_DURATION=$JWT_REFRESH_TOKEN_DURATION \
+--dart-define=APP_NAME=$APP_NAME \
+--dart-define=APP_VERSION=$APP_VERSION
+
 
 # ---------- Stage 2: Serve with Nginx ----------
 FROM nginx:alpine

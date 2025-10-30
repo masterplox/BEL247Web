@@ -1,16 +1,15 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:bel247_web/data/services/api_service.dart';
-import 'package:bel247_web/data/services/service_factory.dart';
-import 'package:bel247_web/data/repositories/user_repository.dart';
 import 'package:bel247_web/data/repositories/bill_repository.dart';
 import 'package:bel247_web/data/repositories/consumption_repository.dart';
-import 'package:bel247_web/core/config/env.dart';
+import 'package:bel247_web/data/repositories/user_repository.dart';
+import 'package:bel247_web/data/services/api_service.dart';
+import 'package:bel247_web/data/services/service_factory.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('API Service Layer Tests', () {
     setUpAll(() async {
       // Initialize environment configuration for tests
-      await EnvConfig.load();
+      // EnvConfig now reads from compile-time --dart-define values; no loading required
     });
 
     setUp(() {

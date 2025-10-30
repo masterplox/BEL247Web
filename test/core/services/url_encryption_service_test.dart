@@ -1,15 +1,12 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:bel247_web/core/services/url_encryption_service.dart';
-import 'package:bel247_web/core/services/crypto_service.dart';
-import 'package:bel247_web/core/config/env.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late UrlEncryptionService urlEncryptionService;
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await EnvConfig.load();
+    // EnvConfig now reads from compile-time --dart-define values; no loading required
     urlEncryptionService = UrlEncryptionService.instance;
   });
 

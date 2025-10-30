@@ -1,6 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:bel247_web/core/services/crypto_service.dart';
-import 'package:bel247_web/core/config/env.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CryptoService Tests', () {
@@ -8,7 +7,7 @@ void main() {
 
     setUpAll(() async {
       // Load environment variables
-      await EnvConfig.load();
+      // EnvConfig now reads from compile-time --dart-define values; no loading required
       cryptoService = CryptoService.instance;
     });
 

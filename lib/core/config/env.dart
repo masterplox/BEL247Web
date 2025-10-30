@@ -1,29 +1,60 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 class EnvConfig {
-  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.bel247.com/v1';
-  static String get mockApiBaseUrl => dotenv.env['MOCK_API_BASE_URL'] ?? 'mock://data';
-  static String get prodApiBaseUrl => dotenv.env['PROD_API_BASE_URL'] ?? 'https://api.bel247.com/v1';
-  
-  static bool get useMockApi => dotenv.env['USE_MOCK']?.toLowerCase() == 'true';
-  
-  static String get encryptionKey => dotenv.env['ENCRYPTION_KEY'] ?? 'bel247_encryption_key_32_chars';
-  
-  static String get environment => dotenv.env['ENVIRONMENT'] ?? 'development';
-  
-  static int get jwtAccessTokenDuration => int.tryParse(dotenv.env['JWT_ACCESS_TOKEN_DURATION'] ?? '15') ?? 15;
-  static int get jwtRefreshTokenDuration => int.tryParse(dotenv.env['JWT_REFRESH_TOKEN_DURATION'] ?? '10080') ?? 10080;
-  
-  static String get appName => dotenv.env['APP_NAME'] ?? 'BEL247 WebApp';
-  static String get appVersion => dotenv.env['APP_VERSION'] ?? '1.0.0';
-  
+  // String values from --dart-define (compile-time). Defaults preserved for local/dev.
+  static String get apiBaseUrl => const String.fromEnvironment(
+        'API_BASE_URL',
+        defaultValue: 'https://api.bel247.com/v1',
+      );
+
+  static String get mockApiBaseUrl => const String.fromEnvironment(
+        'MOCK_API_BASE_URL',
+        defaultValue: 'mock://data',
+      );
+
+  static String get prodApiBaseUrl => const String.fromEnvironment(
+        'PROD_API_BASE_URL',
+        defaultValue: 'https://api.bel247.com/v1',
+      );
+
+  static bool get useMockApi {
+    const value = String.fromEnvironment('USE_MOCK', defaultValue: 'false');
+    return value.toLowerCase() == 'true';
+  }
+
+  static String get encryptionKey => const String.fromEnvironment(
+        'ENCRYPTION_KEY',
+        defaultValue: 'bel247_encryption_key_32_chars',
+      );
+
+  // Support both ENVIRONMENT and APP_ENV (Dockerfile passes APP_ENV)
+  static String get environment {
+    const env = String.fromEnvironment('ENVIRONMENT');
+    if (env.isNotEmpty) return env;
+    return const String.fromEnvironment('APP_ENV', defaultValue: 'development');
+  }
+
+  static int get jwtAccessTokenDuration {
+    const raw = String.fromEnvironment('JWT_ACCESS_TOKEN_DURATION', defaultValue: '15');
+    return int.tryParse(raw) ?? 15;
+  }
+
+  static int get jwtRefreshTokenDuration {
+    const raw = String.fromEnvironment('JWT_REFRESH_TOKEN_DURATION', defaultValue: '10080');
+    return int.tryParse(raw) ?? 10080;
+  }
+
+  static String get appName => const String.fromEnvironment(
+        'APP_NAME',
+        defaultValue: 'BEL247 WebApp',
+      );
+
+  static String get appVersion => const String.fromEnvironment(
+        'APP_VERSION',
+        defaultValue: '1.0.0',
+      );
+
   static bool get isDevelopment => environment == 'development';
   static bool get isProduction => environment == 'production';
   static bool get isStaging => environment == 'staging';
-  
+
   static String get currentApiUrl => useMockApi ? mockApiBaseUrl : apiBaseUrl;
-  
-  static Future<void> load() async {
-    await dotenv.load(fileName: '.env');
-  }
 }
