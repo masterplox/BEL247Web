@@ -1,26 +1,30 @@
-# Stage 1
-#FROM debian:latest AS build-env
-FROM ubuntu:18.04 AS build-env
-RUN apt list --upgradable
-RUN apt update && apt install -y curl git unzip xz-utils zip libglu1-mesa openjdk-8-jdk wget
-#RUN apt-get install -y curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-mesa fonts-droid-fallback lib32stdc++6 python3
-RUN apt-get clean
+# ---------- Stage 1: Build Flutter Web App ----------
+# Use prebuilt Flutter image (includes SDK, Dart, Gradle, fonts, etc.)
+FROM ghcr.io/cirruslabs/flutter:stable AS build
 
-RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
+# Set working directory
+WORKDIR /app
 
-ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+# Copy your Flutter project
+COPY . .
 
-RUN flutter doctor -v
-
-RUN flutter channel master
-RUN flutter upgrade
+# Enable Flutter web (usually already enabled)
 RUN flutter config --enable-web
 
-RUN mkdir /app/
-COPY . /app/
-WORKDIR /app/
-RUN flutter build web
+# Get dependencies
+RUN flutter pub get
 
-# Stage 2
-FROM nginx:1.21.1-alpine
-COPY --from=build-env /app/build/web /usr/share/nginx/html
+# Build the Flutter web release
+RUN flutter build web --release
+
+# ---------- Stage 2: Serve with Nginx ----------
+FROM nginx:alpine
+
+# Copy build output to Nginx web root
+COPY --from=build /app/build/web /usr/share/nginx/html
+
+# Expose port 80 (Render expects this)
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
