@@ -72,6 +72,19 @@ class EnergyPricesWidget extends StatelessWidget {
   Widget _buildPriceChart(BuildContext context) {
     final data = _getPriceData();
     final dates = _getDates();
+    // Compute dynamic Y-axis bounds so lines never go out of bounds
+    final combinedValues = <double>[
+      ...data.priceSignal,
+      ...data.actual.whereType<double>(),
+    ];
+    // Fallbacks in case of empty data
+    final minValue = (combinedValues.isEmpty ? 0.0 : combinedValues.reduce((a, b) => a < b ? a : b));
+    final maxValue = (combinedValues.isEmpty ? 1.0 : combinedValues.reduce((a, b) => a > b ? a : b));
+    // Add small padding top/bottom
+    final padding = (maxValue - minValue).clamp(0.01, 0.05);
+    final minY = (minValue - padding).clamp(0.0, double.infinity);
+    final maxY = maxValue + padding;
+    final yInterval = ((maxY - minY) / 4).clamp(0.005, 0.05);
     
     return SizedBox(
       height: 250,
@@ -123,7 +136,7 @@ class EnergyPricesWidget extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 50,
-                interval: 0.025,
+                interval: yInterval,
                 getTitlesWidget: (value, meta) => Text(
                   value.toStringAsFixed(2),
                   style: const TextStyle(
@@ -137,8 +150,8 @@ class EnergyPricesWidget extends StatelessWidget {
           borderData: FlBorderData(show: true, border: Border.all(color: AppColors.border)),
           minX: 0,
           maxX: 9,
-          minY: 0.25,
-          maxY: 0.35,
+          minY: minY,
+          maxY: maxY,
           lineBarsData: [
             // Actual prices (blue solid line)
             LineChartBarData(
@@ -344,20 +357,36 @@ class EnergyPricesWidget extends StatelessWidget {
   }
 
   List<DateTime> _getDates() {
-    // Dates from Wed 22 Oct to Fri 31 Oct
-    final base = DateTime(2025, 10, 22);
-    return List.generate(10, (index) => base.add(Duration(days: index)));
+    // Dynamic window: 7 days past to 2 days future relative to today
+    final today = DateTime.now();
+    final start = DateTime(today.year, today.month, today.day).subtract(const Duration(days: 7));
+    return List.generate(10, (index) => start.add(Duration(days: index)));
   }
 
   List<_PriceTableRow> _getTableData() {
     final dates = _getDates();
     final priceData = _getPriceData();
-    
-    return List.generate(10, (index) => _PriceTableRow(
-        date: dates[index],
-        priceSignal: priceData.priceSignal[index],
-        actual: priceData.actual[index],
-      ));
+    final rows = List.generate(10, (index) => _PriceTableRow(
+      date: dates[index],
+      priceSignal: priceData.priceSignal[index],
+      actual: priceData.actual[index],
+    ));
+
+    // Desired order:
+    // +1 day, +2 days, today, then 7 days in the past
+    final today = DateTime.now();
+    int rank(DateTime d) {
+      final diff = d.difference(DateTime(today.year, today.month, today.day)).inDays;
+      if (diff == 1) return 0; // tomorrow
+      if (diff == 2) return 1; // day after tomorrow
+      if (diff == 0) return 2; // today
+      if (diff < 0) return 3 + (-diff - 1); // yesterday first, then back 7
+      // Any other future days (not expected) push to end preserving order
+      return 100 + diff;
+    }
+
+    rows.sort((a, b) => rank(a.date).compareTo(rank(b.date)));
+    return rows;
   }
 }
 
