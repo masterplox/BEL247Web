@@ -1,30 +1,32 @@
-# ---------- Stage 1: Build Flutter Web App ----------
-# Use an official Flutter image that already has the SDK preinstalled
-FROM ghcr.io/cirruslabs/flutter:stable AS build
+FROM debian:latest AS build-env
 
-# Set the working directory
-WORKDIR /app
+RUN apt-get update
+# Install necessary dependencies for running Flutter on web
+RUN apt-get install -y libxi6 libgtk-3-0 libxrender1 libxtst6 libxslt1.1 curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-mesa fonts-droid-fallback lib32stdc++6 python3
+RUN apt-get clean
 
-# Copy the Flutter project files
-COPY . .
+RUN git clone <https://github.com/flutter/flutter.git> /usr/local/flutter
 
-# Make sure web is enabled (just in case)
+# Set Flutter path
+ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+
+RUN flutter doctor -v
+RUN flutter channel master
+RUN flutter upgrade
+
+# Enable web support
 RUN flutter config --enable-web
 
-# Fetch dependencies
-RUN flutter pub get
+RUN mkdir /app/
+COPY . /app/
+# Set the working directory inside the container
+WORKDIR /app/
 
-# Build the Flutter web release
-RUN flutter build web --release
+# Build the Flutter web application
+RUN flutter build web --release --web-renderer html
 
-# ---------- Stage 2: Serve with Nginx ----------
-FROM nginx:alpine
+FROM nginx:1.21.1-alpine
+COPY --from=build-env /app/build/web /usr/share/nginx/html
 
-# Copy the built web assets to the nginx html directory
-COPY --from=build /app/build/web /usr/share/nginx/html
-
-# Expose port 80
+# EXPOSE <EXPOSE PORT THAT YOU WANT>
 EXPOSE 80
-
-# Run nginx
-CMD ["nginx", "-g", "daemon off;"]
