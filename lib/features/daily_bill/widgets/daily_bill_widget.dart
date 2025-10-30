@@ -45,87 +45,86 @@ class DailyBillWidget extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context) => Row(
-      children: [
-        const Icon(Icons.receipt_long, color: AppColors.primary),
-        const SizedBox(width: AppTheme.spacing8),
-        Text(
-          'Daily Bill Breakdown',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const Spacer(),
-        Text(
-          _formatDate(dailyConsumption!.date),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-        ),
-      ],
-    );
+    children: [
+      const Icon(Icons.receipt_long, color: AppColors.primary),
+      const SizedBox(width: AppTheme.spacing8),
+      Text(
+        'Daily Bill Breakdown',
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      const Spacer(),
+      Text(
+        _formatDate(dailyConsumption!.date),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+      ),
+    ],
+  );
 
   Widget _buildHeroPanel(BuildContext context) => Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.spacing20),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(AppTheme.radius12),
-        border: Border.all(color: AppColors.primaryLight.withOpacity(0.4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Total Usage',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      dailyConsumption!.totalKwh.toStringAsFixed(1),
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppTheme.spacing20),
+    decoration: BoxDecoration(
+      color: AppColors.primaryLight.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(AppTheme.radius12),
+      border: Border.all(color: AppColors.primaryLight.withOpacity(0.4)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Total Usage',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    dailyConsumption!.totalKwh.toStringAsFixed(1),
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: AppTheme.spacing4),
-                    Text(
-                      'kWh',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                  ),
+                  const SizedBox(width: AppTheme.spacing4),
+                  Text(
+                    'kWh',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.textSecondary,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spacing12),
+              Text(
+                'Estimated Cost',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              ),
+              Text(
+                'BZ\$${dailyConsumption!.cost.toStringAsFixed(2)}',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: AppTheme.spacing12),
-                Text(
-                  'Estimated Cost',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-                Text(
-                  'BZ\$${dailyConsumption!.cost.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const Icon(Icons.flash_on, color: AppColors.textTertiary),
-        ],
-      ),
-    );
+        ),
+        const Icon(Icons.flash_on, color: AppColors.textTertiary),
+      ],
+    ),
+  );
 
   /* Legacy sections kept for reference; now rendered at page-level as separate cards
   Widget _buildPeakLowSection(BuildContext context) {
@@ -404,17 +403,15 @@ class _DailyBillLoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.all(AppTheme.spacing16),
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      );
+    elevation: 2,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radius12),
+    ),
+    child: const Padding(
+      padding: EdgeInsets.all(AppTheme.spacing16),
+      child: Center(child: CircularProgressIndicator()),
+    ),
+  );
 }
 
 class _DailyBillEmptyWidget extends StatelessWidget {
@@ -422,35 +419,35 @@ class _DailyBillEmptyWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
-          child: Column(
-            children: [
-              const Icon(
-                Icons.receipt_long,
-                size: 48,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(height: AppTheme.spacing8),
-              Text(
-                'No Daily Bill Data',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
-              const SizedBox(height: AppTheme.spacing4),
-              Text(
-                'Daily consumption data is not available',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-              ),
-            ],
+    elevation: 2,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radius12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(AppTheme.spacing16),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.receipt_long,
+            size: 48,
+            color: AppColors.textTertiary,
           ),
-        ),
-      );
+          const SizedBox(height: AppTheme.spacing8),
+          Text(
+            'No Daily Bill Data',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppTheme.spacing4),
+          Text(
+            'Daily consumption data is not available',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textTertiary),
+          ),
+        ],
+      ),
+    ),
+  );
 }
