@@ -1,0 +1,60 @@
+{
+  "id": "user_001",
+  "email": "john.doe@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "phone": "+1-555-0123",
+  "address": {
+    "street": "123 Main Street",
+    "city": "Springfield",
+    "state": "IL",
+    "zipCode": "62701",
+    "country": "USA"
+  },
+  "accountNumber": "BEL247-001234",
+  "serviceAddress": {
+    "street": "123 Main Street",
+    "city": "Springfield",
+    "state": "IL",
+    "zipCode": "62701",
+    "country": "USA"
+  },
+  "meterNumber": "MTR-789456",
+  "tariffPlan": "Residential Standard",
+  "connectionDate": "2020-03-15T00:00:00Z",
+  "lastLogin": "2024-01-27T10:30:00Z",
+  "preferences": {
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "push": true
+    },
+    "currency": "USD",
+    "timezone": "America/Chicago",
+    "language": "en"
+  },
+  "accountBalance": {
+    "currentBalance": 125.50,
+    "lastPaymentDate": "2024-01-15T00:00:00Z",
+    "lastPaymentAmount": 89.75,
+    "nextDueDate": "2024-02-15T00:00:00Z",
+    "paymentMethod": "Credit Card ending in 1234"
+  },
+  "usageSummary": {
+    "currentMonth": {
+      "kwh": 456.7,
+      "cost": 89.75,
+      "averageDaily": 15.2
+    },
+    "lastMonth": {
+      "kwh": 523.4,
+      "cost": 98.50,
+      "averageDaily": 16.9
+    },
+    "yearToDate": {
+      "kwh": 5234.5,
+      "cost": 987.25,
+      "averageDaily": 15.8
+    }
+  }
+}

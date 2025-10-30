@@ -1,0 +1,183 @@
+{
+  "bills": [
+    {
+      "id": "bill_001",
+      "accountNumber": "BEL247-001234",
+      "billNumber": "INV-2024-001",
+      "billingPeriod": {
+        "startDate": "2024-01-01T00:00:00Z",
+        "endDate": "2024-01-31T23:59:59Z"
+      },
+      "dueDate": "2024-02-15T00:00:00Z",
+      "issueDate": "2024-02-01T00:00:00Z",
+      "status": "paid",
+      "amounts": {
+        "totalAmount": 89.75,
+        "previousBalance": 0.00,
+        "currentCharges": 89.75,
+        "taxes": 7.18,
+        "fees": 2.50,
+        "adjustments": 0.00
+      },
+      "usage": {
+        "kwhUsed": 456.7,
+        "kwhRate": 0.12,
+        "baseCharge": 15.00,
+        "deliveryCharge": 25.50,
+        "generationCharge": 54.75
+      },
+      "payment": {
+        "paidDate": "2024-01-15T00:00:00Z",
+        "paidAmount": 89.75,
+        "paymentMethod": "Credit Card ending in 1234",
+        "transactionId": "TXN-789456123"
+      },
+      "pdfUrl": "/api/bills/bill_001/pdf"
+    },
+    {
+      "id": "bill_002",
+      "accountNumber": "BEL247-001234",
+      "billNumber": "INV-2023-012",
+      "billingPeriod": {
+        "startDate": "2023-12-01T00:00:00Z",
+        "endDate": "2023-12-31T23:59:59Z"
+      },
+      "dueDate": "2024-01-15T00:00:00Z",
+      "issueDate": "2024-01-01T00:00:00Z",
+      "status": "paid",
+      "amounts": {
+        "totalAmount": 98.50,
+        "previousBalance": 0.00,
+        "currentCharges": 98.50,
+        "taxes": 7.88,
+        "fees": 2.50,
+        "adjustments": 0.00
+      },
+      "usage": {
+        "kwhUsed": 523.4,
+        "kwhRate": 0.12,
+        "baseCharge": 15.00,
+        "deliveryCharge": 28.20,
+        "generationCharge": 62.80
+      },
+      "payment": {
+        "paidDate": "2023-12-28T00:00:00Z",
+        "paidAmount": 98.50,
+        "paymentMethod": "Credit Card ending in 1234",
+        "transactionId": "TXN-456789123"
+      },
+      "pdfUrl": "/api/bills/bill_002/pdf"
+    },
+    {
+      "id": "bill_003",
+      "accountNumber": "BEL247-001234",
+      "billNumber": "INV-2023-011",
+      "billingPeriod": {
+        "startDate": "2023-11-01T00:00:00Z",
+        "endDate": "2023-11-30T23:59:59Z"
+      },
+      "dueDate": "2023-12-15T00:00:00Z",
+      "issueDate": "2023-12-01T00:00:00Z",
+      "status": "paid",
+      "amounts": {
+        "totalAmount": 76.25,
+        "previousBalance": 0.00,
+        "currentCharges": 76.25,
+        "taxes": 6.10,
+        "fees": 2.50,
+        "adjustments": 0.00
+      },
+      "usage": {
+        "kwhUsed": 412.3,
+        "kwhRate": 0.12,
+        "baseCharge": 15.00,
+        "deliveryCharge": 22.15,
+        "generationCharge": 49.50
+      },
+      "payment": {
+        "paidDate": "2023-11-28T00:00:00Z",
+        "paidAmount": 76.25,
+        "paymentMethod": "Credit Card ending in 1234",
+        "transactionId": "TXN-123456789"
+      },
+      "pdfUrl": "/api/bills/bill_003/pdf"
+    },
+    {
+      "id": "bill_004",
+      "accountNumber": "BEL247-001234",
+      "billNumber": "INV-2023-010",
+      "billingPeriod": {
+        "startDate": "2023-10-01T00:00:00Z",
+        "endDate": "2023-10-31T23:59:59Z"
+      },
+      "dueDate": "2023-11-15T00:00:00Z",
+      "issueDate": "2023-11-01T00:00:00Z",
+      "status": "paid",
+      "amounts": {
+        "totalAmount": 112.40,
+        "previousBalance": 0.00,
+        "currentCharges": 112.40,
+        "taxes": 8.99,
+        "fees": 2.50,
+        "adjustments": 0.00
+      },
+      "usage": {
+        "kwhUsed": 678.9,
+        "kwhRate": 0.12,
+        "baseCharge": 15.00,
+        "deliveryCharge": 36.45,
+        "generationCharge": 81.45
+      },
+      "payment": {
+        "paidDate": "2023-10-30T00:00:00Z",
+        "paidAmount": 112.40,
+        "paymentMethod": "Credit Card ending in 1234",
+        "transactionId": "TXN-987654321"
+      },
+      "pdfUrl": "/api/bills/bill_004/pdf"
+    },
+    {
+      "id": "bill_005",
+      "accountNumber": "BEL247-001234",
+      "billNumber": "INV-2023-009",
+      "billingPeriod": {
+        "startDate": "2023-09-01T00:00:00Z",
+        "endDate": "2023-09-30T23:59:59Z"
+      },
+      "dueDate": "2023-10-15T00:00:00Z",
+      "issueDate": "2023-10-01T00:00:00Z",
+      "status": "paid",
+      "amounts": {
+        "totalAmount": 134.85,
+        "previousBalance": 0.00,
+        "currentCharges": 134.85,
+        "taxes": 10.79,
+        "fees": 2.50,
+        "adjustments": 0.00
+      },
+      "usage": {
+        "kwhUsed": 789.2,
+        "kwhRate": 0.12,
+        "baseCharge": 15.00,
+        "deliveryCharge": 42.35,
+        "generationCharge": 94.70
+      },
+      "payment": {
+        "paidDate": "2023-09-28T00:00:00Z",
+        "paidAmount": 134.85,
+        "paymentMethod": "Credit Card ending in 1234",
+        "transactionId": "TXN-456123789"
+      },
+      "pdfUrl": "/api/bills/bill_005/pdf"
+    }
+  ],
+  "summary": {
+    "totalBills": 5,
+    "totalPaid": 511.75,
+    "averageMonthlyBill": 102.35,
+    "highestBill": 134.85,
+    "lowestBill": 76.25,
+    "lastPaymentDate": "2024-01-15T00:00:00Z",
+    "nextDueDate": "2024-02-15T00:00:00Z"
+  }
+}

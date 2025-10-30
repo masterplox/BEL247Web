@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="BEL247 WebApp - Monitor your electricity usage, bills, and payments">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Security Headers - Flutter Web Compatible -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' ws: wss: https: http: localhost:* 127.0.0.1:*; media-src 'self' data: blob:; object-src 'none'; child-src 'self' blob:; frame-src 'none'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Permissions-Policy" content="accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=()">
+  <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin">
+  <meta http-equiv="Expect-CT" content="max-age=86400, enforce">
+  <meta http-equiv="Feature-Policy" content="camera 'none'; microphone 'none'; geolocation 'none'; payment 'none'">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="BEL247">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>BEL247 WebApp</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <!-- Security Initialization Script -->
+  <script>
+    // HTTPS Enforcement
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      location.replace('https:' + window.location.href.substring(window.location.protocol.length));
+    }
+    
+    // Mixed Content Detection (only warn in production)
+    document.addEventListener('DOMContentLoaded', function() {
+      // Only check for mixed content if not on localhost/127.0.0.1
+      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        const scripts = document.querySelectorAll('script[src]');
+        scripts.forEach(script => {
+          if (script.src.startsWith('http://')) {
+            console.warn('Mixed content detected: HTTP script source:', script.src);
+          }
+        });
+        
+        const links = document.querySelectorAll('link[href]');
+        links.forEach(link => {
+          if (link.href.startsWith('http://')) {
+            console.warn('Mixed content detected: HTTP link href:', link.href);
+          }
+        });
+      }
+    });
+    
+    // CSP Violation Reporting
+    document.addEventListener('securitypolicyviolation', function(e) {
+      const violation = {
+        violatedDirective: e.violatedDirective,
+        blockedURI: e.blockedURI,
+        sourceFile: e.sourceFile,
+        lineNumber: e.lineNumber,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.warn('CSP Violation:', violation);
+      
+      // Store violations in localStorage for debugging
+      try {
+        const existingViolations = JSON.parse(localStorage.getItem('csp-violations') || '[]');
+        existingViolations.push(violation);
+        // Keep only last 50 violations
+        if (existingViolations.length > 50) {
+          existingViolations.splice(0, existingViolations.length - 50);
+        }
+        localStorage.setItem('csp-violations', JSON.stringify(existingViolations));
+      } catch (err) {
+        console.warn('Failed to store CSP violation:', err);
+      }
+      
+      // Try to send violation report (will fail gracefully if no server endpoint)
+      fetch('/api/csp-violation-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'csp-report': {
+            'violated-directive': e.violatedDirective,
+            'blocked-uri': e.blockedURI,
+            'source-file': e.sourceFile,
+            'line-number': e.lineNumber,
+            'column-number': e.columnNumber,
+            'disposition': e.disposition,
+            'effective-directive': e.effectiveDirective,
+            'original-policy': e.originalPolicy,
+            'referrer': e.referrer,
+            'status-code': e.statusCode
+          }
+        })
+      }).catch(() => {
+        // Silently fail - no server endpoint available
+      });
+    });
+  </script>
+  
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

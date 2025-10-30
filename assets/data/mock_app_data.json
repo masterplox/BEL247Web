@@ -1,0 +1,52 @@
+{
+  "accounts": [
+    {
+      "id": "account_1",
+      "accountNumber": "BEL247-001234",
+      "accountBalance": {
+        "currentBalance": 245.50,
+        "lastPaymentDate": "2025-09-15T00:00:00Z",
+        "lastPaymentAmount": 200.0,
+        "nextDueDate": "2025-10-15T00:00:00Z",
+        "paymentMethod": "Credit Card ending in 1234"
+      },
+      "usageSummary": {
+        "currentMonth": {"kwh": 650.0, "cost": 98.25, "averageDaily": 21.0},
+        "lastMonth": {"kwh": 950.0, "cost": 142.75, "averageDaily": 30.6},
+        "yearToDate": {"kwh": 2450.0, "cost": 366.50, "averageDaily": 26.8}
+      }
+    },
+    {
+      "id": "account_2",
+      "accountNumber": "BEL247-005678",
+      "accountBalance": {
+        "currentBalance": 1450.00,
+        "lastPaymentDate": "2025-09-10T00:00:00Z",
+        "lastPaymentAmount": 500.0,
+        "nextDueDate": "2025-10-10T00:00:00Z",
+        "paymentMethod": "Bank Transfer"
+      },
+      "usageSummary": {
+        "currentMonth": {"kwh": 1850.0, "cost": 412.30, "averageDaily": 61.7},
+        "lastMonth": {"kwh": 2010.0, "cost": 458.10, "averageDaily": 67.0},
+        "yearToDate": {"kwh": 17200.0, "cost": 3875.00, "averageDaily": 56.4}
+      }
+    },
+    {
+      "id": "account_3",
+      "accountNumber": "BEL247-009012",
+      "accountBalance": {
+        "currentBalance": 0.00,
+        "lastPaymentDate": "2025-09-28T00:00:00Z",
+        "lastPaymentAmount": 120.0,
+        "nextDueDate": "2025-10-28T00:00:00Z",
+        "paymentMethod": "Debit Card ending in 5678"
+      },
+      "usageSummary": {
+        "currentMonth": {"kwh": 320.0, "cost": 54.40, "averageDaily": 10.7},
+        "lastMonth": {"kwh": 300.0, "cost": 51.00, "averageDaily": 10.0},
+        "yearToDate": {"kwh": 2800.0, "cost": 476.00, "averageDaily": 9.2}
+      }
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "dailyConsumption": [
+    {
+      "date": "2024-01-27T00:00:00Z",
+      "totalKwh": 15.2,
+      "cost": 1.82,
+      "hourlyBreakdown": [
+        {"hour": 0, "kwh": 0.4, "cost": 0.05},
+        {"hour": 1, "kwh": 0.3, "cost": 0.04},
+        {"hour": 2, "kwh": 0.3, "cost": 0.04},
+        {"hour": 3, "kwh": 0.4, "cost": 0.05},
+        {"hour": 4, "kwh": 0.5, "cost": 0.06},
+        {"hour": 5, "kwh": 0.6, "cost": 0.07},
+        {"hour": 6, "kwh": 0.8, "cost": 0.10},
+        {"hour": 7, "kwh": 1.2, "cost": 0.14},
+        {"hour": 8, "kwh": 1.5, "cost": 0.18},
+        {"hour": 9, "kwh": 1.3, "cost": 0.16},
+        {"hour": 10, "kwh": 1.1, "cost": 0.13},
+        {"hour": 11, "kwh": 1.0, "cost": 0.12},
+        {"hour": 12, "kwh": 1.2, "cost": 0.14},
+        {"hour": 13, "kwh": 1.4, "cost": 0.17},
+        {"hour": 14, "kwh": 1.6, "cost": 0.19},
+        {"hour": 15, "kwh": 1.8, "cost": 0.22},
+        {"hour": 16, "kwh": 1.7, "cost": 0.20},
+        {"hour": 17, "kwh": 1.9, "cost": 0.23},
+        {"hour": 18, "kwh": 2.1, "cost": 0.25},
+        {"hour": 19, "kwh": 1.8, "cost": 0.22},
+        {"hour": 20, "kwh": 1.5, "cost": 0.18},
+        {"hour": 21, "kwh": 1.2, "cost": 0.14},
+        {"hour": 22, "kwh": 0.9, "cost": 0.11},
+        {"hour": 23, "kwh": 0.6, "cost": 0.07}
+      ]
+    },
+    {
+      "date": "2024-01-26T00:00:00Z",
+      "totalKwh": 14.8,
+      "cost": 1.78,
+      "hourlyBreakdown": [
+        {"hour": 0, "kwh": 0.3, "cost": 0.04},
+        {"hour": 1, "kwh": 0.3, "cost": 0.04},
+        {"hour": 2, "kwh": 0.4, "cost": 0.05},
+        {"hour": 3, "kwh": 0.4, "cost": 0.05},
+        {"hour": 4, "kwh": 0.5, "cost": 0.06},
+        {"hour": 5, "kwh": 0.7, "cost": 0.08},
+        {"hour": 6, "kwh": 0.9, "cost": 0.11},
+        {"hour": 7, "kwh": 1.1, "cost": 0.13},
+        {"hour": 8, "kwh": 1.4, "cost": 0.17},
+        {"hour": 9, "kwh": 1.2, "cost": 0.14},
+        {"hour": 10, "kwh": 1.0, "cost": 0.12},
+        {"hour": 11, "kwh": 0.9, "cost": 0.11},
+        {"hour": 12, "kwh": 1.1, "cost": 0.13},
+        {"hour": 13, "kwh": 1.3, "cost": 0.16},
+        {"hour": 14, "kwh": 1.5, "cost": 0.18},
+        {"hour": 15, "kwh": 1.7, "cost": 0.20},
+        {"hour": 16, "kwh": 1.6, "cost": 0.19},
+        {"hour": 17, "kwh": 1.8, "cost": 0.22},
+        {"hour": 18, "kwh": 2.0, "cost": 0.24},
+        {"hour": 19, "kwh": 1.7, "cost": 0.20},
+        {"hour": 20, "kwh": 1.4, "cost": 0.17},
+        {"hour": 21, "kwh": 1.1, "cost": 0.13},
+        {"hour": 22, "kwh": 0.8, "cost": 0.10},
+        {"hour": 23, "kwh": 0.5, "cost": 0.06}
+      ]
+    },
+    {
+      "date": "2024-01-25T00:00:00Z",
+      "totalKwh": 16.1,
+      "cost": 1.93,
+      "hourlyBreakdown": [
+        {"hour": 0, "kwh": 0.5, "cost": 0.06},
+        {"hour": 1, "kwh": 0.4, "cost": 0.05},
+        {"hour": 2, "kwh": 0.4, "cost": 0.05},
+        {"hour": 3, "kwh": 0.5, "cost": 0.06},
+        {"hour": 4, "kwh": 0.6, "cost": 0.07},
+        {"hour": 5, "kwh": 0.8, "cost": 0.10},
+        {"hour": 6, "kwh": 1.0, "cost": 0.12},
+        {"hour": 7, "kwh": 1.3, "cost": 0.16},
+        {"hour": 8, "kwh": 1.6, "cost": 0.19},
+        {"hour": 9, "kwh": 1.4, "cost": 0.17},
+        {"hour": 10, "kwh": 1.2, "cost": 0.14},
+        {"hour": 11, "kwh": 1.1, "cost": 0.13},
+        {"hour": 12, "kwh": 1.3, "cost": 0.16},
+        {"hour": 13, "kwh": 1.5, "cost": 0.18},
+        {"hour": 14, "kwh": 1.7, "cost": 0.20},
+        {"hour": 15, "kwh": 1.9, "cost": 0.23},
+        {"hour": 16, "kwh": 1.8, "cost": 0.22},
+        {"hour": 17, "kwh": 2.0, "cost": 0.24},
+        {"hour": 18, "kwh": 2.2, "cost": 0.26},
+        {"hour": 19, "kwh": 1.9, "cost": 0.23},
+        {"hour": 20, "kwh": 1.6, "cost": 0.19},
+        {"hour": 21, "kwh": 1.3, "cost": 0.16},
+        {"hour": 22, "kwh": 1.0, "cost": 0.12},
+        {"hour": 23, "kwh": 0.7, "cost": 0.08}
+      ]
+    }
+  ],
+  "monthlyConsumption": [
+    {
+      "month": "2024-01",
+      "totalKwh": 456.7,
+      "totalCost": 89.75,
+      "averageDaily": 15.2,
+      "peakDay": "2024-01-15",
+      "peakKwh": 18.3,
+      "lowestDay": "2024-01-03",
+      "lowestKwh": 12.1
+    },
+    {
+      "month": "2023-12",
+      "totalKwh": 523.4,
+      "totalCost": 98.50,
+      "averageDaily": 16.9,
+      "peakDay": "2023-12-22",
+      "peakKwh": 22.1,
+      "lowestDay": "2023-12-05",
+      "lowestKwh": 11.8
+    },
+    {
+      "month": "2023-11",
+      "totalKwh": 412.3,
+      "totalCost": 76.25,
+      "averageDaily": 13.7,
+      "peakDay": "2023-11-18",
+      "peakKwh": 16.9,
+      "lowestDay": "2023-11-02",
+      "lowestKwh": 9.2
+    },
+    {
+      "month": "2023-10",
+      "totalKwh": 678.9,
+      "totalCost": 112.40,
+      "averageDaily": 21.9,
+      "peakDay": "2023-10-15",
+      "peakKwh": 28.4,
+      "lowestDay": "2023-10-03",
+      "lowestKwh": 15.6
+    },
+    {
+      "month": "2023-09",
+      "totalKwh": 789.2,
+      "totalCost": 134.85,
+      "averageDaily": 26.3,
+      "peakDay": "2023-09-12",
+      "peakKwh": 32.1,
+      "lowestDay": "2023-09-28",
+      "lowestKwh": 18.7
+    }
+  ],
+  "yearlyConsumption": [
+    {
+      "year": 2024,
+      "totalKwh": 456.7,
+      "totalCost": 89.75,
+      "averageMonthly": 456.7,
+      "peakMonth": "January",
+      "peakKwh": 456.7,
+      "lowestMonth": "January",
+      "lowestKwh": 456.7
+    },
+    {
+      "year": 2023,
+      "totalKwh": 5234.5,
+      "totalCost": 987.25,
+      "averageMonthly": 436.2,
+      "peakMonth": "September",
+      "peakKwh": 789.2,
+      "lowestMonth": "November",
+      "lowestKwh": 412.3
+    }
+  ],
+  "usageStatistics": {
+    "averageDailyUsage": 15.8,
+    "averageMonthlyUsage": 474.6,
+    "averageYearlyUsage": 5695.2,
+    "peakUsageHour": 18,
+    "lowestUsageHour": 2,
+    "seasonalTrends": {
+      "summer": {"average": 22.5, "peak": 28.4},
+      "fall": {"average": 18.3, "peak": 22.1},
+      "winter": {"average": 16.7, "peak": 20.8},
+      "spring": {"average": 19.1, "peak": 24.2}
+    }
+  }
+}
