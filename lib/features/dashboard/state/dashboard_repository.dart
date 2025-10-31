@@ -9,6 +9,7 @@ class DashboardRepository {
   const DashboardRepository();
 
   Future<AccountBalance> fetchAccountBalance(String accountId) async {
+    print('[Dashboard] Repository.fetchAccountBalance useMockApi=${EnvConfig.useMockApi}');
     print('[Dashboard] Repository.fetchAccountBalance start accountId=$accountId');
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final bal = EnvConfig.useMockApi
@@ -30,6 +31,7 @@ class DashboardRepository {
   }
 
   Future<DailyConsumption> fetchDailyConsumption(String accountId) async {
+    print('[Dashboard] Repository.fetchDailyConsumption useMockApi=${EnvConfig.useMockApi}');
     print('[Dashboard] Repository.fetchDailyConsumption start accountId=$accountId');
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final consumption = DailyConsumption(
