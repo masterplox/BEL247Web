@@ -655,8 +655,12 @@ class AccountSwitcherNotifier extends StateNotifier<AccountSwitcherState> {
   /// Switch to a different account
   void switchAccount(String accountId) {
     if (state.accounts.any((account) => account.id == accountId)) {
+      final previousAccountId = state.activeAccountId;
       state = state.copyWith(activeAccountId: accountId);
       Logger.info('Switched to account: $accountId');
+      print('[AccountSwitcher] Account switched from=$previousAccountId to=$accountId');
+    } else {
+      print('[AccountSwitcher] [ERROR] Attempted to switch to invalid accountId=$accountId');
     }
   }
 

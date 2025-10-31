@@ -9,22 +9,30 @@ class DashboardRepository {
   const DashboardRepository();
 
   Future<AccountBalance> fetchAccountBalance(String accountId) async {
+    print('[Dashboard] Repository.fetchAccountBalance start accountId=$accountId');
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final bal = EnvConfig.useMockApi
         ? await MockAppDataService.getAccountBalance(accountId)
         : null; // Replace with live call when implemented
-    return bal ?? AccountBalance(
+    final result = bal ?? AccountBalance(
       currentBalance: 0,
       lastPaymentDate: DateTime.now(),
       lastPaymentAmount: 0,
       nextDueDate: DateTime.now(),
       paymentMethod: 'Unknown',
     );
+    if (bal == null) {
+      print('[Dashboard] Repository.fetchAccountBalance [ERROR] No balance found for accountId=$accountId, returning default');
+    } else {
+      print('[Dashboard] Repository.fetchAccountBalance success balance=\$${result.currentBalance.toStringAsFixed(2)} accountId=$accountId');
+    }
+    return result;
   }
 
   Future<DailyConsumption> fetchDailyConsumption(String accountId) async {
+    print('[Dashboard] Repository.fetchDailyConsumption start accountId=$accountId');
     await Future<void>.delayed(const Duration(milliseconds: 300));
-    return DailyConsumption(
+    final consumption = DailyConsumption(
       date: DateTime.now(),
       totalKwh: 25.5,
       cost: 12.33,
@@ -50,5 +58,7 @@ class DashboardRepository {
         holidayAverage: 15,
       ),
     );
+    print('[Dashboard] Repository.fetchDailyConsumption success totalKwh=${consumption.totalKwh.toStringAsFixed(2)} cost=\$${consumption.cost.toStringAsFixed(2)} accountId=$accountId');
+    return consumption;
   }
 }

@@ -10,15 +10,21 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) => const
 final accountBalanceProvider = FutureProvider<AccountBalance>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
+  print('[Dashboard] accountBalanceProvider fetching for accountId=$activeAccountId');
   final repo = ref.read(dashboardRepositoryProvider);
-  return repo.fetchAccountBalance(activeAccountId);
+  final balance = await repo.fetchAccountBalance(activeAccountId);
+  print('[Dashboard] accountBalanceProvider loaded balance=\$${balance.currentBalance.toStringAsFixed(2)} accountId=$activeAccountId');
+  return balance;
 });
 
 final dailyConsumptionProvider = FutureProvider<DailyConsumption>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
+  print('[Dashboard] dailyConsumptionProvider fetching for accountId=$activeAccountId');
   final repo = ref.read(dashboardRepositoryProvider);
-  return repo.fetchDailyConsumption(activeAccountId);
+  final consumption = await repo.fetchDailyConsumption(activeAccountId);
+  print('[Dashboard] dailyConsumptionProvider loaded totalKwh=${consumption.totalKwh.toStringAsFixed(2)} cost=\$${consumption.cost.toStringAsFixed(2)} accountId=$activeAccountId');
+  return consumption;
 });
 
 class DashboardRefreshNotifier extends AsyncNotifier<void> {

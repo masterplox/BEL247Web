@@ -11,9 +11,12 @@ class ConsumptionRepository {
     // Simulate API call delay
     await Future.delayed(const Duration(milliseconds: 500));
     
+    print('[Usage] fetchDailyConsumption start accountId=$accountId date=${date.toIso8601String()}');
+    
     // Get account-specific usage summary to use as baseline
     final usageSummary = await MockAppDataService.getUsageSummary(accountId);
     final averageDailyKwh = usageSummary?.currentMonth.averageDaily ?? 25.0;
+    print('[Usage] accountId=$accountId averageDailyKwh=$averageDailyKwh');
     
     // Generate base hourly breakdown based on account's average usage
     final hourlyMultipliers = [
@@ -48,6 +51,8 @@ class ConsumptionRepository {
     final lowestUsage = sortedHours.last.kwh;
     final peakHour = sortedHours.first.hour;
     final lowHour = sortedHours.last.hour;
+
+    print('[Usage] computed totalKwh=${totalKwh.toStringAsFixed(2)} cost=${cost.toStringAsFixed(2)} peakHour=$peakHour peakKwh=${peakUsage.toStringAsFixed(2)}');
     
     return DailyConsumption(
       date: date,

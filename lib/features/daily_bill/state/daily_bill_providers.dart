@@ -85,10 +85,14 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
   DailyBillNotifier(this._ref) : super(const DailyBillState()) {
     // Listen to account changes and reload data
     _ref.listen(accountSwitcherProvider, (_, __) {
+      final id = _accountId;
+      print('[DailyBill] Account changed -> accountId=$id');
       if (state.currentConsumption != null) {
         loadDailyConsumption(state.currentConsumption!.date);
       }
     });
+    // Initial account
+    print('[DailyBill] Notifier created with accountId=$_accountId');
   }
 
   final Ref _ref;
@@ -99,6 +103,7 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
   Future<void> loadDailyConsumption(DateTime date) async {
     // Capture accountId at start of async operation
     final accountId = _accountId;
+    print('[DailyBill] loadDailyConsumption start accountId=$accountId date=${date.toIso8601String()}');
     
     try {
       state = state.copyWith(isLoading: true, error: null);
@@ -112,14 +117,20 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
       await Future.delayed(const Duration(milliseconds: 500));
       
       // Check if account changed during async operation
-      if (_accountId != accountId) return;
+      if (_accountId != accountId) {
+        print('[DailyBill] loadDailyConsumption aborted (account changed) start=$accountId now=$_accountId');
+        return;
+      }
       
       // Mock data - generate account-specific data
       final currentConsumption = await _getMockDailyConsumption(date, accountId);
       final previousConsumption = await _getMockDailyConsumption(date.subtract(const Duration(days: 1)), accountId);
       
       // Check if account changed during async operations
-      if (_accountId != accountId) return;
+      if (_accountId != accountId) {
+        print('[DailyBill] after fetch aborted (account changed) start=$accountId now=$_accountId');
+        return;
+      }
       
       // Calculate costs
       final costCalculation = CostCalculationService.calculateDailyCost(currentConsumption);
@@ -132,7 +143,10 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
       final alerts = _generateAlerts(currentConsumption, previousConsumption);
 
       // Check if account changed before updating state
-      if (_accountId != accountId) return;
+      if (_accountId != accountId) {
+        print('[DailyBill] before state update aborted (account changed) start=$accountId now=$_accountId');
+        return;
+      }
       
       try {
         state = state.copyWith(
@@ -143,6 +157,7 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
           alerts: alerts,
           isLoading: false,
         );
+        print('[DailyBill] loaded currentKwh=${currentConsumption.totalKwh.toStringAsFixed(2)} cost=${currentConsumption.cost.toStringAsFixed(2)}');
       } catch (e) {
         // Ignore if notifier was disposed during state update
         return;
@@ -155,6 +170,7 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
           isLoading: false,
           error: e.toString(),
         );
+        print('[DailyBill][ERROR] accountId=$accountId error=$e');
       } catch (_) {
         // Ignore if notifier was disposed
         return;

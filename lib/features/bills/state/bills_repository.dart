@@ -7,9 +7,10 @@ class BillsRepository {
   const BillsRepository();
 
   Future<List<Bill>> fetchBills(String accountId) async {
+    print('[Bills] Repository.fetchBills start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
     
-    return [
+    final bills = [
       Bill(
         id: '1',
         accountNumber: '123456789',
@@ -113,32 +114,48 @@ class BillsRepository {
         pdfUrl: 'https://example.com/bill-3.pdf',
       ),
     ];
+    print('[Bills] Repository.fetchBills success ${bills.length} bills accountId=$accountId');
+    return bills;
   }
 
   Future<AccountBalance> fetchAccountBalance(String accountId) async {
+    print('[Bills] Repository.fetchAccountBalance start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate network delay
     final bal = EnvConfig.useMockApi
         ? await MockAppDataService.getAccountBalance(accountId)
         : null; // Replace with live call when implemented
-    return bal ?? AccountBalance(
+    final result = bal ?? AccountBalance(
       currentBalance: 0,
       lastPaymentDate: DateTime.now(),
       lastPaymentAmount: 0,
       nextDueDate: DateTime.now(),
       paymentMethod: 'Unknown',
     );
+    if (bal == null) {
+      print('[Bills] Repository.fetchAccountBalance [ERROR] No balance found for accountId=$accountId, returning default');
+    } else {
+      print('[Bills] Repository.fetchAccountBalance success balance=\$${result.currentBalance.toStringAsFixed(2)} accountId=$accountId');
+    }
+    return result;
   }
 
   Future<UsageSummary> fetchUsageSummary(String accountId) async {
+    print('[Bills] Repository.fetchUsageSummary start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate network delay
     final usage = EnvConfig.useMockApi
         ? await MockAppDataService.getUsageSummary(accountId)
         : null; // Replace with live call when implemented
-    return usage ?? const UsageSummary(
+    final result = usage ?? const UsageSummary(
       currentMonth: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
       lastMonth: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
       yearToDate: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
     );
+    if (usage == null) {
+      print('[Bills] Repository.fetchUsageSummary [ERROR] No usage summary found for accountId=$accountId, returning default');
+    } else {
+      print('[Bills] Repository.fetchUsageSummary success currentMonth=${usage.currentMonth.kwh.toStringAsFixed(2)}kwh cost=\$${usage.currentMonth.cost.toStringAsFixed(2)} accountId=$accountId');
+    }
+    return result;
   }
 
   Future<bool> processPayment({

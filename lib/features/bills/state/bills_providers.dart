@@ -12,22 +12,31 @@ final billsRepositoryProvider = Provider<BillsRepository>((ref) => const BillsRe
 final billsProvider = FutureProvider<List<Bill>>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
+  print('[Bills] billsProvider fetching for accountId=$activeAccountId');
   final repository = ref.watch(billsRepositoryProvider);
-  return repository.fetchBills(activeAccountId);
+  final bills = await repository.fetchBills(activeAccountId);
+  print('[Bills] billsProvider loaded ${bills.length} bills accountId=$activeAccountId');
+  return bills;
 });
 
 final accountBalanceProvider = FutureProvider<AccountBalance>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
+  print('[Bills] accountBalanceProvider fetching for accountId=$activeAccountId');
   final repository = ref.watch(billsRepositoryProvider);
-  return repository.fetchAccountBalance(activeAccountId);
+  final balance = await repository.fetchAccountBalance(activeAccountId);
+  print('[Bills] accountBalanceProvider loaded balance=\$${balance.currentBalance.toStringAsFixed(2)} accountId=$activeAccountId');
+  return balance;
 });
 
 final usageSummaryProvider = FutureProvider<UsageSummary>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
+  print('[Bills] usageSummaryProvider fetching for accountId=$activeAccountId');
   final repository = ref.watch(billsRepositoryProvider);
-  return repository.fetchUsageSummary(activeAccountId);
+  final usage = await repository.fetchUsageSummary(activeAccountId);
+  print('[Bills] usageSummaryProvider loaded currentMonth=${usage.currentMonth.kwh.toStringAsFixed(2)}kwh cost=\$${usage.currentMonth.cost.toStringAsFixed(2)} accountId=$activeAccountId');
+  return usage;
 });
 
 // Payment state management
