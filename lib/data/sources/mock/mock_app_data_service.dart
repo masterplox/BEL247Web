@@ -6,6 +6,7 @@ class MockAppDataService {
   static const String _path = 'assets/data/mock_app_data.json';
 
   static Future<Map<String, dynamic>?> _getAccountJson(String accountId) async {
+    print('[MockAppDataService] _getAccountJson path=$_path');
     final data = await DataLoader.loadJsonFromAssets(_path);
     final accounts = data['accounts'] as List<dynamic>?;
     if (accounts == null) return null;
