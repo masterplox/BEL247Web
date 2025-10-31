@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/feature_providers.dart' hide CostCalculationResult, CostSavings;
 import '../../../data/models/consumption.dart';
+import '../../../data/sources/mock/mock_app_data_service.dart';
 import '../services/cost_calculation_service.dart';
 
 /// State for daily bill data
@@ -80,19 +82,44 @@ class DailyBillState {
 
 /// Notifier for managing daily bill state
 class DailyBillNotifier extends StateNotifier<DailyBillState> {
-  DailyBillNotifier() : super(const DailyBillState());
+  DailyBillNotifier(this._ref) : super(const DailyBillState()) {
+    // Listen to account changes and reload data
+    _ref.listen(accountSwitcherProvider, (_, __) {
+      if (state.currentConsumption != null) {
+        loadDailyConsumption(state.currentConsumption!.date);
+      }
+    });
+  }
+
+  final Ref _ref;
+  
+  String get _accountId => _ref.read(accountSwitcherProvider).activeAccountId;
 
   /// Load daily consumption data
   Future<void> loadDailyConsumption(DateTime date) async {
-    state = state.copyWith(isLoading: true, error: null);
+    // Capture accountId at start of async operation
+    final accountId = _accountId;
+    
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+    } catch (e) {
+      // Ignore if notifier was disposed
+      return;
+    }
 
     try {
       // Simulate API call - replace with actual repository call
       await Future.delayed(const Duration(milliseconds: 500));
       
-      // Mock data - replace with actual data fetching
-      final currentConsumption = _getMockDailyConsumption(date);
-      final previousConsumption = _getMockDailyConsumption(date.subtract(const Duration(days: 1)));
+      // Check if account changed during async operation
+      if (_accountId != accountId) return;
+      
+      // Mock data - generate account-specific data
+      final currentConsumption = await _getMockDailyConsumption(date, accountId);
+      final previousConsumption = await _getMockDailyConsumption(date.subtract(const Duration(days: 1)), accountId);
+      
+      // Check if account changed during async operations
+      if (_accountId != accountId) return;
       
       // Calculate costs
       final costCalculation = CostCalculationService.calculateDailyCost(currentConsumption);
@@ -104,19 +131,34 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
       // Generate alerts based on consumption
       final alerts = _generateAlerts(currentConsumption, previousConsumption);
 
-      state = state.copyWith(
-        currentConsumption: currentConsumption,
-        previousConsumption: previousConsumption,
-        costCalculation: costCalculation,
-        costSavings: costSavings,
-        alerts: alerts,
-        isLoading: false,
-      );
+      // Check if account changed before updating state
+      if (_accountId != accountId) return;
+      
+      try {
+        state = state.copyWith(
+          currentConsumption: currentConsumption,
+          previousConsumption: previousConsumption,
+          costCalculation: costCalculation,
+          costSavings: costSavings,
+          alerts: alerts,
+          isLoading: false,
+        );
+      } catch (e) {
+        // Ignore if notifier was disposed during state update
+        return;
+      }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      // Check if account changed or notifier was disposed
+      if (_accountId != accountId) return;
+      try {
+        state = state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+        );
+      } catch (_) {
+        // Ignore if notifier was disposed
+        return;
+      }
     }
   }
 
@@ -266,56 +308,96 @@ class DailyBillNotifier extends StateNotifier<DailyBillState> {
     return alerts;
   }
 
-  /// Mock data generation - replace with actual repository calls
-  DailyConsumption _getMockDailyConsumption(DateTime date) {
-    // This is a simplified mock - replace with actual data fetching
+  /// Mock data generation - generates account-specific data based on account's average daily usage
+  Future<DailyConsumption> _getMockDailyConsumption(DateTime date, String accountId) async {
+    // Get account-specific usage summary to use as baseline
+    final usageSummary = await MockAppDataService.getUsageSummary(accountId);
+    final averageDailyKwh = usageSummary?.currentMonth.averageDaily ?? 25.0;
+    
+    // Generate base hourly breakdown based on account's average usage
+    final hourlyMultipliers = [
+      0.3, 0.25, 0.25, 0.3, 0.4, 0.5, 0.7, 1.0, 1.2, 1.1, 0.9, 0.8,
+      0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.4, 1.2, 1.0, 0.8, 0.5,
+    ];
+    
+    final baseHourlyKwh = averageDailyKwh / hourlyMultipliers.fold<double>(0, (sum, m) => sum + m);
+    final hourlyBreakdown = hourlyMultipliers.asMap().entries.map((entry) {
+      final hour = entry.key;
+      final multiplier = entry.value;
+      // Add some variation based on date to make it feel more realistic
+      final variation = 1.0 + ((date.day % 10 - 5) / 50);
+      final kwh = (baseHourlyKwh * multiplier * variation).clamp(0.1, 10.0);
+      return HourlyConsumption(
+        hour: hour,
+        kwh: kwh,
+        cost: kwh * 0.12, // $0.12 per kWh
+      );
+    }).toList();
+    
+    final totalKwh = hourlyBreakdown.fold<double>(0, (sum, h) => sum + h.kwh);
+    final cost = totalKwh * 0.12;
+    
+    // Find peak and low usage hours
+    final sortedHours = hourlyBreakdown.toList()
+      ..sort((a, b) => b.kwh.compareTo(a.kwh));
+    final peakUsage = sortedHours.first.kwh;
+    final lowestUsage = sortedHours.last.kwh;
+    final peakHour = sortedHours.first.hour;
+    final lowHour = sortedHours.last.hour;
+    
     return DailyConsumption(
       date: date,
-      totalKwh: 25.5 + (date.day % 10) * 2.5,
-      cost: 0,
-      hourlyBreakdown: List.generate(24, (hour) => HourlyConsumption(
-        hour: hour,
-        kwh: 0.8 + (hour % 6) * 0.3,
-        cost: 0,
-      )),
+      totalKwh: totalKwh,
+      cost: cost,
+      hourlyBreakdown: hourlyBreakdown,
       peakUsages: [
         PeakUsage(
-          hour: 18,
-          kwh: 2.5,
-          cost: 0,
-          timestamp: DateTime.now(),
+          hour: peakHour,
+          kwh: peakUsage,
+          cost: peakUsage * 0.12,
+          timestamp: date.add(Duration(hours: peakHour)),
           reason: 'Evening peak',
         ),
       ],
       lowUsages: [
         LowUsage(
-          hour: 3,
-          kwh: 0.2,
-          cost: 0,
-          timestamp: DateTime.now(),
+          hour: lowHour,
+          kwh: lowestUsage,
+          cost: lowestUsage * 0.12,
+          timestamp: date.add(Duration(hours: lowHour)),
           reason: 'Night time',
         ),
       ],
-      averageHourlyUsage: 1.1,
-      peakHourlyUsage: 2.5,
-      lowestHourlyUsage: 0.2,
-      standardDeviation: 0.8,
-      pattern: const ConsumptionPattern(
-        previousDayUsage: 23.2,
-        previousWeekAverage: 24.8,
-        previousMonthAverage: 26.1,
+      averageHourlyUsage: totalKwh / 24,
+      peakHourlyUsage: peakUsage,
+      lowestHourlyUsage: lowestUsage,
+      standardDeviation: _calculateStandardDeviation(hourlyBreakdown),
+      pattern: ConsumptionPattern(
+        previousDayUsage: totalKwh * 0.95,
+        previousWeekAverage: averageDailyKwh,
+        previousMonthAverage: averageDailyKwh,
         typicalPeakHours: [18, 19, 20],
         typicalLowHours: [2, 3, 4],
-        weekendAverage: 22.5,
-        weekdayAverage: 25.8,
-        holidayAverage: 20.1,
+        weekendAverage: averageDailyKwh * 0.9,
+        weekdayAverage: averageDailyKwh * 1.1,
+        holidayAverage: averageDailyKwh * 0.8,
       ),
     );
   }
+  
+  double _calculateStandardDeviation(List<HourlyConsumption> hourlyData) {
+    if (hourlyData.isEmpty) return 0;
+    final mean = hourlyData.fold<double>(0, (sum, h) => sum + h.kwh) / hourlyData.length;
+    final variance = hourlyData.fold<double>(
+      0,
+      (sum, h) => sum + (h.kwh - mean) * (h.kwh - mean),
+    ) / hourlyData.length;
+    return variance;
+  }
 }
 
-/// Provider for daily bill state
-final dailyBillProvider = StateNotifierProvider<DailyBillNotifier, DailyBillState>((ref) => DailyBillNotifier());
+/// Provider for daily bill state - watches account switcher to reload when account changes
+final dailyBillProvider = StateNotifierProvider<DailyBillNotifier, DailyBillState>(DailyBillNotifier.new);
 
 /// Provider for current consumption data
 final currentConsumptionProvider = Provider<DailyConsumption?>((ref) => ref.watch(dailyBillProvider).currentConsumption);

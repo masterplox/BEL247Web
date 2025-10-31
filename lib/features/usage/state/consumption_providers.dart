@@ -4,36 +4,50 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/feature_providers.dart';
 import '../../../data/models/consumption.dart';
+import '../../../data/sources/mock/mock_app_data_service.dart';
 
 class ConsumptionRepository {
   Future<DailyConsumption> fetchDailyConsumption(DateTime date, String accountId) async {
     // Simulate API call delay
     await Future.delayed(const Duration(milliseconds: 500));
     
-    // Generate realistic daily data
-    final hourlyBreakdown = List.generate(24, (hour) {
-      double baseUsage = 1.5;
-      if (hour >= 6 && hour <= 9) {
-        baseUsage = 2.5; // Morning peak
-      } else if (hour >= 18 && hour <= 22) {
-        baseUsage = 3.5; // Evening peak
-      } else if (hour >= 23 || hour <= 5) {
-        baseUsage = 0.8; // Night low usage
-      }
-      
-      // Add some randomness based on date
-      final random = (hour * date.day * 0.1) % 1.0;
-      final usage = baseUsage + (random - 0.5) * 0.8;
+    // Get account-specific usage summary to use as baseline
+    final usageSummary = await MockAppDataService.getUsageSummary(accountId);
+    final averageDailyKwh = usageSummary?.currentMonth.averageDaily ?? 25.0;
+    
+    // Generate base hourly breakdown based on account's average usage
+    final hourlyMultipliers = [
+      0.3, 0.25, 0.25, 0.3, 0.4, 0.5, 0.7, 1.0, 1.2, 1.1, 0.9, 0.8,
+      0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.4, 1.2, 1.0, 0.8, 0.5,
+    ];
+    
+    final baseHourlyKwh = averageDailyKwh / hourlyMultipliers.fold<double>(0, (sum, m) => sum + m);
+    final hourlyBreakdown = hourlyMultipliers.asMap().entries.map((entry) {
+      final hour = entry.key;
+      final multiplier = entry.value;
+      // Add some variation based on date and account ID
+      final accountHash = accountId.hashCode.abs() % 100 / 100;
+      final dateVariation = (date.day % 10 - 5) / 50;
+      final variation = 1.0 + dateVariation + (accountHash - 0.5) * 0.1;
+      final kwh = (baseHourlyKwh * multiplier * variation).clamp(0.1, 10.0);
       
       return HourlyConsumption(
         hour: hour,
-        kwh: usage.clamp(0.1, 5.0),
-        cost: usage.clamp(0.1, 5.0) * 0.12, // $0.12 per kWh
+        kwh: kwh,
+        cost: kwh * 0.12,
       );
-    });
+    }).toList();
     
     final totalKwh = hourlyBreakdown.fold<double>(0, (sum, h) => sum + h.kwh);
     final cost = totalKwh * 0.12;
+    
+    // Find peak and low usage hours
+    final sortedHours = hourlyBreakdown.toList()
+      ..sort((a, b) => b.kwh.compareTo(a.kwh));
+    final peakUsage = sortedHours.first.kwh;
+    final lowestUsage = sortedHours.last.kwh;
+    final peakHour = sortedHours.first.hour;
+    final lowHour = sortedHours.last.hour;
     
     return DailyConsumption(
       date: date,
@@ -42,36 +56,36 @@ class ConsumptionRepository {
       hourlyBreakdown: hourlyBreakdown,
       peakUsages: [
         PeakUsage(
-          hour: 19,
-          kwh: 3.5,
-          cost: 0.42,
-          timestamp: date,
+          hour: peakHour,
+          kwh: peakUsage,
+          cost: peakUsage * 0.12,
+          timestamp: date.add(Duration(hours: peakHour)),
           reason: 'Evening peak usage',
         ),
       ],
       lowUsages: [
         LowUsage(
-          hour: 3,
-          kwh: 0.8,
-          cost: 0.096,
-          timestamp: date,
+          hour: lowHour,
+          kwh: lowestUsage,
+          cost: lowestUsage * 0.12,
+          timestamp: date.add(Duration(hours: lowHour)),
           reason: 'Night low usage',
         ),
       ],
       averageHourlyUsage: totalKwh / 24,
-      peakHourlyUsage: hourlyBreakdown.map((h) => h.kwh).reduce((a, b) => a > b ? a : b),
-      lowestHourlyUsage: hourlyBreakdown.map((h) => h.kwh).reduce((a, b) => a < b ? a : b),
+      peakHourlyUsage: peakUsage,
+      lowestHourlyUsage: lowestUsage,
       standardDeviation: _calculateStandardDeviation(hourlyBreakdown),
       alerts: [],
       pattern: ConsumptionPattern(
-        previousDayUsage: totalKwh - 2.0,
-        previousWeekAverage: 42.8,
-        previousMonthAverage: 38.2,
+        previousDayUsage: totalKwh * 0.95,
+        previousWeekAverage: averageDailyKwh,
+        previousMonthAverage: averageDailyKwh,
         typicalPeakHours: [18, 19, 20, 21],
         typicalLowHours: [1, 2, 3, 4],
-        weekendAverage: 35,
-        weekdayAverage: 45.2,
-        holidayAverage: 30,
+        weekendAverage: averageDailyKwh * 0.9,
+        weekdayAverage: averageDailyKwh * 1.1,
+        holidayAverage: averageDailyKwh * 0.8,
       ),
     );
   }
