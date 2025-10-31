@@ -7,7 +7,7 @@ class BillsRepository {
   const BillsRepository();
 
   Future<List<Bill>> fetchBills(String accountId) async {
-    print('[Bills] Repository.fetchBills start accountId=$accountId');
+    print('[Bills] Repository.fetchBills (does not use EnvConfig) start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
     
     final bills = [
@@ -119,6 +119,7 @@ class BillsRepository {
   }
 
   Future<AccountBalance> fetchAccountBalance(String accountId) async {
+    print('[Bills] Repository.fetchAccountBalance useMockApi=${EnvConfig.useMockApi}');
     print('[Bills] Repository.fetchAccountBalance start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate network delay
     final bal = EnvConfig.useMockApi
@@ -140,6 +141,7 @@ class BillsRepository {
   }
 
   Future<UsageSummary> fetchUsageSummary(String accountId) async {
+    print('[Bills] Repository.fetchUsageSummary useMockApi=${EnvConfig.useMockApi}');
     print('[Bills] Repository.fetchUsageSummary start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate network delay
     final usage = EnvConfig.useMockApi
