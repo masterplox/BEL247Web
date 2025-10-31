@@ -3,7 +3,7 @@ import '../../models/user.dart' show AccountBalance, UsageSummary, UsagePeriod;
 import 'data_loader.dart';
 
 class MockAppDataService {
-  static const String _path = '/data/mock_app_data.json';
+  static const String _path = 'assets/data/mock_app_data.json';
 
   static Future<Map<String, dynamic>?> _getAccountJson(String accountId) async {
     final data = await DataLoader.loadJsonFromAssets(_path);
