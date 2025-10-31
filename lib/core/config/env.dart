@@ -16,7 +16,7 @@ class EnvConfig {
       );
 
   static bool get useMockApi {
-    const value = String.fromEnvironment('USE_MOCK', defaultValue: 'false');
+    const value = String.fromEnvironment('USE_MOCK', defaultValue: 'true');
     return value.toLowerCase() == 'true';
   }
 
