@@ -20,10 +20,11 @@ class EnvConfig {
     return value.toLowerCase() == 'true';
   }
 
-  static String get encryptionKey => const String.fromEnvironment(
-        'ENCRYPTION_KEY',
-        defaultValue: 'bel247_encryption_key_32_chars',
-      );
+  static String get encryptionKey {
+    const key = String.fromEnvironment('ENCRYPTION_KEY');
+    // If not provided via --dart-define, use default value
+    return key.isEmpty ? 'bel247_encryption_key_32_chars' : key;
+  }
 
   // Support both ENVIRONMENT and APP_ENV (Dockerfile passes APP_ENV)
   static String get environment {
