@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
@@ -15,11 +16,174 @@ class AmiMeterReadingsCard extends ConsumerStatefulWidget {
   ConsumerState<AmiMeterReadingsCard> createState() => _AmiMeterReadingsCardState();
 }
 
-enum _UsageTab { today, hourly, last7Days, month, custom }
+enum _UsageTab { day, week, month, year }
 
 class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
-  _UsageTab _selected = _UsageTab.today;
-  DateTimeRange? _customRange;
+  _UsageTab _selected = _UsageTab.day;
+  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedWeekStart = _startOfWeek(DateTime.now());
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  int _selectedYear = DateTime.now().year;
+  final DateFormat _dayFormat = DateFormat('EEE, MMM d, yyyy');
+  final DateFormat _rangeFormat = DateFormat('MMM d, yyyy');
+  final DateFormat _monthFormat = DateFormat('MMM yyyy');
+
+  DateTime get _normalizedSelectedDate =>
+      DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+
+  static DateTime _startOfWeek(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    final weekday = normalized.weekday % DateTime.daysPerWeek; // Sunday => 0
+    return normalized.subtract(Duration(days: weekday));
+  }
+
+  static DateTime _endOfWeek(DateTime date) =>
+      _startOfWeek(date).add(const Duration(days: 6));
+
+  static DateTime _startOfMonth(DateTime date) =>
+      DateTime(date.year, date.month, 1);
+
+  static DateTime _endOfMonth(DateTime date) =>
+      DateTime(date.year, date.month + 1, 0);
+
+  void _setSelectedTab(_UsageTab tab) {
+    setState(() {
+      _selected = tab;
+      if (tab == _UsageTab.week) {
+        _selectedWeekStart = _startOfWeek(_selectedDate);
+      } else if (tab == _UsageTab.month) {
+        _selectedMonth = _startOfMonth(_selectedDate);
+      } else if (tab == _UsageTab.year) {
+        _selectedYear = _selectedDate.year;
+      }
+    });
+  }
+
+  void _shiftPeriod(int delta) {
+    setState(() {
+      switch (_selected) {
+        case _UsageTab.day:
+          _selectedDate = _normalizedSelectedDate.add(Duration(days: delta));
+          _selectedWeekStart = _startOfWeek(_selectedDate);
+          _selectedMonth = _startOfMonth(_selectedDate);
+          _selectedYear = _selectedDate.year;
+          break;
+        case _UsageTab.week:
+          _selectedWeekStart =
+              _selectedWeekStart.add(Duration(days: 7 * delta));
+          _selectedDate = _selectedWeekStart;
+          _selectedMonth = _startOfMonth(_selectedWeekStart);
+          _selectedYear = _selectedWeekStart.year;
+          break;
+        case _UsageTab.month:
+          _selectedMonth = DateTime(
+            _selectedMonth.year,
+            _selectedMonth.month + delta,
+            1,
+          );
+          _selectedDate = _selectedMonth;
+          _selectedWeekStart = _startOfWeek(_selectedMonth);
+          _selectedYear = _selectedMonth.year;
+          break;
+        case _UsageTab.year:
+          _selectedYear += delta;
+          _selectedMonth = DateTime(_selectedYear, _selectedMonth.month, 1);
+          _selectedDate = _selectedMonth;
+          _selectedWeekStart = _startOfWeek(_selectedMonth);
+          break;
+      }
+    });
+  }
+
+  String _formattedPeriodLabel() {
+    switch (_selected) {
+      case _UsageTab.day:
+        return _dayFormat.format(_normalizedSelectedDate);
+      case _UsageTab.week:
+        final start = _selectedWeekStart;
+        final end = _endOfWeek(_selectedWeekStart);
+        return '${_rangeFormat.format(start)} - ${_rangeFormat.format(end)}';
+      case _UsageTab.month:
+        return _monthFormat.format(_selectedMonth);
+      case _UsageTab.year:
+        return '$_selectedYear';
+    }
+  }
+
+  Future<void> _handlePeriodTap() async {
+    switch (_selected) {
+      case _UsageTab.day:
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _normalizedSelectedDate,
+          firstDate: DateTime(2020, 1, 1),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+        );
+        if (picked != null) {
+          setState(() {
+            _selectedDate = DateTime(picked.year, picked.month, picked.day);
+            _selectedWeekStart = _startOfWeek(_selectedDate);
+            _selectedMonth = _startOfMonth(_selectedDate);
+            _selectedYear = _selectedDate.year;
+          });
+        }
+        break;
+      case _UsageTab.week:
+        final initialRange = DateTimeRange(
+          start: _selectedWeekStart,
+          end: _endOfWeek(_selectedWeekStart),
+        );
+        final pickedRange = await showDateRangePicker(
+          context: context,
+          initialDateRange: initialRange,
+          firstDate: DateTime(2020, 1, 1),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+        );
+        if (pickedRange != null) {
+          setState(() {
+            _selectedWeekStart = _startOfWeek(pickedRange.start);
+            _selectedDate = _selectedWeekStart;
+            _selectedMonth = _startOfMonth(_selectedWeekStart);
+            _selectedYear = _selectedWeekStart.year;
+          });
+        }
+        break;
+      case _UsageTab.month:
+        final pickedMonth = await showDatePicker(
+          context: context,
+          initialDate: _selectedMonth,
+          firstDate: DateTime(2020, 1, 1),
+          lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+          initialDatePickerMode: DatePickerMode.year,
+        );
+        if (pickedMonth != null) {
+          setState(() {
+            _selectedMonth = _startOfMonth(pickedMonth);
+            _selectedDate = _selectedMonth;
+            _selectedWeekStart = _startOfWeek(_selectedMonth);
+            _selectedYear = _selectedMonth.year;
+          });
+        }
+        break;
+      case _UsageTab.year:
+        final pickedYear = await showDatePicker(
+          context: context,
+          initialDate: DateTime(_selectedYear, 1, 1),
+          firstDate: DateTime(2020, 1, 1),
+          lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+          initialDatePickerMode: DatePickerMode.year,
+        );
+        if (pickedYear != null) {
+          setState(() {
+            _selectedYear = pickedYear.year;
+            _selectedMonth = DateTime(_selectedYear, _selectedMonth.month, 1);
+            _selectedDate = _selectedMonth;
+            _selectedWeekStart = _startOfWeek(_selectedMonth);
+          });
+        }
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Card(
@@ -57,13 +221,9 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
             ),
             const SizedBox(height: AppTheme.spacing12),
             _buildTabs(context),
-            if (_selected == _UsageTab.custom) ...[
               const SizedBox(height: AppTheme.spacing12),
-              _buildCustomRangeControls(context),
+            _buildPeriodSelector(context),
               const SizedBox(height: AppTheme.spacing12),
-            ] else ...[
-              const SizedBox(height: AppTheme.spacing12),
-            ],
             // Chart area
             Container(
               height: 320,
@@ -86,28 +246,58 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
 
   Widget _buildTabs(BuildContext context) => Row(
         children: [
-          _tab('Today', _UsageTab.today),
+          _tab('Day', _UsageTab.day),
           const SizedBox(width: AppTheme.spacing8),
-          _tab('Hourly', _UsageTab.hourly),
-          const SizedBox(width: AppTheme.spacing8),
-          _tab('Last 7 Days', _UsageTab.last7Days),
+          _tab('Week', _UsageTab.week),
           const SizedBox(width: AppTheme.spacing8),
           _tab('Month', _UsageTab.month),
           const SizedBox(width: AppTheme.spacing8),
-          _tabWithIcon('Custom Range', _UsageTab.custom, Icons.calendar_today),
+          _tab('Year', _UsageTab.year),
+        ],
+      );
+
+  Widget _buildPeriodSelector(BuildContext context) => Row(
+        children: [
+          IconButton(
+            onPressed: () => _shiftPeriod(-1),
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: _handlePeriodTap,
+              borderRadius: BorderRadius.circular(AppTheme.radius8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing16,
+                  vertical: AppTheme.spacing12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppTheme.radius8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Center(
+                  child: Text(
+                    _formattedPeriodLabel(),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: () => _shiftPeriod(1),
+            icon: const Icon(Icons.chevron_right),
+          ),
         ],
       );
 
   Widget _tab(String label, _UsageTab tab) {
     final selected = _selected == tab;
     return GestureDetector(
-      onTap: () async {
-        if (tab == _UsageTab.custom) {
-          setState(() => _selected = tab);
-        } else {
-          setState(() => _selected = tab);
-        }
-      },
+      onTap: () => _setSelectedTab(tab),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppTheme.spacing16,
@@ -129,180 +319,104 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
     );
   }
 
-  Widget _buildCustomRangeControls(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: _openRangePicker,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    labelText: 'Start date',
-                    prefixIcon: Icon(Icons.calendar_today, size: 18),
-                    hintText: 'Select start',
-                  ),
-                  controller: TextEditingController(
-                    text: _customRange == null
-                        ? ''
-                        : '${_customRange!.start.year}-${_two(_customRange!.start.month)}-${_two(_customRange!.start.day)}',
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppTheme.spacing16),
-          Expanded(
-            child: GestureDetector(
-              onTap: _openRangePicker,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    labelText: 'End date',
-                    prefixIcon: Icon(Icons.calendar_today, size: 18),
-                    hintText: 'Select end',
-                  ),
-                  controller: TextEditingController(
-                    text: _customRange == null
-                        ? ''
-                        : '${_customRange!.end.year}-${_two(_customRange!.end.month)}-${_two(_customRange!.end.day)}',
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppTheme.spacing16),
-          OutlinedButton.icon(
-            onPressed: _openRangePicker,
-            icon: const Icon(Icons.date_range, size: 18),
-            label: const Text('Pick dates'),
-          ),
-        ],
-      );
-
-  Future<void> _openRangePicker() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020, 1, 1),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: _customRange,
-    );
-    if (picked != null) {
-      setState(() => _customRange = picked);
-    }
-  }
-
-  String _two(int n) => n.toString().padLeft(2, '0');
-
   Widget _buildChart(BuildContext context) {
     switch (_selected) {
-      case _UsageTab.today:
-      case _UsageTab.hourly:
-        final dailyAsync = ref.watch(currentConsumptionProvider);
+      case _UsageTab.day:
+        final dailyAsync = ref.watch(dailyConsumptionProvider(_normalizedSelectedDate));
         return dailyAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load data')),
           data: (daily) => _HourlyChart(daily: daily),
         );
-      case _UsageTab.last7Days:
-        final end = DateTime.now();
-        final start = end.subtract(const Duration(days: 6));
-        final rangeAsync = ref.watch(dailyConsumptionRangeProvider((startDate: DateTime(start.year, start.month, start.day), endDate: DateTime(end.year, end.month, end.day))));
+      case _UsageTab.week:
+        final start = _selectedWeekStart;
+        final end = _endOfWeek(_selectedWeekStart);
+        final rangeAsync = ref.watch(
+          dailyConsumptionRangeProvider(
+            (
+              startDate: DateTime(start.year, start.month, start.day),
+              endDate: DateTime(end.year, end.month, end.day),
+            ),
+          ),
+        );
         return rangeAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load data')),
           data: (days) => _DailyChart(days: days),
         );
       case _UsageTab.month:
-        final end = DateTime.now();
-        final start = end.subtract(const Duration(days: 29));
-        final rangeAsync = ref.watch(dailyConsumptionRangeProvider((startDate: DateTime(start.year, start.month, start.day), endDate: DateTime(end.year, end.month, end.day))));
+        final start = _startOfMonth(_selectedMonth);
+        final end = _endOfMonth(_selectedMonth);
+        final rangeAsync = ref.watch(
+          dailyConsumptionRangeProvider(
+            (
+              startDate: DateTime(start.year, start.month, start.day),
+              endDate: DateTime(end.year, end.month, end.day),
+            ),
+          ),
+        );
         return rangeAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load data')),
           data: (days) => _DailyChart(days: days),
         );
-      case _UsageTab.custom:
-        if (_customRange == null) {
-          return const Center(child: Text('Choose a date range'));
-        }
-        final rangeAsync = ref.watch(dailyConsumptionRangeProvider((startDate: DateTime(_customRange!.start.year, _customRange!.start.month, _customRange!.start.day), endDate: DateTime(_customRange!.end.year, _customRange!.end.month, _customRange!.end.day))));
+      case _UsageTab.year:
+        final start = DateTime(_selectedYear, 1, 1);
+        final end = DateTime(_selectedYear, 12, 31);
+        final rangeAsync = ref.watch(
+          dailyConsumptionRangeProvider(
+            (
+              startDate: start,
+              endDate: end,
+            ),
+          ),
+        );
         return rangeAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load data')),
-          data: (days) => _DailyChart(days: days),
+          data: (days) => _YearlyChart(days: days, year: _selectedYear),
         );
     }
   }
 
   Widget _buildSummary() {
     switch (_selected) {
-      case _UsageTab.today:
-      case _UsageTab.hourly:
-        final dailyAsync = ref.watch(currentConsumptionProvider);
+      case _UsageTab.day:
+        final dailyAsync = ref.watch(dailyConsumptionProvider(_normalizedSelectedDate));
         return dailyAsync.when(
           loading: () => const SizedBox.shrink(),
           error: (e, st) => const SizedBox.shrink(),
           data: (daily) => _SummaryRow(daily: daily),
         );
-      case _UsageTab.last7Days:
+      case _UsageTab.week:
       case _UsageTab.month:
-      case _UsageTab.custom:
-        DateTimeRange range;
-        if (_selected == _UsageTab.last7Days) {
-          final end = DateTime.now();
-          final start = end.subtract(const Duration(days: 6));
-          range = DateTimeRange(start: start, end: end);
+      case _UsageTab.year:
+        late final DateTime start;
+        late final DateTime end;
+        if (_selected == _UsageTab.week) {
+          start = _selectedWeekStart;
+          end = _endOfWeek(_selectedWeekStart);
         } else if (_selected == _UsageTab.month) {
-          final end = DateTime.now();
-          final start = end.subtract(const Duration(days: 29));
-          range = DateTimeRange(start: start, end: end);
+          start = _startOfMonth(_selectedMonth);
+          end = _endOfMonth(_selectedMonth);
         } else {
-          if (_customRange == null) return const SizedBox.shrink();
-          range = _customRange!;
+          start = DateTime(_selectedYear, 1, 1);
+          end = DateTime(_selectedYear, 12, 31);
         }
-        final rangeAsync = ref.watch(dailyConsumptionRangeProvider((startDate: DateTime(range.start.year, range.start.month, range.start.day), endDate: DateTime(range.end.year, range.end.month, range.end.day))));
+        final rangeAsync = ref.watch(
+          dailyConsumptionRangeProvider(
+            (
+              startDate: DateTime(start.year, start.month, start.day),
+              endDate: DateTime(end.year, end.month, end.day),
+            ),
+          ),
+        );
         return rangeAsync.when(
           loading: () => const SizedBox.shrink(),
           error: (e, st) => const SizedBox.shrink(),
           data: (days) => _SummaryRowFromDays(days: days),
         );
     }
-  }
-
-  Widget _tabWithIcon(String label, _UsageTab tab, IconData icon) {
-    final selected = _selected == tab;
-    return GestureDetector(
-      onTap: () => setState(() => _selected = tab),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing16,
-          vertical: AppTheme.spacing8,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radius8),
-          border: Border.all(color: selected ? AppColors.primary : AppColors.border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: selected ? AppColors.white : AppColors.textSecondary),
-            const SizedBox(width: AppTheme.spacing8),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: selected ? AppColors.white : AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -314,15 +428,40 @@ class _HourlyChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final hourly = daily.hourlyBreakdown;
     final maxKwh = hourly.isNotEmpty ? hourly.map((e) => e.kwh).reduce((a, b) => a > b ? a : b) : 8.0;
-    return LineChart(
-      LineChartData(
+    final maxY = (maxKwh * 1.2).clamp(6.0, 12.0);
+    final groups = List.generate(24, (hour) {
+      final value = hourly.firstWhere(
+        (h) => h.hour == hour,
+        orElse: () => HourlyConsumption(hour: hour, kwh: 0, cost: 0),
+      ).kwh;
+      return BarChartGroupData(
+        x: hour,
+        barRods: [
+          BarChartRodData(
+            toY: value,
+            width: 10,
+            borderRadius: BorderRadius.circular(6),
+            color: const Color(0xFF06B6D4),
+          ),
+        ],
+      );
+    });
+
+    return BarChart(
+      BarChartData(
+        maxY: maxY,
+        minY: 0,
+        alignment: BarChartAlignment.spaceBetween,
+        barGroups: groups,
         gridData: FlGridData(
           show: true,
-          drawVerticalLine: true,
           drawHorizontalLine: true,
-          horizontalInterval: 1.6,
-          getDrawingHorizontalLine: (v) => const FlLine(color: AppColors.border, strokeWidth: 1),
-          getDrawingVerticalLine: (v) => const FlLine(color: AppColors.border, strokeWidth: 1),
+          drawVerticalLine: false,
+          horizontalInterval: (maxY / 4).clamp(1.0, 4.0),
+          getDrawingHorizontalLine: (value) => const FlLine(
+            color: AppColors.border,
+            strokeWidth: 1,
+          ),
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -331,7 +470,7 @@ class _HourlyChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 24,
+              reservedSize: 30,
               interval: 3,
               getTitlesWidget: (value, meta) {
                 final hour = value.toInt();
@@ -354,7 +493,13 @@ class _HourlyChart extends StatelessWidget {
                                                 : '';
                 return SideTitleWidget(
                   axisSide: meta.axisSide,
-                  child: Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 );
               },
             ),
@@ -362,11 +507,14 @@ class _HourlyChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              interval: (maxKwh / 4).clamp(1, 4),
-              reservedSize: 28,
+              reservedSize: 32,
+              interval: (maxY / 4).clamp(1.0, 4.0),
               getTitlesWidget: (value, meta) => Text(
                 value.toInt().toString(),
-                style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ),
@@ -375,43 +523,20 @@ class _HourlyChart extends StatelessWidget {
           show: true,
           border: Border.all(color: AppColors.border),
         ),
-        minX: 0,
-        maxX: 23,
-        minY: 0,
-        maxY: (maxKwh * 1.2).clamp(8, 10),
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(24, (i) => FlSpot(i.toDouble(),
-                hourly.firstWhere((h) => h.hour == i, orElse: () => HourlyConsumption(hour: i, kwh: 0, cost: 0)).kwh)),
-            isCurved: true,
-            color: const Color(0xFF06B6D4),
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                radius: 3,
-                color: const Color(0xFF06B6D4),
-                strokeWidth: 2,
-                strokeColor: Colors.white,
-              ),
-            ),
-          ),
-        ],
-        lineTouchData: LineTouchData(
+        barTouchData: BarTouchData(
           enabled: true,
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipItems: (touched) => touched.map((s) {
-              final h = s.x.toInt();
-              final kwh = s.y;
-              final cost = kwh * 0.35; // for display only
-              return LineTooltipItem(
-                '${_formatHour(h)}\nUsage: ${kwh.toStringAsFixed(2)} kWh\nCost: BZ\$${cost.toStringAsFixed(2)}',
-                const TextStyle(color: AppColors.textPrimary),
-              );
-            }).toList(),
+          touchTooltipData: BarTouchTooltipData(
             tooltipRoundedRadius: AppTheme.radius8,
             tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final hour = group.x;
+              final kwh = rod.toY;
+              final cost = kwh * 0.35;
+              return BarTooltipItem(
+                '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh\nCost: BZ\$${cost.toStringAsFixed(2)}',
+                const TextStyle(color: AppColors.textPrimary),
+              );
+            },
           ),
         ),
       ),
@@ -524,15 +649,38 @@ class _DailyChart extends StatelessWidget {
     if (days.isEmpty) {
       return const Center(child: Text('No data'));
     }
-    return LineChart(
-      LineChartData(
+    final maxKwh = days.map((d) => d.totalKwh).reduce((a, b) => a > b ? a : b);
+    final maxY = (maxKwh * 1.2).clamp(20.0, 120.0);
+    final groups = List.generate(days.length, (index) {
+      final value = days[index].totalKwh;
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: value,
+            width: 10,
+            borderRadius: BorderRadius.circular(6),
+            color: const Color(0xFF06B6D4),
+          ),
+        ],
+      );
+    });
+
+    return BarChart(
+      BarChartData(
+        maxY: maxY,
+        minY: 0,
+        alignment: BarChartAlignment.spaceBetween,
+        barGroups: groups,
         gridData: FlGridData(
           show: true,
-          drawVerticalLine: true,
           drawHorizontalLine: true,
-          horizontalInterval: 10,
-          getDrawingHorizontalLine: (v) => const FlLine(color: AppColors.border, strokeWidth: 1),
-          getDrawingVerticalLine: (v) => const FlLine(color: AppColors.border, strokeWidth: 1),
+          drawVerticalLine: false,
+          horizontalInterval: (maxY / 5).clamp(5.0, 25.0),
+          getDrawingHorizontalLine: (value) => const FlLine(
+            color: AppColors.border,
+            strokeWidth: 1,
+          ),
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -541,15 +689,23 @@ class _DailyChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 24,
+              reservedSize: 28,
               interval: (days.length / 6).clamp(1, 6).toDouble(),
               getTitlesWidget: (value, meta) {
                 final idx = value.toInt();
-                if (idx < 0 || idx >= days.length) return const SizedBox.shrink();
+                if (idx < 0 || idx >= days.length) {
+                  return const SizedBox.shrink();
+                }
                 final d = days[idx].date;
                 return SideTitleWidget(
                   axisSide: meta.axisSide,
-                  child: Text('${d.day}', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  child: Text(
+                    '${d.day}',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 );
               },
             ),
@@ -557,42 +713,178 @@ class _DailyChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 36,
-              interval: 10,
+              reservedSize: 38,
+              interval: (maxY / 5).clamp(5.0, 25.0),
               getTitlesWidget: (value, meta) => Text(
                 value.toInt().toString(),
-                style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ),
         ),
-        borderData: FlBorderData(show: true, border: Border.all(color: AppColors.border)),
-        minX: 0,
-        maxX: (days.length - 1).toDouble(),
-        minY: 0,
-        maxY: (days.map((d) => d.totalKwh).reduce((a, b) => a > b ? a : b) * 1.2).clamp(20, 100),
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(days.length, (i) => FlSpot(i.toDouble(), days[i].totalKwh)),
-            isCurved: true,
-            color: const Color(0xFF06B6D4),
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: const Color(0xFF06B6D4).withOpacity(0.08)),
-          ),
-        ],
-        lineTouchData: LineTouchData(
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: AppColors.border),
+        ),
+        barTouchData: BarTouchData(
           enabled: true,
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipItems: (touched) => touched.map((s) {
-              final idx = s.x.toInt();
-              final kwh = s.y;
-              return LineTooltipItem(
-                '${days[idx].date.month}/${days[idx].date.day}: ${kwh.toStringAsFixed(1)} kWh',
+          touchTooltipData: BarTouchTooltipData(
+            tooltipRoundedRadius: AppTheme.radius8,
+            tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final idx = group.x.toInt();
+              final kwh = rod.toY;
+              final date = days[idx].date;
+              return BarTooltipItem(
+                '${date.month}/${date.day}\n${kwh.toStringAsFixed(1)} kWh',
                 const TextStyle(color: AppColors.textPrimary),
               );
-            }).toList(),
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _YearlyChart extends StatelessWidget {
+  const _YearlyChart({required this.days, required this.year});
+  final List<DailyConsumption> days;
+  final int year;
+
+  @override
+  Widget build(BuildContext context) {
+    if (days.isEmpty) {
+      return const Center(child: Text('No data'));
+    }
+
+    final monthlyTotals = List<double>.filled(12, 0);
+    for (final day in days) {
+      if (day.date.year == year) {
+        monthlyTotals[day.date.month - 1] += day.totalKwh;
+      }
+    }
+
+    double maxKwh = 0;
+    for (final value in monthlyTotals) {
+      if (value > maxKwh) {
+        maxKwh = value;
+      }
+    }
+    double maxY = maxKwh * 1.2;
+    if (maxY <= 0) {
+      maxY = 1;
+    } else if (maxY < 20) {
+      maxY = 20;
+    }
+
+    final groups = List.generate(12, (index) {
+      final value = monthlyTotals[index];
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: value,
+            width: 16,
+            borderRadius: BorderRadius.circular(6),
+            color: const Color(0xFF06B6D4),
+          ),
+        ],
+      );
+    });
+
+    return BarChart(
+      BarChartData(
+        maxY: maxY,
+        minY: 0,
+        alignment: BarChartAlignment.spaceBetween,
+        barGroups: groups,
+        gridData: FlGridData(
+          show: true,
+          drawHorizontalLine: true,
+          drawVerticalLine: false,
+          horizontalInterval: (maxY / 5).clamp(10.0, maxY),
+          getDrawingHorizontalLine: (value) => const FlLine(
+            color: AppColors.border,
+            strokeWidth: 1,
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              getTitlesWidget: (value, meta) {
+                const monthLabels = [
+                  'Jan',
+                  'Feb',
+                  'Mar',
+                  'Apr',
+                  'May',
+                  'Jun',
+                  'Jul',
+                  'Aug',
+                  'Sep',
+                  'Oct',
+                  'Nov',
+                  'Dec',
+                ];
+                final index = value.toInt();
+                if (index < 0 || index >= monthLabels.length) {
+                  return const SizedBox.shrink();
+                }
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    monthLabels[index],
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 38,
+              interval: (maxY / 5).clamp(10.0, maxY),
+              getTitlesWidget: (value, meta) => Text(
+                value.toInt().toString(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: AppColors.border),
+        ),
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            tooltipRoundedRadius: AppTheme.radius8,
+            tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final monthIndex = group.x.toInt();
+              final value = rod.toY;
+              final monthName = DateFormat('MMMM').format(DateTime(year, monthIndex + 1, 1));
+              return BarTooltipItem(
+                '$monthName\n${value.toStringAsFixed(1)} kWh',
+                const TextStyle(color: AppColors.textPrimary),
+              );
+            },
           ),
         ),
       ),

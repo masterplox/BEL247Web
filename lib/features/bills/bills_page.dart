@@ -224,9 +224,6 @@ class AccountSummaryCard extends ConsumerWidget {
           accountBalance: accountBalance,
           usageSummary: usageSummary,
           onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
-          onMakePayment: () {
-            // TODO: Navigate to payment form
-          },
         ),
       ),
     );

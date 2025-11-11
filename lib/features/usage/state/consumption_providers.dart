@@ -8,9 +8,6 @@ import '../../../data/sources/mock/mock_app_data_service.dart';
 
 class ConsumptionRepository {
   Future<DailyConsumption> fetchDailyConsumption(DateTime date, String accountId) async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    
     print('[Usage] fetchDailyConsumption start accountId=$accountId date=${date.toIso8601String()}');
     
     // Get account-specific usage summary to use as baseline
@@ -100,9 +97,6 @@ class ConsumptionRepository {
     DateTime endDate,
     String accountId,
   ) async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 800));
-    
     final days = endDate.difference(startDate).inDays + 1;
     final consumptionList = <DailyConsumption>[];
     

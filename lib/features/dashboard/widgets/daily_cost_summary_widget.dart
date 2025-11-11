@@ -60,27 +60,50 @@ class DailyCostSummaryWidget extends StatelessWidget {
               Column(
                 children: [
                   // Today and Yesterday cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildCostCard(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 600;
+                      final cards = [
+                        _buildCostCard(
                           context,
                           label: 'Today',
                           amount: consumption.cost,
                           isHighlighted: true,
                         ),
-                      ),
-                      const SizedBox(width: AppTheme.spacing16),
-                      Expanded(
-                        child: _buildCostCard(
+                        _buildCostCard(
                           context,
                           label: 'Yesterday',
                           amount: _getYesterdayCost(),
-                          isHighlighted: false,
-                          changePercent: _calculateChangePercent(),
                         ),
-                      ),
-                    ],
+                        _buildCostCard(
+                          context,
+                          label: 'This Month',
+                          amount: _getMonthToDateCost(),
+                        ),
+                      ];
+
+                      if (isNarrow) {
+                        return Column(
+                          children: [
+                            for (int i = 0; i < cards.length; i++) ...[
+                              cards[i],
+                              if (i != cards.length - 1)
+                                const SizedBox(height: AppTheme.spacing12),
+                            ],
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Expanded(child: cards[0]),
+                          const SizedBox(width: AppTheme.spacing16),
+                          Expanded(child: cards[1]),
+                          const SizedBox(width: AppTheme.spacing16),
+                          Expanded(child: cards[2]),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: AppTheme.spacing24),
                   // 7-day line graph
@@ -96,8 +119,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
     BuildContext context, {
     required String label,
     required double amount,
-    required bool isHighlighted,
-    double? changePercent,
+    bool isHighlighted = false,
   }) =>
       Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
@@ -132,21 +154,6 @@ class DailyCostSummaryWidget extends StatelessWidget {
                         fontSize: 24,
                       ),
                 ),
-                if (changePercent != null && changePercent > 0) ...[
-                  const SizedBox(width: AppTheme.spacing8),
-                  const Icon(
-                    Icons.arrow_upward,
-                    color: AppColors.error,
-                    size: 16,
-                  ),
-                  Text(
-                    '${changePercent.toStringAsFixed(1)}%',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ],
               ],
             ),
           ],
@@ -258,9 +265,12 @@ class DailyCostSummaryWidget extends StatelessWidget {
     return 8.68;
   }
 
-  double _calculateChangePercent() {
-    final yesterday = _getYesterdayCost();
-    final today = consumption.cost;
-    return ((today - yesterday) / yesterday) * 100;
+  double _getMonthToDateCost() {
+    final daysInMonth = DateUtils.getDaysInMonth(
+      consumption.date.year,
+      consumption.date.month,
+    );
+    return consumption.cost * daysInMonth;
   }
+
 }

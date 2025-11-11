@@ -344,7 +344,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                       textAlign: TextAlign.end,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: entry.isPayment ? AppColors.success : AppColors.error,
                           ),
                     ),
                   ),
@@ -366,21 +365,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                               textAlign: TextAlign.end,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: entry.accountBalance == 0 
-                                        ? AppColors.success 
-                                        : AppColors.error,
                                   ),
                             ),
-                          ),
-                          const SizedBox(width: AppTheme.spacing4),
-                          Icon(
-                            entry.accountBalance == 0
-                                ? Icons.arrow_downward
-                                : Icons.arrow_upward,
-                            size: 14,
-                            color: entry.accountBalance == 0
-                                ? AppColors.success
-                                : AppColors.error,
                           ),
                         ],
                       ),

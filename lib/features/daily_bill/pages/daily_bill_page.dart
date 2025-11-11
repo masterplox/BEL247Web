@@ -133,7 +133,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
               ),
               const SizedBox(width: AppTheme.spacing16),
               Expanded(
-                child: _buildRecentAverageTile(
+                child: _buildProjectedMonthlyTile(
                   dailyBillState.currentConsumption,
                 ),
               ),
@@ -323,61 +323,6 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     ),
   );
 
-  Widget _buildActionButtons(BuildContext context) => Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppTheme.radius12),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(AppTheme.spacing16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Actions',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: AppTheme.spacing12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement export functionality
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Export functionality coming soon'),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.download),
-                  label: const Text('Export Report'),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacing8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement share functionality
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Share functionality coming soon'),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.share),
-                  label: const Text('Share'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
-
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -474,12 +419,10 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     );
   }
 
-  Widget _buildRecentAverageTile(current) {
-    final recentAvg = current.pattern.previousWeekAverage ?? current.totalKwh;
-    final diff = recentAvg == 0
-        ? 0
-        : ((current.totalKwh - recentAvg) / recentAvg) * 100;
-    final isAbove = diff > 0;
+  Widget _buildProjectedMonthlyTile(current) {
+    final projectedUsage = current.totalKwh * 30;
+    final projectedCost = current.cost * 30;
+    final dailyCost = current.cost;
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -492,56 +435,37 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  isAbove ? Icons.trending_up : Icons.trending_down,
-                  color: isAbove ? AppColors.error : AppColors.success,
-                  size: 18,
-                ),
+                const Icon(Icons.calendar_month, color: AppColors.primary, size: 18),
                 const SizedBox(width: AppTheme.spacing8),
                 Text(
-                  'vs Recent Average',
+                  'Projected Monthly Outlook',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                        color: AppColors.textSecondary,
+                      ),
                 ),
               ],
             ),
             const SizedBox(height: AppTheme.spacing12),
-            Row(
-              children: [
-                Text(
-                  '${diff.abs().toStringAsFixed(1)}%',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: isAbove ? AppColors.error : AppColors.success,
+            Text(
+              'BZ\$${projectedCost.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
-                ),
-                const SizedBox(width: AppTheme.spacing8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing8,
-                    vertical: AppTheme.spacing4,
+            ),
+            const SizedBox(height: AppTheme.spacing8),
+            Text(
+              '${projectedUsage.toStringAsFixed(1)} kWh expected over 30 days',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                  decoration: BoxDecoration(
-                    color: isAbove
-                        ? AppColors.error.withOpacity(0.1)
-                        : AppColors.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppTheme.radius20),
-                    border: Border.all(
-                      color: isAbove
-                          ? AppColors.error.withOpacity(0.3)
-                          : AppColors.success.withOpacity(0.3),
-                    ),
+            ),
+            const SizedBox(height: AppTheme.spacing4),
+            Text(
+              'Daily estimate: BZ\$${dailyCost.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                  child: Text(
-                    isAbove ? 'Above average' : 'Below average',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isAbove ? AppColors.error : AppColors.success,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

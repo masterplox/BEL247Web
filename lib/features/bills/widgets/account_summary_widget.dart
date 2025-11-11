@@ -12,14 +12,12 @@ class AccountSummaryWidget extends ConsumerWidget {
     required this.usageSummary,
     this.isLoading = false,
     this.onRefresh,
-    this.onMakePayment,
   });
 
   final AccountBalance accountBalance;
   final UsageSummary usageSummary;
   final bool isLoading;
   final VoidCallback? onRefresh;
-  final VoidCallback? onMakePayment;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Card(
@@ -72,8 +70,6 @@ class AccountSummaryWidget extends ConsumerWidget {
           _buildPaymentInfo(context),
           const SizedBox(height: AppTheme.spacing16),
           _buildYTDSummary(context),
-          const SizedBox(height: AppTheme.spacing16),
-          _buildActionButtons(context),
         ],
       );
 
@@ -107,10 +103,10 @@ class AccountSummaryWidget extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppTheme.spacing4),
                   Text(
-                    r'$' '${accountBalance.currentBalance.toStringAsFixed(2)}',
+                    'BZ\$${accountBalance.currentBalance.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: _getBalanceColor(),
+                          color: AppColors.textPrimary,
                         ),
                   ),
                 ],
@@ -126,8 +122,8 @@ class AccountSummaryWidget extends ConsumerWidget {
           Expanded(
             child: _buildInfoItem(
               context,
-              'Last Payment',
-              r'$' '${accountBalance.lastPaymentAmount.toStringAsFixed(2)}',
+              'Past due',
+              'BZ\$${accountBalance.lastPaymentAmount.toStringAsFixed(2)}',
               _formatDate(accountBalance.lastPaymentDate),
               Icons.payment,
             ),
@@ -174,7 +170,7 @@ class AccountSummaryWidget extends ConsumerWidget {
                   child: _buildYTDItem(
                     context,
                     'Cost',
-                    r'$' '${usageSummary.yearToDate.cost.toStringAsFixed(2)}',
+                    'BZ\$${usageSummary.yearToDate.cost.toStringAsFixed(2)}',
                   ),
                 ),
                 Expanded(
@@ -255,36 +251,6 @@ class AccountSummaryWidget extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
-          ),
-        ],
-      );
-
-  Widget _buildActionButtons(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: onMakePayment,
-              icon: const Icon(Icons.payment),
-              label: const Text('Make Payment'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppTheme.spacing12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Navigate to payment history
-              },
-              icon: const Icon(Icons.history),
-              label: const Text('Payment History'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
-              ),
-            ),
           ),
         ],
       );

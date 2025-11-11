@@ -28,7 +28,6 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
 
   PaymentMethodType _selectedPaymentMethod = PaymentMethodType.card;
   bool _isProcessing = false;
-  bool _savePaymentMethod = false;
 
   @override
   void initState() {
@@ -209,36 +208,6 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
 
   
 
-  Widget _buildPaymentOptions() => Container(
-        padding: const EdgeInsets.all(AppTheme.spacing16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppTheme.radius8),
-        ),
-        child: Column(
-          children: [
-            CheckboxListTile(
-              title: const Text('Save payment method for future use'),
-              value: _savePaymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  _savePaymentMethod = value ?? false;
-                });
-              },
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            CheckboxListTile(
-              title: const Text('Enable AutoPay for future bills'),
-              value: false,
-              onChanged: (value) {
-                // TODO: Implement AutoPay
-              },
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-          ],
-        ),
-      );
-
   Widget _buildActionButtons() => Row(
         children: [
           // Expanded(
@@ -257,7 +226,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
               ),
-              child: const Text('Process Payment'),
+              child: const Text('Make Payment'),
             ),
           ),
         ],
@@ -284,10 +253,6 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
       case PaymentMethodType.digiWallet:
         return 'DigiWallet';
     }
-  }
-
-  void _cancelPayment() {
-    Navigator.of(context).pop();
   }
 
   Future<void> _processPayment() async {
