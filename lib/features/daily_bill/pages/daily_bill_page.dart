@@ -5,7 +5,6 @@ import '../../../core/providers/feature_providers.dart'
     show accountSwitcherProvider;
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import '../services/cost_calculation_service.dart';
 import '../state/daily_bill_providers.dart';
 import '../widgets/alert_banner_widget.dart';
 import '../widgets/daily_bill_widget.dart';
@@ -139,10 +138,6 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spacing16),
-
-          // Cost breakdown card
-          _buildCostBreakdown(context, dailyBillState.currentConsumption),
           const SizedBox(height: AppTheme.spacing16),
 
           // Alerts Section
@@ -472,73 +467,6 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
       ),
     );
   }
-
-  Widget _buildCostBreakdown(BuildContext context, current) {
-    final costCalculation = CostCalculationService.calculateDailyCost(current);
-    final b = costCalculation.costBreakdown;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primaryLight.withOpacity(0.06), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radius12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacing16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Daily Consumption Breakdown',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: AppTheme.spacing12),
-            _breakdownRow(
-              context,
-              'Energy Charge (${current.totalKwh.toStringAsFixed(1)} kWh × BZ\$0.35)',
-              b.energyCharge,
-            ),
-            _breakdownRow(context, 'Service Fee', b.serviceFee),
-            const Divider(),
-            _breakdownRow(
-              context,
-              'Total Estimated Cost',
-              b.totalCost,
-              isTotal: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _breakdownRow(
-    BuildContext context,
-    String label,
-    double amount, {
-    bool isTotal = false,
-  }) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(
-        label,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
-      Text(
-        'BZ\$${amount.toStringAsFixed(2)}',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
-        ),
-      ),
-    ],
-  );
 
   Color _getAlertColor(dynamic severity) {
     switch (severity.toString()) {

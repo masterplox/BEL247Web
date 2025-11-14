@@ -81,8 +81,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     size: 24,
                   ),
                   const SizedBox(width: AppTheme.spacing8),
-                  Text(
-                    'Account Ledger',
+                    Text(
+                      'Transaction History',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
