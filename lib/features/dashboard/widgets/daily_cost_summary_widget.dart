@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
@@ -18,7 +19,21 @@ class DailyCostSummaryWidget extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) {
+    final billingStart = DateTime(
+      consumption.date.year,
+      consumption.date.month,
+      1,
+    );
+    final billingEnd = DateTime(
+      consumption.date.year,
+      consumption.date.month + 1,
+      0,
+    );
+    final billingRangeLabel =
+        '${DateFormat('MMM d').format(billingStart)} – ${DateFormat('MMM d, yyyy').format(billingEnd)}';
+
+    return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius12),
@@ -41,7 +56,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing4),
                 Text(
-                  'Your electricity cost over the past 7 days',
+                  'Your electricity cost for the billing cycle ($billingRangeLabel)',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -114,6 +129,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
         ),
       ),
     );
+  }
 
   Widget _buildCostCard(
     BuildContext context, {
