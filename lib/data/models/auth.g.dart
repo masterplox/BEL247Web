@@ -96,6 +96,9 @@ _$AuthStateImpl _$$AuthStateImplFromJson(Map<String, dynamic> json) =>
       lastRefresh: json['lastRefresh'] == null
           ? null
           : DateTime.parse(json['lastRefresh'] as String),
+      otpSent: json['otpSent'] as bool? ?? false,
+      otpContact: json['otpContact'] as String?,
+      otpVerified: json['otpVerified'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
@@ -106,6 +109,9 @@ Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
       'userSession': instance.userSession,
       'error': instance.error,
       'lastRefresh': instance.lastRefresh?.toIso8601String(),
+      'otpSent': instance.otpSent,
+      'otpContact': instance.otpContact,
+      'otpVerified': instance.otpVerified,
     };
 
 _$TokenRefreshRequestImpl _$$TokenRefreshRequestImplFromJson(
@@ -187,3 +193,35 @@ Map<String, dynamic> _$$AuthValidationResultImplToJson(
   'errors': instance.errors,
   'fieldErrors': instance.fieldErrors,
 };
+
+_$OtpSendRequestImpl _$$OtpSendRequestImplFromJson(Map<String, dynamic> json) =>
+    _$OtpSendRequestImpl(contact: json['contact'] as String);
+
+Map<String, dynamic> _$$OtpSendRequestImplToJson(
+  _$OtpSendRequestImpl instance,
+) => <String, dynamic>{'contact': instance.contact};
+
+_$OtpVerifyRequestImpl _$$OtpVerifyRequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$OtpVerifyRequestImpl(
+  contact: json['contact'] as String,
+  otp: json['otp'] as String,
+);
+
+Map<String, dynamic> _$$OtpVerifyRequestImplToJson(
+  _$OtpVerifyRequestImpl instance,
+) => <String, dynamic>{'contact': instance.contact, 'otp': instance.otp};
+
+_$SignUpRequestImpl _$$SignUpRequestImplFromJson(Map<String, dynamic> json) =>
+    _$SignUpRequestImpl(
+      email: json['email'] as String,
+      password: json['password'] as String,
+      contact: json['contact'] as String,
+    );
+
+Map<String, dynamic> _$$SignUpRequestImplToJson(_$SignUpRequestImpl instance) =>
+    <String, dynamic>{
+      'email': instance.email,
+      'password': instance.password,
+      'contact': instance.contact,
+    };

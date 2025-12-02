@@ -114,6 +114,119 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Sign up a new user
+  Future<void> signup(String email, String password) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      final contact = state.otpContact;
+      if (contact == null) {
+        throw Exception('Contact information not found for sign up.');
+      }
+
+      final request = SignUpRequest(email: email, password: password, contact: contact);
+      final response = await _authRepository.signup(request);
+
+      if (response.success && response.data != null) {
+        Logger.info('Signup successful for: $email');
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          userSession: response.data!.userSession,
+          lastRefresh: DateTime.now(),
+          error: null,
+        );
+      } else {
+        Logger.warning('Signup failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: false,
+          error: response.error ?? 'Signup failed',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Signup error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: false,
+        error: 'Signup failed: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Verify OTP for user's contact
+  Future<void> verifyOtp(String otp) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      final contact = state.otpContact;
+      if (contact == null) {
+        throw Exception('Contact information not found for OTP verification.');
+      }
+
+      final request = OtpVerifyRequest(contact: contact, otp: otp);
+      final response = await _authRepository.verifyOtp(request);
+
+      if (response.success) {
+        Logger.info('OTP verified successfully for: $contact');
+        state = state.copyWith(
+          isLoading: false,
+          otpVerified: true,
+          error: null,
+        );
+      } else {
+        Logger.warning('OTP verification failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          otpVerified: false,
+          error: response.error ?? 'Failed to verify OTP',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Verify OTP error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        otpVerified: false,
+        error: 'Failed to verify OTP: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Send OTP to user's contact for verification
+  Future<void> sendOtp(String contact) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null, otpSent: false);
+      
+      final request = OtpSendRequest(contact: contact);
+      final response = await _authRepository.sendOtp(request);
+      
+      if (response.success) {
+        Logger.info('OTP sent successfully to: $contact');
+        state = state.copyWith(
+          isLoading: false,
+          otpSent: true,
+          otpContact: contact,
+          error: null,
+        );
+      } else {
+        Logger.warning('Send OTP failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          otpSent: false,
+          error: response.error ?? 'Failed to send OTP',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Send OTP error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        otpSent: false,
+        otpContact: null,
+        error: 'Failed to send OTP: ${e.toString()}',
+      );
+    }
+  }
+
   /// Logout user and clear session
   Future<void> logout({bool logoutAllDevices = false}) async {
     try {
@@ -139,6 +252,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         userSession: null,
         lastRefresh: null,
         error: null,
+        otpSent: false,
+        otpContact: null,
+        otpVerified: false,
       );
     } catch (e, stackTrace) {
       Logger.error('Logout error', error: e, stackTrace: stackTrace);
@@ -150,6 +266,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         userSession: null,
         lastRefresh: null,
         error: 'Logout failed: ${e.toString()}',
+        otpSent: false,
+        otpContact: null,
+        otpVerified: false,
       );
     }
   }
@@ -236,6 +355,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Clear error state
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  /// Reset OTP sent state
+  void resetOtpState() {
+    state = state.copyWith(otpSent: false, otpContact: null, otpVerified: false);
   }
 
   /// Check if user is authenticated

@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/auth/signup/signup_contact_page.dart';
+import '../../features/auth/signup/signup_credentials_page.dart';
+import '../../features/auth/signup/signup_verify_otp_page.dart';
 import '../../features/bills/bills_page.dart';
 import '../../features/daily_bill/pages/daily_bill_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
@@ -26,9 +29,9 @@ class AppRouter {
       
       final isLoggedIn = authState.isAuthenticated;
       final isInitialized = authState.isInitialized;
-      final isLoginRoute = state.matchedLocation == '/login';
+      final isPublicRoute = state.matchedLocation == '/login' || state.matchedLocation.startsWith('/signup');
       
-      Logger.debug('Router redirect check - isInitialized: $isInitialized, isLoggedIn: $isLoggedIn, isLoginRoute: $isLoginRoute');
+      Logger.debug('Router redirect check - isInitialized: $isInitialized, isLoggedIn: $isLoggedIn, isPublicRoute: $isPublicRoute');
       
       // Don't redirect if auth is not initialized yet
       if (!isInitialized) {
@@ -36,14 +39,14 @@ class AppRouter {
         return null;
       }
       
-      // If user is not logged in and not on login page, redirect to login
-      if (!isLoggedIn && !isLoginRoute) {
+      // If user is not logged in and not on a public page, redirect to login
+      if (!isLoggedIn && !isPublicRoute) {
         Logger.debug('User not authenticated, redirecting to login');
         return '/login';
       }
       
-      // If user is logged in and on login page, redirect to dashboard
-      if (isLoggedIn && isLoginRoute) {
+      // If user is logged in and on a public page, redirect to dashboard
+      if (isLoggedIn && isPublicRoute) {
         Logger.debug('User already authenticated, redirecting to dashboard');
         return '/dashboard';
       }
@@ -59,6 +62,23 @@ class AppRouter {
         path: '/login',
         name: 'login',
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/signup',
+        name: 'signup',
+        builder: (context, state) => const SignupContactPage(),
+        routes: [
+          GoRoute(
+            path: 'verify',
+            name: 'signup-verify',
+            builder: (context, state) => const SignupVerifyOtpPage(),
+          ),
+          GoRoute(
+            path: 'credentials',
+            name: 'signup-credentials',
+            builder: (context, state) => const SignupCredentialsPage(),
+          ),
+        ],
       ),
       
       // Protected routes (wrapped with NavigationWrapper for sidebar/bottom nav)
@@ -118,20 +138,20 @@ class AppRouter {
         },
       ),
       
-      GoRoute(
-        path: '/daily-bill',
-        name: 'daily-bill',
-        builder: (context, state) {
-          final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
+      // GoRoute(
+      //   path: '/daily-bill',
+      //   name: 'daily-bill',
+      //   builder: (context, state) {
+      //     final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
           
-          Logger.debug('Navigating to daily bill');
-          Logger.debug('Encrypted params: $encryptedParams');
+      //     Logger.debug('Navigating to daily bill');
+      //     Logger.debug('Encrypted params: $encryptedParams');
           
-          return const NavigationWrapper(
-            child: DailyBillPage(),
-          );
-        },
-      ),
+      //     return const NavigationWrapper(
+      //       child: DailyBillPage(),
+      //     );
+      //   },
+      // ),
       
       GoRoute(
         path: '/daily-bill/:date',
@@ -193,7 +213,7 @@ class AppRouter {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
+            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Page not found',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../daily_bill/widgets/daily_consumption_breakdown_widget.dart';
 import 'ami_meter_readings_card.dart';
 
 class ConsumptionLayout extends ConsumerWidget {
@@ -31,6 +32,8 @@ class DesktopConsumptionLayout extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AmiMeterReadingsCard(),
+            SizedBox(height: AppTheme.spacing24),
+            // DailyConsumptionBreakdownWidget(),
           ],
         ),
       );
@@ -46,6 +49,8 @@ class TabletConsumptionLayout extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AmiMeterReadingsCard(),
+            SizedBox(height: AppTheme.spacing16),
+            DailyConsumptionBreakdownWidget(),
           ],
         ),
       );
@@ -61,6 +66,8 @@ class MobileConsumptionLayout extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AmiMeterReadingsCard(),
+            SizedBox(height: AppTheme.spacing12),
+            DailyConsumptionBreakdownWidget(),
           ],
         ),
       );

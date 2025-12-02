@@ -337,7 +337,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             TextButton(
               onPressed: () {
                 // TODO: Navigate to registration
-                Logger.info('Register clicked');
+                context.go('/signup');
               },
               child: const Text('Sign Up'),
             ),

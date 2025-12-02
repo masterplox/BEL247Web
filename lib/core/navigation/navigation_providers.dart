@@ -106,12 +106,14 @@ class NavigationConfig {
       activeIcon: Icons.show_chart,
       route: '/usage',
     ),
+    /*
     NavigationItem(
       label: 'Daily Bill',
       icon: Icons.calendar_today_outlined,
       activeIcon: Icons.calendar_today,
       route: '/daily-bill',
     ),
+    */
   ];
 
   static const List<NavigationItem> bottomNavItems = [
@@ -133,12 +135,14 @@ class NavigationConfig {
       activeIcon: Icons.show_chart,
       route: '/usage',
     ),
+    /*
     NavigationItem(
       label: 'Daily Bill',
       icon: Icons.calendar_today_outlined,
       activeIcon: Icons.calendar_today,
       route: '/daily-bill',
     ),
+    */
   ];
 }
 

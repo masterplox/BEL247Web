@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Colors - BEL247 Brand Colors
-  static const Color primary = Color(0xFF1E3A8A); // Deep blue
-  static const Color primaryLight = Color(0xFF3B82F6); // Lighter blue
-  static const Color primaryDark = Color(0xFF1E40AF); // Darker blue
+  static const Color primary = Color(0xFF148A2E); // New green
+  static const Color primaryLight = Color(0xFF4CAF50); // Lighter green
+  static const Color primaryDark = Color(0xFF0A681F); // Darker green
   
   // Secondary Colors
-  static const Color secondary = Color(0xFF059669); // Green
-  static const Color secondaryLight = Color(0xFF10B981); // Light green
-  static const Color secondaryDark = Color(0xFF047857); // Dark green
+  static const Color secondary = Color(0xFFFFC107); // Amber/Yellow
+  static const Color secondaryLight = Color(0xFFFFD54F); // Light amber
+  static const Color secondaryDark = Color(0xFFFFA000); // Dark amber
   
   // Accent Colors
   static const Color accent = Color(0xFFF59E0B); // Amber
@@ -52,6 +52,11 @@ class AppColors {
   static const Color borderLight = Color(0xFFF3F4F6);
   static const Color borderDark = Color(0xFFD1D5DB);
   
+  // TOU Colors
+  static const Color peak = Color(0xFFEF4444); // Red
+  static const Color midPeak = Color(0xFFF59E0B); // Amber
+  static const Color offPeak = Color(0xFF10B981); // Green
+
   // Chart Colors
   static const List<Color> chartColors = [
     Color(0xFF3B82F6), // Blue

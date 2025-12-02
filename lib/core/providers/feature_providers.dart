@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/account.dart';
@@ -569,15 +571,60 @@ class NoticeBannerState {
   );
 }
 
+/// TOU Period Enum
+enum TouPeriod { peak, midPeak, offPeak }
+
 /// Notice Banner Notifier
 class NoticeBannerNotifier extends StateNotifier<NoticeBannerState> {
-  NoticeBannerNotifier() : super(
-    // Start with a test message visible - remove this and set to NoticeBannerState.hidden for production
-    const NoticeBannerState(
-      isVisible: true,
-      message: 'Scheduled maintenance in Belize City area on Oct 5, 2025, 6:00 AM - 10:00 AM',
-    ),
-  );
+  NoticeBannerNotifier() : super(const NoticeBannerState(isVisible: false, message: '')) {
+    _initializeTouBanner();
+  }
+
+  Timer? _timer;
+
+  TouPeriod _getCurrentTouPeriod() {
+    final now = DateTime.now();
+    final hour = now.hour;
+
+    if (hour >= 21) { // 9pm to midnight
+      return TouPeriod.midPeak;
+    } else if (hour < 11) { // midnight to 11am
+      return TouPeriod.offPeak;
+    } else { // 11am to 9pm
+      return TouPeriod.peak;
+    }
+  }
+
+  String _getMessageForTouPeriod(TouPeriod period) {
+    switch (period) {
+      case TouPeriod.peak:
+        return 'You are currently in PEAK hours (11am - 9pm).';
+      case TouPeriod.midPeak:
+        return 'You are currently in MID PEAK hours (9pm - 12am).';
+      case TouPeriod.offPeak:
+        return 'You are currently in OFF PEAK hours (12am - 11am).';
+    }
+  }
+
+  void _initializeTouBanner() {
+    final currentPeriod = _getCurrentTouPeriod();
+    final message = _getMessageForTouPeriod(currentPeriod);
+    state = NoticeBannerState(isVisible: true, message: message);
+
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      final newPeriod = _getCurrentTouPeriod();
+      final newMessage = _getMessageForTouPeriod(newPeriod);
+      if (state.message != newMessage) {
+        updateMessage(newMessage);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   /// Show notice banner with message
   void show(String message) {

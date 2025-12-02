@@ -182,7 +182,7 @@ class EnergyPricesWidget extends StatelessWidget {
                 FlSpot(entry.key.toDouble(), entry.value)
               ).toList(),
               isCurved: false,
-              color: const Color(0xFF8B5CF6), // Purple
+              color: Theme.of(context).colorScheme.secondary, // Purple
               barWidth: 2,
               isStrokeCapRound: true,
               dotData: FlDotData(
@@ -190,7 +190,7 @@ class EnergyPricesWidget extends StatelessWidget {
                 getDotPainter: (spot, percent, barData, index) =>
                     FlDotCirclePainter(
                   radius: 3,
-                  color: const Color(0xFF8B5CF6),
+                  color: Theme.of(context).colorScheme.secondary,
                   strokeWidth: 1,
                   strokeColor: AppColors.white,
                 ),
@@ -216,9 +216,9 @@ class EnergyPricesWidget extends StatelessWidget {
           // Header row
           Container(
             padding: const EdgeInsets.all(AppTheme.spacing12),
-            decoration: const BoxDecoration(
-              color: AppColors.grey100,
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(AppTheme.radius8),
                 topRight: Radius.circular(AppTheme.radius8),
               ),
@@ -244,15 +244,6 @@ class EnergyPricesWidget extends StatelessWidget {
                         ),
                   ),
                 ),
-                Expanded(
-                  child: Text(
-                    'Actual',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -267,7 +258,7 @@ class EnergyPricesWidget extends StatelessWidget {
             
             return Container(
               decoration: BoxDecoration(
-                color: isToday ? AppColors.primaryLight.withOpacity(0.1) : Colors.transparent,
+                color: isToday ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1) : Colors.transparent,
                 border: Border(
                   bottom: BorderSide(
                     color: AppColors.border,
@@ -303,13 +294,13 @@ class EnergyPricesWidget extends StatelessWidget {
                               vertical: AppTheme.spacing4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(AppTheme.radius4),
                             ),
                             child: Text(
                               'Today',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.white,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -323,16 +314,6 @@ class EnergyPricesWidget extends StatelessWidget {
                     child: Text(
                       row.priceSignal != null 
                           ? 'BZ\$${row.priceSignal!.toStringAsFixed(3)}'
-                          : '-',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      row.actual != null 
-                          ? 'BZ\$${row.actual!.toStringAsFixed(3)}'
                           : '-',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textPrimary,
@@ -369,7 +350,6 @@ class EnergyPricesWidget extends StatelessWidget {
     final rows = List.generate(10, (index) => _PriceTableRow(
       date: dates[index],
       priceSignal: priceData.priceSignal[index],
-      actual: priceData.actual[index],
     ));
 
     // Desired order:
@@ -404,11 +384,9 @@ class _PriceTableRow {
   const _PriceTableRow({
     required this.date,
     required this.priceSignal,
-    required this.actual,
   });
 
   final DateTime date;
   final double? priceSignal;
-  final double? actual;
 }
 

@@ -41,8 +41,15 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing4),
                 Text(
-                  'Your electricity cost over the past 7 days',
+                  'The information below is an estimate of your current billing cycle.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: AppTheme.spacing4),
+                Text(
+                  'Billing Cycle: Nov 1, 2025 - Nov 30, 2025',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
                 ),
@@ -108,6 +115,14 @@ class DailyCostSummaryWidget extends StatelessWidget {
                   const SizedBox(height: AppTheme.spacing24),
                   // 7-day line graph
                   _build7DayChart(context),
+                  const SizedBox(height: AppTheme.spacing12),
+                  Text(
+                    '* All dollar values are estimates.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                  ),
                 ],
               ),
           ],
@@ -125,8 +140,8 @@ class DailyCostSummaryWidget extends StatelessWidget {
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
           color: isHighlighted
-              ? AppColors.primaryLight.withOpacity(0.1)
-              : AppColors.grey100,
+              ? Theme.of((context)).colorScheme.primaryContainer.withOpacity(0.1)
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Column(
@@ -148,7 +163,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
                   'BZ\$${amount.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: isHighlighted
-                            ? AppColors.primary
+                            ? Theme.of(context).colorScheme.primary
                             : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
@@ -232,7 +247,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 FlSpot(entry.key.toDouble(), entry.value)
               ).toList(),
               isCurved: true,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               barWidth: 3,
               isStrokeCapRound: true,
               dotData: FlDotData(
@@ -240,9 +255,9 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 getDotPainter: (spot, percent, barData, index) =>
                     FlDotCirclePainter(
                   radius: 4,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   strokeWidth: 2,
-                  strokeColor: AppColors.white,
+                  strokeColor: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
               belowBarData: BarAreaData(show: false),

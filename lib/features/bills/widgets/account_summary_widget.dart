@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,7 +33,7 @@ class AccountSummaryWidget extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.account_balance_wallet, color: AppColors.primary),
+                  Icon(Icons.account_balance_wallet, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: AppTheme.spacing8),
                   Text(
                     'Account Summary',
@@ -40,12 +41,12 @@ class AccountSummaryWidget extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                         ),
                   ),
-                  const Spacer(),
-                  if (onRefresh != null)
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: isLoading ? null : onRefresh,
-                    ),
+                  // const Spacer(),
+                  // if (onRefresh != null)
+                  //   IconButton(
+                  //     icon: const Icon(Icons.refresh),
+                  //     onPressed: isLoading ? null : onRefresh,
+                  //   ),
                 ],
               ),
               const SizedBox(height: AppTheme.spacing16),
@@ -76,10 +77,10 @@ class AccountSummaryWidget extends ConsumerWidget {
   Widget _buildCurrentBalance(BuildContext context) => Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
-          color: _getBalanceColor().withOpacity(0.1),
+          color: _getBalanceColor(context).withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius8),
           border: Border.all(
-            color: _getBalanceColor().withOpacity(0.3),
+            color: _getBalanceColor(context).withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -87,7 +88,7 @@ class AccountSummaryWidget extends ConsumerWidget {
           children: [
             Icon(
               _getBalanceIcon(),
-              color: _getBalanceColor(),
+              color: _getBalanceColor(context),
               size: 32,
             ),
             const SizedBox(width: AppTheme.spacing12),
@@ -98,7 +99,7 @@ class AccountSummaryWidget extends ConsumerWidget {
                   Text(
                     'Current Balance',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                         ),
                   ),
                   const SizedBox(height: AppTheme.spacing4),
@@ -106,7 +107,6 @@ class AccountSummaryWidget extends ConsumerWidget {
                     'BZ\$${accountBalance.currentBalance.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
                         ),
                   ),
                 ],
@@ -144,7 +144,7 @@ class AccountSummaryWidget extends ConsumerWidget {
   Widget _buildYTDSummary(BuildContext context) => Container(
         padding: const EdgeInsets.all(AppTheme.spacing12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Column(
@@ -182,6 +182,8 @@ class AccountSummaryWidget extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: AppTheme.spacing8),
+            _buildYTDChart(context),
           ],
         ),
       );
@@ -196,7 +198,7 @@ class AccountSummaryWidget extends ConsumerWidget {
       Container(
         padding: const EdgeInsets.all(AppTheme.spacing12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Column(
@@ -207,14 +209,12 @@ class AccountSummaryWidget extends ConsumerWidget {
                 Icon(
                   icon,
                   size: 16,
-                  color: AppColors.textTertiary,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
                 const SizedBox(width: AppTheme.spacing4),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textTertiary,
-                      ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -228,9 +228,7 @@ class AccountSummaryWidget extends ConsumerWidget {
             const SizedBox(height: AppTheme.spacing4),
             Text(
               subtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
@@ -241,9 +239,7 @@ class AccountSummaryWidget extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: AppTheme.spacing4),
           Text(
@@ -261,10 +257,10 @@ class AccountSummaryWidget extends ConsumerWidget {
           vertical: AppTheme.spacing4,
         ),
         decoration: BoxDecoration(
-          color: _getBalanceColor().withOpacity(0.1),
+          color: _getBalanceColor(context).withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius4),
           border: Border.all(
-            color: _getBalanceColor().withOpacity(0.3),
+            color: _getBalanceColor(context).withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -273,18 +269,18 @@ class AccountSummaryWidget extends ConsumerWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: _getBalanceColor(),
+            color: _getBalanceColor(context),
           ),
         ),
       );
 
-  Color _getBalanceColor() {
+  Color _getBalanceColor(BuildContext context) {
     if (accountBalance.currentBalance > 0) {
-      return AppColors.error; // Positive balance means we owe money
+      return Theme.of(context).colorScheme.error; // Positive balance means we owe money
     } else if (accountBalance.currentBalance < 0) {
-      return AppColors.success; // Negative balance means credit
+      return Theme.of(context).colorScheme.primary; // Negative balance means credit
     } else {
-      return AppColors.textSecondary; // Zero balance
+      return Theme.of(context).textTheme.bodySmall?.color ?? AppColors.textSecondary; // Zero balance
     }
   }
 
@@ -339,4 +335,106 @@ class AccountSummaryWidget extends ConsumerWidget {
       return 'Overdue by ${difference.abs()} days';
     }
   }
+
+  Widget _buildYTDChart(BuildContext context) {
+    // Mock monthly data for chart
+    final thisYearData = [350.0, 320.0, 380.0, 400.0, 370.0, 410.0, 430.0, 420.0, 390.0, 380.0, 360.0, 370.0];
+    final lastYearData = [330.0, 310.0, 360.0, 380.0, 350.0, 390.0, 410.0, 400.0, 370.0, 360.0, 340.0, 350.0];
+    final currentYear = DateTime.now().year;
+    final lastYear = currentYear - 1;
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 120,
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(show: false),
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 22,
+                    getTitlesWidget: (value, meta) {
+                      const style = TextStyle(fontSize: 10);
+                      String text;
+                      switch (value.toInt()) {
+                        case 0:
+                          text = 'Jan';
+                          break;
+                        case 5:
+                          text = 'Jun';
+                          break;
+                        case 11:
+                          text = 'Dec';
+                          break;
+                        default:
+                          return Container();
+                      }
+                      return Text(text, style: style);
+                    },
+                  ),
+                  axisNameWidget: const Text('Months'),
+                ),
+                leftTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                  axisNameWidget: Text('Usage (kWh)'),
+                ),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: List.generate(thisYearData.length, (index) => FlSpot(index.toDouble(), thisYearData[index])),
+                  isCurved: true,
+                  color: Theme.of(context).colorScheme.primary,
+                  barWidth: 2,
+                  isStrokeCapRound: true,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: false),
+                ),
+                LineChartBarData(
+                  spots: List.generate(lastYearData.length, (index) => FlSpot(index.toDouble(), lastYearData[index])),
+                  isCurved: true,
+                  color: Theme.of(context).colorScheme.secondary,
+                  barWidth: 2,
+                  isStrokeCapRound: true,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: false),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacing8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(context, Theme.of(context).colorScheme.primary, lastYear.toString()),
+            const SizedBox(width: AppTheme.spacing16),
+            _buildLegendItem(context, Theme.of(context).colorScheme.secondary, currentYear.toString()),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spacing4),
+        Text(
+          'Comparison for last year and this year',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(BuildContext context, Color color, String text) => Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          color: color,
+        ),
+        const SizedBox(width: AppTheme.spacing4),
+        Text(text, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
 }

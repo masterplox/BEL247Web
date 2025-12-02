@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/user.dart';
 import '../../../theme/app_theme.dart';
-import '../../../theme/colors.dart';
 
 class PaymentWidget extends ConsumerStatefulWidget {
   const PaymentWidget({
@@ -52,27 +51,27 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.payment, color: AppColors.primary),
-                  const SizedBox(width: AppTheme.spacing8),
-                  Text(
-                    'Make Payment',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spacing16),
-              if (_isProcessing)
-                _buildProcessingState()
-              else
-                _buildPaymentForm(),
-            ],
+                Row(
+                  children: [
+                    Icon(Icons.payment, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Text(
+                      'Make Payment',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spacing16),
+                if (_isProcessing)
+                  _buildProcessingState()
+                else
+                  _buildPaymentForm(),
+              ],
+            ),
           ),
-        ),
-      );
+        );
 
   Widget _buildProcessingState() => const Center(
         child: Padding(
@@ -105,7 +104,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
   Widget _buildAmountSection() => Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Column(
@@ -143,7 +142,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
             const SizedBox(height: AppTheme.spacing8),
             Row(
               children: [
-                _buildQuickAmountButton('Minimum', widget.accountBalance.currentBalance),
+                _buildQuickAmountButton('Past Due', widget.accountBalance.currentBalance),
                 const SizedBox(width: AppTheme.spacing8),
                 _buildQuickAmountButton('Full Balance', widget.accountBalance.currentBalance),
               ],
@@ -166,7 +165,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
   Widget _buildPaymentMethodSection() => Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Column(
@@ -222,8 +221,8 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
             child: ElevatedButton(
               onPressed: _isProcessing ? null : _processPayment,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
               ),
               child: const Text('Make Payment'),
@@ -235,6 +234,11 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
   List<PaymentMethodType> get _availableMethods => const [
         PaymentMethodType.card,
         PaymentMethodType.digiWallet,
+        PaymentMethodType.heritageBank,
+        PaymentMethodType.atlanticBankCreditCard,
+        PaymentMethodType.atlanticBankPersonal,
+        PaymentMethodType.belizeBank,
+        PaymentMethodType.nationalBank,
       ];
 
   IconData _getPaymentMethodIcon(PaymentMethodType method) {
@@ -243,6 +247,12 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
         return Icons.credit_card;
       case PaymentMethodType.digiWallet:
         return Icons.account_balance_wallet;
+      case PaymentMethodType.heritageBank:
+      case PaymentMethodType.atlanticBankCreditCard:
+      case PaymentMethodType.atlanticBankPersonal:
+      case PaymentMethodType.belizeBank:
+      case PaymentMethodType.nationalBank:
+        return Icons.account_balance;
     }
   }
 
@@ -252,6 +262,16 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
         return 'Debit/Credit Card';
       case PaymentMethodType.digiWallet:
         return 'DigiWallet';
+      case PaymentMethodType.heritageBank:
+        return 'Heritage Bank Limited (Web Portal)';
+      case PaymentMethodType.atlanticBankCreditCard:
+        return 'Atlantic Bank (Web Portal - Credit Card)';
+      case PaymentMethodType.atlanticBankPersonal:
+        return 'Atlantic Bank (Web Portal - Personal Login)';
+      case PaymentMethodType.belizeBank:
+        return 'Belize Bank (Portal)';
+      case PaymentMethodType.nationalBank:
+        return 'National Bank of Belize (Web Portal)';
     }
   }
 
@@ -292,11 +312,11 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle, color: AppColors.success),
-            SizedBox(width: AppTheme.spacing8),
-            Text('Payment Successful'),
+            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: AppTheme.spacing8),
+            const Text('Payment Successful'),
           ],
         ),
         content: Column(
@@ -327,11 +347,11 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.error, color: AppColors.error),
-            SizedBox(width: AppTheme.spacing8),
-            Text('Payment Failed'),
+            Icon(Icons.error, color: Theme.of(context).colorScheme.error),
+            const SizedBox(width: AppTheme.spacing8),
+            const Text('Payment Failed'),
           ],
         ),
         content: Text('Payment could not be processed: $error'),
@@ -349,4 +369,9 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
 enum PaymentMethodType {
   card,
   digiWallet,
+  heritageBank,
+  atlanticBankCreditCard,
+  atlanticBankPersonal,
+  belizeBank,
+  nationalBank,
 }

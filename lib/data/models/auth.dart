@@ -73,6 +73,9 @@ class AuthState with _$AuthState {
     UserSession? userSession,
     String? error,
     DateTime? lastRefresh,
+    @Default(false) bool otpSent,
+    String? otpContact,
+    @Default(false) bool otpVerified,
   }) = _AuthState;
 
   factory AuthState.fromJson(Map<String, dynamic> json) =>
@@ -140,4 +143,40 @@ class AuthValidationResult with _$AuthValidationResult {
 
   factory AuthValidationResult.fromJson(Map<String, dynamic> json) =>
       _$AuthValidationResultFromJson(json);
+}
+
+/// OTP Send request model
+@freezed
+class OtpSendRequest with _$OtpSendRequest {
+  const factory OtpSendRequest({
+    required String contact, // email or phone
+  }) = _OtpSendRequest;
+
+  factory OtpSendRequest.fromJson(Map<String, dynamic> json) =>
+      _$OtpSendRequestFromJson(json);
+}
+
+/// OTP Verify request model
+@freezed
+class OtpVerifyRequest with _$OtpVerifyRequest {
+  const factory OtpVerifyRequest({
+    required String contact,
+    required String otp,
+  }) = _OtpVerifyRequest;
+
+  factory OtpVerifyRequest.fromJson(Map<String, dynamic> json) =>
+      _$OtpVerifyRequestFromJson(json);
+}
+
+/// SignUp request model
+@freezed
+class SignUpRequest with _$SignUpRequest {
+  const factory SignUpRequest({
+    required String email,
+    required String password,
+    required String contact,
+  }) = _SignUpRequest;
+
+  factory SignUpRequest.fromJson(Map<String, dynamic> json) =>
+      _$SignUpRequestFromJson(json);
 }

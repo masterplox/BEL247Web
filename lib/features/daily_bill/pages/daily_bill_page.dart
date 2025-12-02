@@ -142,7 +142,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
           const SizedBox(height: AppTheme.spacing16),
 
           // Cost breakdown card
-          _buildCostBreakdown(context, dailyBillState.currentConsumption),
+          // _buildCostBreakdown(context, dailyBillState.currentConsumption),
           const SizedBox(height: AppTheme.spacing16),
 
           // Alerts Section
@@ -166,7 +166,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: AppTheme.spacing16),
             Text(
               'Error Loading Data',
@@ -202,10 +202,10 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.receipt_long,
               size: 64,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
             const SizedBox(height: AppTheme.spacing16),
             Text(
@@ -247,7 +247,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.notifications, color: AppColors.primary),
+                  Icon(Icons.notifications, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: AppTheme.spacing8),
                   Text(
                     'Alerts & Notifications',
@@ -304,7 +304,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
                 _formatAlertTime(alert.timestamp),
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ).textTheme.bodySmall,
               ),
             ],
           ),
@@ -315,7 +315,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
               ref.read(dailyBillProvider.notifier).markAlertAsRead(alert.id);
             },
             icon: const Icon(Icons.check, size: 16),
-            color: AppColors.textSecondary,
+            color: Theme.of(context).textTheme.bodySmall?.color,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
           ),
@@ -340,14 +340,14 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
-            Icon(icon, color: color ?? AppColors.textSecondary, size: 18),
+            Icon(icon, color: color ?? Theme.of(context).textTheme.bodySmall?.color, size: 18),
             const SizedBox(height: AppTheme.spacing8),
           ],
           Text(
             title,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            ).textTheme.bodySmall,
           ),
           const SizedBox(height: AppTheme.spacing8),
           Row(
@@ -356,7 +356,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
               Text(
                 value,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: color ?? AppColors.textPrimary,
+                  color: color ?? Theme.of(context).textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -364,9 +364,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
                 const SizedBox(width: AppTheme.spacing4),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ],
@@ -387,7 +385,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
       title: 'Peak Interval',
       value: peak != null ? peak.kwh.toStringAsFixed(2) : '0.0',
       subtitle: 'kWh\nat $timeStr',
-      color: AppColors.textPrimary,
+      color: Theme.of(context).textTheme.bodyLarge?.color,
       icon: Icons.trending_up,
     );
   }
@@ -401,7 +399,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
       title: 'Lowest Interval',
       value: low != null ? low.kwh.toStringAsFixed(2) : '0.0',
       subtitle: 'kWh\nat $timeStr',
-      color: AppColors.textPrimary,
+      color: Theme.of(context).textTheme.bodyLarge?.color,
       icon: Icons.trending_down,
     );
   }
@@ -414,7 +412,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
       title: 'Average/Interval',
       value: avg.toStringAsFixed(2),
       subtitle: 'kWh',
-      color: AppColors.textPrimary,
+      color: Theme.of(context).textTheme.bodyLarge?.color,
       icon: Icons.timeline,
     );
   }
@@ -435,13 +433,11 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.calendar_month, color: AppColors.primary, size: 18),
+                Icon(Icons.calendar_month, color: Theme.of(context).colorScheme.primary, size: 18),
                 const SizedBox(width: AppTheme.spacing8),
                 Text(
                   'Projected Monthly Outlook',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -449,23 +445,18 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
             Text(
               'BZ\$${projectedCost.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: AppTheme.spacing8),
             Text(
               '${projectedUsage.toStringAsFixed(1)} kWh expected over 30 days',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: AppTheme.spacing4),
             Text(
               'Daily estimate: BZ\$${dailyCost.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
@@ -473,6 +464,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     );
   }
 
+  /*
   Widget _buildCostBreakdown(BuildContext context, current) {
     final costCalculation = CostCalculationService.calculateDailyCost(current);
     final b = costCalculation.costBreakdown;
@@ -539,19 +531,19 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
       ),
     ],
   );
-
+  */
   Color _getAlertColor(dynamic severity) {
     switch (severity.toString()) {
       case 'AlertSeverity.critical':
-        return AppColors.error;
+        return Theme.of(context).colorScheme.error;
       case 'AlertSeverity.high':
-        return AppColors.error;
+        return Theme.of(context).colorScheme.error;
       case 'AlertSeverity.medium':
-        return AppColors.warning;
+        return Theme.of(context).colorScheme.secondary;
       case 'AlertSeverity.low':
-        return AppColors.primary;
+        return Theme.of(context).colorScheme.primary;
       default:
-        return AppColors.textSecondary;
+        return Theme.of(context).textTheme.bodySmall?.color ?? AppColors.textSecondary;
     }
   }
 

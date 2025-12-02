@@ -75,14 +75,14 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.arrow_upward,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 24,
                   ),
                   const SizedBox(width: AppTheme.spacing8),
                   Text(
-                    'Account Ledger',
+                    'Transaction History',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -93,7 +93,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
               Text(
                 'Bills and payments affecting your account balance',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
               ),
             ],
@@ -119,7 +119,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     'Date',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
                         ),
                   ),
                 ),
@@ -129,7 +128,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     'Description',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
                         ),
                   ),
                 ),
@@ -140,7 +138,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     textAlign: TextAlign.end,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
                         ),
                   ),
                 ),
@@ -151,7 +148,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     textAlign: TextAlign.end,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
                         ),
                   ),
                 ),
@@ -279,7 +275,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
               horizontal: AppTheme.spacing16,
               vertical: AppTheme.spacing12,
             ),
-            color: isExpanded ? AppColors.surface : Colors.transparent,
+            color: isExpanded ? Theme.of(context).colorScheme.surface : Colors.transparent,
             child: isMobile
                 ? _buildMobileRow(context, entry)
                 : Row(
@@ -322,9 +318,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                         const SizedBox(height: AppTheme.spacing4),
                         Text(
                           entry.subDescription!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           softWrap: false,
@@ -378,13 +372,13 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                             vertical: AppTheme.spacing4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.1),
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(AppTheme.radius4),
                           ),
                           child: Text(
                             'Paid Up',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.success,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -396,7 +390,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                 // Chevron
                 Icon(
                   isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ],
             ),
@@ -431,7 +425,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     if (entry.subDescription != null)
                       Text(
                         entry.subDescription!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodySmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -449,7 +443,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                 _formatAmount(entry.amount),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: entry.isPayment ? AppColors.success : AppColors.error,
+                      color: entry.isPayment ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
                     ),
               ),
               Row(
@@ -459,14 +453,14 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     'BZ\$${entry.accountBalance.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: entry.accountBalance == 0 ? AppColors.success : AppColors.error,
+                          color: entry.accountBalance == 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
                         ),
                   ),
                   const SizedBox(width: AppTheme.spacing4),
                   Icon(
                     entry.accountBalance == 0 ? Icons.arrow_downward : Icons.arrow_upward,
                     size: 14,
-                    color: entry.accountBalance == 0 ? AppColors.success : AppColors.error,
+                    color: entry.accountBalance == 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
                   ),
                 ],
               ),
@@ -480,20 +474,20 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
       return Container(
         width: 24,
         height: 24,
-        decoration: const BoxDecoration(
-          color: AppColors.success,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.check,
           size: 16,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
         ),
       );
     } else {
-      return const Icon(
+      return Icon(
         Icons.description,
-        color: Colors.blue,
+        color: Theme.of(context).colorScheme.secondary,
         size: 24,
       );
     }
@@ -501,7 +495,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
 
   Widget _buildExpandedDetails(BuildContext context, LedgerEntry entry) => Container(
       padding: const EdgeInsets.all(AppTheme.spacing16),
-      color: AppColors.surface,
+      color: Theme.of(context).colorScheme.surface,
       child: entry.isPayment
           ? _buildPaymentDetails(context, entry)
           : _buildBillDetails(context, entry),
@@ -522,11 +516,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
         ),
         const SizedBox(height: AppTheme.spacing16),
         _buildDetailRow(context, 'Receipt Number', payment.referenceNumber ?? 'N/A'),
-        _buildDetailRow(context, 'Payment Method', payment.paymentMethod),
-        _buildDetailRow(context, 'Amount', 'BZ\$${entry.amount.abs().toStringAsFixed(2)}'),
-        _buildDetailRow(context, 'Transaction ID', payment.transactionId),
-        if (payment.referenceNumber != null)
-          _buildDetailRow(context, 'Reference', payment.referenceNumber!),
+        _buildDetailRow(context, 'Electric Payment', 'BZ\$${entry.amount.abs().toStringAsFixed(2)}'),
+        _buildDetailRow(context, 'Outstanding Balance', 'BZ\$${entry.accountBalance.toStringAsFixed(2)}'),
         const SizedBox(height: AppTheme.spacing16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -536,18 +527,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
               icon: const Icon(Icons.download, size: 18),
               label: const Text('Download Receipt'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            const SizedBox(width: AppTheme.spacing12),
-            OutlinedButton.icon(
-              onPressed: () => widget.onViewFullDetails?.call(payment),
-              icon: const Icon(Icons.description, size: 18),
-              label: const Text('Full Details'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ],
@@ -604,8 +585,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
             icon: const Icon(Icons.download, size: 18),
             label: const Text('Download Bill'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
         ),
@@ -626,7 +607,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
           Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                   fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
                 ),
           ),
@@ -634,7 +615,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-                  color: isTotal ? AppColors.textPrimary : null,
+                  color: isTotal ? Theme.of(context).textTheme.bodyLarge?.color : null,
                 ),
           ),
         ],
@@ -646,24 +627,20 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
       child: Center(
         child: Column(
           children: [
-            const Icon(
+            Icon(
               Icons.receipt_long_outlined,
               size: 64,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
             const SizedBox(height: AppTheme.spacing16),
             Text(
               'No transactions found',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppTheme.spacing8),
             Text(
               'Your bills and payments will appear here',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),

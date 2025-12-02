@@ -93,27 +93,27 @@ class TabletBillsLayout extends ConsumerWidget {
   const TabletBillsLayout({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.spacing20),
+  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
+        padding: EdgeInsets.all(AppTheme.spacing20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const BillsHeader(),
-            const SizedBox(height: AppTheme.spacing20),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: AppTheme.spacing16,
-              mainAxisSpacing: AppTheme.spacing16,
-              childAspectRatio: 1.2,
-              children: const [
-                AccountSummaryCard(),
-                PaymentCard(),
+            BillsHeader(),
+            SizedBox(height: AppTheme.spacing20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: AccountSummaryCard(),
+                ),
+                SizedBox(width: AppTheme.spacing16),
+                Expanded(
+                  child: PaymentCard(),
+                ),
               ],
             ),
-            const SizedBox(height: AppTheme.spacing20),
-            const AccountLedgerCard(),
+            SizedBox(height: AppTheme.spacing20),
+            AccountLedgerCard(),
           ],
         ),
       );

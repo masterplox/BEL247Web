@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import '../../core/utils/error_handler.dart';
 import '../../core/utils/logger.dart';
 import '../models/auth.dart';
-import '../services/mock_api_endpoints.dart';
 import '../services/token_storage_service.dart';
 import 'base_repository.dart';
 
@@ -24,6 +23,15 @@ abstract class AuthRepository extends BaseRepository {
   /// Change user password
   Future<ApiResponse<void>> changePassword(PasswordChangeRequest request);
   
+  /// Send OTP to user's contact for verification
+  Future<ApiResponse<void>> sendOtp(OtpSendRequest request);
+
+  /// Verify OTP for user's contact
+  Future<ApiResponse<void>> verifyOtp(OtpVerifyRequest request);
+  
+  /// Register a new user
+  Future<ApiResponse<AuthResponse>> signup(SignUpRequest request);
+
   /// Check if user is authenticated
   Future<bool> isAuthenticated();
   
@@ -34,9 +42,97 @@ abstract class AuthRepository extends BaseRepository {
 /// Mock implementation of authentication repository
 class MockAuthRepository implements AuthRepository {
 
-  MockAuthRepository({MockApiEndpoints? mockApiEndpoints})
-      : _mockApiEndpoints = mockApiEndpoints ?? MockApiEndpoints();
-  final MockApiEndpoints _mockApiEndpoints;
+  MockAuthRepository();
+
+  @override
+  Future<ApiResponse<void>> verifyOtp(OtpVerifyRequest request) async {
+    try {
+      Logger.info('Attempting to verify OTP for: ${request.contact}');
+
+      if (request.otp == '12345') {
+        Logger.info('OTP verified successfully for: ${request.contact}');
+        return ApiResponse.success(null);
+      } else {
+        Logger.warning('OTP verification failed for: ${request.contact}');
+        return ApiResponse.error('Invalid OTP');
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Verify OTP error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Verify OTP failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<AuthResponse>> signup(SignUpRequest request) async {
+    try {
+      Logger.info('Attempting to sign up user: ${request.email}');
+      
+      // Simulate API call delay
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Mock signup logic
+      final now = DateTime.now();
+      final accessTokenExpiry = now.add(const Duration(minutes: 15));
+      final refreshTokenExpiry = now.add(const Duration(days: 7));
+
+      final userSession = UserSession(
+        userId: 'user_${now.millisecondsSinceEpoch}',
+        email: request.email,
+        firstName: 'New',
+        lastName: 'User',
+        loginTime: now,
+        lastActivity: now,
+        isActive: true,
+        preferences: {},
+      );
+
+      final authResponse = AuthResponse(
+        accessToken: 'mock_access_token_${now.millisecondsSinceEpoch}',
+        refreshToken: 'mock_refresh_token_${now.millisecondsSinceEpoch}',
+        userId: userSession.userId,
+        expiresAt: accessTokenExpiry,
+        userSession: userSession,
+      );
+
+      // Store tokens and session
+      await TokenStorageService.storeTokenPair(TokenPair(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        accessTokenExpiresAt: accessTokenExpiry,
+        refreshTokenExpiresAt: refreshTokenExpiry,
+      ));
+      await TokenStorageService.storeUserSession(userSession);
+      await TokenStorageService.updateLastRefresh();
+
+      Logger.info('Signup successful for user: ${request.email}');
+      return ApiResponse.success(authResponse);
+    } catch (e, stackTrace) {
+      Logger.error('Signup error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Signup failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<void>> sendOtp(OtpSendRequest request) async {
+    try {
+      Logger.info('Attempting to send OTP to: ${request.contact}');
+      
+      final validation = _validateOtpSendRequest(request);
+      if (!validation.isValid) {
+        return ApiResponse.error(
+          'Validation failed: ${validation.errors.join(', ')}',
+        );
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      Logger.info('OTP sent successfully to: ${request.contact}');
+      return ApiResponse.success(null);
+    } catch (e, stackTrace) {
+      Logger.error('Send OTP error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Send OTP failed: ${e.toString()}');
+    }
+  }
 
   @override
   Future<ApiResponse<AuthResponse>> login(AuthRequest request) async {
@@ -315,6 +411,30 @@ class MockAuthRepository implements AuthRepository {
     } else if (request.newPassword != request.confirmPassword) {
       errors.add('Passwords do not match');
       fieldErrors['confirmPassword'] = 'Passwords do not match';
+    }
+
+    return AuthValidationResult(
+      isValid: errors.isEmpty,
+      errors: errors,
+      fieldErrors: fieldErrors,
+    );
+  }
+
+  /// Validate OTP send request
+  AuthValidationResult _validateOtpSendRequest(OtpSendRequest request) {
+    final errors = <String>[];
+    final fieldErrors = <String, String>{};
+
+    if (request.contact.isEmpty) {
+      errors.add('Contact information is required');
+      fieldErrors['contact'] = 'Contact information is required';
+    } else {
+      final isEmail = _isValidEmail(request.contact);
+      final isPhone = RegExp(r'^\+?[0-9]{10,}$').hasMatch(request.contact);
+      if (!isEmail && !isPhone) {
+        errors.add('Invalid email or phone number format');
+        fieldErrors['contact'] = 'Invalid email or phone number format';
+      }
     }
 
     return AuthValidationResult(
