@@ -1,6 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/app_bar_chart.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_switch.dart';
+import '../../../core/widgets/app_text.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -26,83 +30,68 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
   bool _showPreviousYear = false;
 
   @override
-  Widget build(BuildContext context) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Usage',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                        ),
-                        const SizedBox(height: AppTheme.spacing4),
-                        Text(
-                          'Yesterday\'s consumption vs 7-day average',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
+  Widget build(BuildContext context) => AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Compare Last Year',
-                        style: Theme.of(context).textTheme.bodySmall,
+                      AppText(
+                        'Usage',
+                        style: AppTextStyle.title,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: AppTheme.spacing8),
-                      Switch(
-                        value: _showPreviousYear,
-                        onChanged: (value) {
-                          setState(() {
-                            _showPreviousYear = value;
-                          });
-                        },
+                      SizedBox(height: AppTheme.spacing4),
+                      AppText(
+                        'Yesterday\'s consumption vs 7-day average',
+                        style: AppTextStyle.body,
+                        color: AppColors.textSecondary,
                       ),
                     ],
-                  )
-                ],
-              ),
-              const SizedBox(height: AppTheme.spacing20),
-              if (widget.isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spacing32),
-                    child: CircularProgressIndicator(),
                   ),
-                )
-              else
-                Column(
+                ),
+                Row(
                   children: [
-                    _buildYearlyComparisonCards(context),
-                    const SizedBox(height: AppTheme.spacing20),
-                    SizedBox(
-                      height: 250,
-                      child: _buildBarChart(context),
+                    const AppText('Compare Last Year', style: AppTextStyle.caption),
+                    const SizedBox(width: AppTheme.spacing8),
+                    AppSwitch(
+                      value: _showPreviousYear,
+                      onChanged: (value) {
+                        setState(() {
+                          _showPreviousYear = value;
+                        });
+                      },
                     ),
                   ],
+                )
+              ],
+            ),
+            const SizedBox(height: AppTheme.spacing20),
+            if (widget.isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing32),
+                  child: CircularProgressIndicator(),
                 ),
-            ],
-          ),
+              )
+            else
+              Column(
+                children: [
+                  _buildYearlyComparisonCards(context),
+                  const SizedBox(height: AppTheme.spacing20),
+                  SizedBox(
+                    height: 250,
+                    child: _buildBarChart(context),
+                  ),
+                ],
+              ),
+          ],
         ),
       );
 
@@ -127,86 +116,64 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
       ),
     );
 
-    return Stack(
-      children: [
-        BarChart(
-          BarChartData(
-            alignment: BarChartAlignment.spaceAround,
-            maxY: maxY,
-            barTouchData: BarTouchData(
-              enabled: false,
-            ),
-            titlesData: FlTitlesData(
-              show: true,
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (double value, TitleMeta meta) {
-                    final index = value.toInt();
-                    if (index < 0 || index >= days.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return SideTitleWidget(
-                      axisSide: meta.axisSide,
-                      space: 4,
-                      child: Text(days[index], style: const TextStyle(fontSize: 10)),
-                    );
-                  },
-                  reservedSize: 30,
+    return AppBarChart(
+      barChartData: BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: maxY,
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (group) => Theme.of(context).colorScheme.secondary,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final kwh = rod.toY;
+              return BarTooltipItem(
+                '${kwh.toStringAsFixed(1)} kWh',
+                TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (value, meta) {
-                    if (value % 25 != 0) return const SizedBox.shrink();
-                    return Text('${value.toInt()}');
-                  },
-                  reservedSize: 30,
-                ),
-              ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            ),
-            borderData: FlBorderData(
-              show: false,
-            ),
-            barGroups: barGroups,
-            gridData: const FlGridData(show: false),
+              );
+            },
           ),
         ),
-        // This is for showing the numbers on top of the bars
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final double barWidth = constraints.maxWidth / (dailyConsumption.length * 2);
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                dailyConsumption.length,
-                (index) {
-                  final value = dailyConsumption[index];
-                  final barHeight = (value / maxY) * (constraints.maxHeight - 30); // 30 is reserved for bottom titles
-                  return Container(
-                    width: barWidth,
-                    height: constraints.maxHeight - 30,
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: barHeight + 5),
-                      child: Text(
-                        value.toInt().toString(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= days.length) {
+                  return const SizedBox.shrink();
+                }
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  space: 4,
+                  child: AppText(days[index], style: AppTextStyle.caption),
+                );
+              },
+              reservedSize: 30,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value % 25 != 0) return const SizedBox.shrink();
+                return AppText(value.toInt().toString(), style: AppTextStyle.caption);
+              },
+              reservedSize: 30,
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-      ],
+        borderData: FlBorderData(
+          show: false,
+        ),
+        barGroups: barGroups,
+        gridData: const FlGridData(show: false),
+      ),
     );
   }
 
@@ -216,7 +183,7 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
       context,
       label: 'Total Kwh',
       value: widget.consumption.totalKwh,
-      isHighlighted: true,
+      isHighlighted: false,
     );
     final currentYearEstCost = _buildUsageCard(
       context,
@@ -242,7 +209,7 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
       context,
       label: 'Total Kwh (Last Year)',
       value: widget.consumption.totalKwh * 0.9,
-      isHighlighted: true,
+      isHighlighted: false,
     );
     final lastYearEstCost = _buildUsageCard(
       context,
@@ -266,12 +233,10 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const AppText(
           'This Year',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: AppTextStyle.subtitle,
+          fontWeight: FontWeight.bold,
         ),
         const SizedBox(height: AppTheme.spacing8),
         Row(
@@ -291,12 +256,10 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
         ),
         if (_showPreviousYear) ...[
           const SizedBox(height: AppTheme.spacing20),
-          Text(
+          const AppText(
             'Last Year',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: AppTextStyle.subtitle,
+            fontWeight: FontWeight.bold,
           ),
           const SizedBox(height: AppTheme.spacing8),
           Row(
@@ -336,23 +299,19 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
+              style: AppTextStyle.caption,
+              color: AppColors.textSecondary,
             ),
             const SizedBox(height: AppTheme.spacing8),
-            Text(
+            AppText(
               '${value.toStringAsFixed(1)} kWh',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: isHighlighted
-                        ? Theme.of(context).colorScheme.primary
-                        : AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
+              style: AppTextStyle.title,
+              color: isHighlighted
+                  ? Theme.of(context).colorScheme.primary
+                  : AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
             ),
           ],
         ),

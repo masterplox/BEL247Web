@@ -69,17 +69,22 @@ class MockConsumptionRepository implements ConsumptionRepository {
       Logger.info('MockConsumptionRepository: Getting monthly consumption for user: $userId, month: $month');
       
       final Map<String, dynamic> consumptionData = await DataLoader.loadJsonFromAssets(_consumptionDataPath);
-      final List<dynamic> monthlyData = consumptionData['monthlyConsumption'] as List<dynamic>;
-      
-      final monthlyConsumptionJson = monthlyData.firstWhere(
-        (item) => item['month'] == month,
-        orElse: () => throw Exception('No consumption data found for month: $month'),
-      );
-      
-      final monthlyConsumption = MonthlyConsumption.fromJson(monthlyConsumptionJson);
-      
-      Logger.info('MockConsumptionRepository: ApiResponse.successfully retrieved monthly consumption: ${monthlyConsumption.totalKwh} kWh');
-      return ApiResponse.success(monthlyConsumption);
+      final Map<String, dynamic> monthlyDataByYear = consumptionData['monthlyConsumption'] as Map<String, dynamic>;
+
+      final year = month.split('-').first;
+
+      if (monthlyDataByYear.containsKey(year)) {
+        final List<dynamic> yearData = monthlyDataByYear[year] as List<dynamic>;
+        final monthlyConsumptionJson = yearData.firstWhere(
+          (item) => item['month'] == month,
+          orElse: () => throw Exception('No consumption data found for month: $month'),
+        );
+        final monthlyConsumption = MonthlyConsumption.fromJson(monthlyConsumptionJson as Map<String, dynamic>);
+        Logger.info('MockConsumptionRepository: Successfully retrieved monthly consumption: ${monthlyConsumption.totalKwh} kWh');
+        return ApiResponse.success(monthlyConsumption);
+      } else {
+        throw Exception('No consumption data found for year: $year');
+      }
     } catch (e, stackTrace) {
       Logger.error('MockConsumptionRepository: Failed to get monthly consumption', error: e, stackTrace: stackTrace);
       return ApiResponse.error('Failed to retrieve monthly consumption: ${e.toString()}');
@@ -92,15 +97,20 @@ class MockConsumptionRepository implements ConsumptionRepository {
       Logger.info('MockConsumptionRepository: Getting yearly consumption for user: $userId, year: $year');
       
       final Map<String, dynamic> consumptionData = await DataLoader.loadJsonFromAssets(_consumptionDataPath);
-      final List<dynamic> monthlyData = consumptionData['monthlyConsumption'] as List<dynamic>;
-      
-      final monthlyConsumptionList = monthlyData
-          .where((item) => item['month'].startsWith(year.toString()))
-          .map((item) => MonthlyConsumption.fromJson(item))
-          .toList();
-      
-      Logger.info('MockConsumptionRepository: ApiResponse.successfully retrieved ${monthlyConsumptionList.length} months of consumption data');
-      return ApiResponse.success(monthlyConsumptionList);
+      final Map<String, dynamic> monthlyDataByYear = consumptionData['monthlyConsumption'] as Map<String, dynamic>;
+
+      final String yearString = year.toString();
+      if (monthlyDataByYear.containsKey(yearString)) {
+        final List<dynamic> monthlyData = monthlyDataByYear[yearString] as List<dynamic>;
+        final monthlyConsumptionList =
+            monthlyData.map((item) => MonthlyConsumption.fromJson(item as Map<String, dynamic>)).toList();
+
+        Logger.info('MockConsumptionRepository: Successfully retrieved ${monthlyConsumptionList.length} months of consumption data');
+        return ApiResponse.success(monthlyConsumptionList);
+      } else {
+        Logger.info('MockConsumptionRepository: No monthly consumption data found for year $year');
+        return ApiResponse.success([]); // Return empty list if no data for the year
+      }
     } catch (e, stackTrace) {
       Logger.error('MockConsumptionRepository: Failed to get yearly consumption', error: e, stackTrace: stackTrace);
       return ApiResponse.error('Failed to retrieve yearly consumption: ${e.toString()}');

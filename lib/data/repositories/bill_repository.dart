@@ -1,8 +1,9 @@
 import '../models/bill.dart';
+import '../models/consumption.dart';
 import 'base_repository.dart';
 import '../../core/utils/error_handler.dart';
 
-/// Abstract interface for bill data operations
+/// Abstract BillRepository defining the contract for bill data operations
 abstract class BillRepository extends BaseRepository {
   /// Get all bills for a user
   Future<ApiResponse<BillsResponse>> getBills(String userId);
@@ -41,4 +42,5 @@ abstract class BillRepository extends BaseRepository {
 
   /// Get upcoming bills
   Future<ApiResponse<List<Bill>>> getUpcomingBills(String userId);
+  Future<ApiResponse<List<MonthlyConsumption>>> getYearlyConsumption(String userId, int year);
 }

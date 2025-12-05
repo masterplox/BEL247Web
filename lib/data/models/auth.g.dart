@@ -99,6 +99,7 @@ _$AuthStateImpl _$$AuthStateImplFromJson(Map<String, dynamic> json) =>
       otpSent: json['otpSent'] as bool? ?? false,
       otpContact: json['otpContact'] as String?,
       otpVerified: json['otpVerified'] as bool? ?? false,
+      signupCompleted: json['signupCompleted'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
@@ -112,6 +113,7 @@ Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
       'otpSent': instance.otpSent,
       'otpContact': instance.otpContact,
       'otpVerified': instance.otpVerified,
+      'signupCompleted': instance.signupCompleted,
     };
 
 _$TokenRefreshRequestImpl _$$TokenRefreshRequestImplFromJson(

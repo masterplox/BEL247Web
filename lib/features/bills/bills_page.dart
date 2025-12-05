@@ -23,13 +23,13 @@ class BillsPage extends ConsumerWidget {
           centerTitle: true,
           backgroundColor: AppColors.surface,
           elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                ref.read(billsRefreshProvider.notifier).refreshAll(ref);
-              },
-            ),
+          actions: const [
+            // IconButton(
+            //   icon: const Icon(Icons.refresh),
+            //   onPressed: () {
+            //     ref.read(billsRefreshProvider.notifier).refreshAll(ref);
+            //   },
+            // ),
           ],
         ),
         body: const BillsLayout(),
@@ -176,6 +176,7 @@ class AccountSummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accountBalanceAsync = ref.watch(accountBalanceProvider);
     final usageSummaryAsync = ref.watch(usageSummaryProvider);
+    final yearlyConsumptionAsync = ref.watch(yearlyConsumptionProvider);
     
     return accountBalanceAsync.when(
       loading: () => const Center(
@@ -220,10 +221,24 @@ class AccountSummaryCard extends ConsumerWidget {
           ),
           onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
         ),
-        data: (usageSummary) => AccountSummaryWidget(
-          accountBalance: accountBalance,
-          usageSummary: usageSummary,
-          onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+        data: (usageSummary) => yearlyConsumptionAsync.when(
+          loading: () => AccountSummaryWidget(
+            accountBalance: accountBalance,
+            usageSummary: usageSummary,
+            isLoading: true,
+            onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+          ),
+          error: (e, st) => AccountSummaryWidget(
+            accountBalance: accountBalance,
+            usageSummary: usageSummary,
+            onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+          ),
+          data: (yearlyConsumption) => AccountSummaryWidget(
+            accountBalance: accountBalance,
+            usageSummary: usageSummary,
+            yearlyConsumption: yearlyConsumption,
+            onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+          ),
         ),
       ),
     );

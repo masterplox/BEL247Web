@@ -1056,6 +1056,7 @@ mixin _$AuthState {
   bool get otpSent => throw _privateConstructorUsedError;
   String? get otpContact => throw _privateConstructorUsedError;
   bool get otpVerified => throw _privateConstructorUsedError;
+  bool get signupCompleted => throw _privateConstructorUsedError;
 
   /// Serializes this AuthState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1082,6 +1083,7 @@ abstract class $AuthStateCopyWith<$Res> {
     bool otpSent,
     String? otpContact,
     bool otpVerified,
+    bool signupCompleted,
   });
 
   $UserSessionCopyWith<$Res>? get userSession;
@@ -1111,6 +1113,7 @@ class _$AuthStateCopyWithImpl<$Res, $Val extends AuthState>
     Object? otpSent = null,
     Object? otpContact = freezed,
     Object? otpVerified = null,
+    Object? signupCompleted = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1149,6 +1152,10 @@ class _$AuthStateCopyWithImpl<$Res, $Val extends AuthState>
             otpVerified: null == otpVerified
                 ? _value.otpVerified
                 : otpVerified // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            signupCompleted: null == signupCompleted
+                ? _value.signupCompleted
+                : signupCompleted // ignore: cast_nullable_to_non_nullable
                       as bool,
           )
           as $Val,
@@ -1189,6 +1196,7 @@ abstract class _$$AuthStateImplCopyWith<$Res>
     bool otpSent,
     String? otpContact,
     bool otpVerified,
+    bool signupCompleted,
   });
 
   @override
@@ -1218,6 +1226,7 @@ class __$$AuthStateImplCopyWithImpl<$Res>
     Object? otpSent = null,
     Object? otpContact = freezed,
     Object? otpVerified = null,
+    Object? signupCompleted = null,
   }) {
     return _then(
       _$AuthStateImpl(
@@ -1257,6 +1266,10 @@ class __$$AuthStateImplCopyWithImpl<$Res>
             ? _value.otpVerified
             : otpVerified // ignore: cast_nullable_to_non_nullable
                   as bool,
+        signupCompleted: null == signupCompleted
+            ? _value.signupCompleted
+            : signupCompleted // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -1275,6 +1288,7 @@ class _$AuthStateImpl implements _AuthState {
     this.otpSent = false,
     this.otpContact,
     this.otpVerified = false,
+    this.signupCompleted = false,
   });
 
   factory _$AuthStateImpl.fromJson(Map<String, dynamic> json) =>
@@ -1303,10 +1317,13 @@ class _$AuthStateImpl implements _AuthState {
   @override
   @JsonKey()
   final bool otpVerified;
+  @override
+  @JsonKey()
+  final bool signupCompleted;
 
   @override
   String toString() {
-    return 'AuthState(isAuthenticated: $isAuthenticated, isLoading: $isLoading, isInitialized: $isInitialized, userSession: $userSession, error: $error, lastRefresh: $lastRefresh, otpSent: $otpSent, otpContact: $otpContact, otpVerified: $otpVerified)';
+    return 'AuthState(isAuthenticated: $isAuthenticated, isLoading: $isLoading, isInitialized: $isInitialized, userSession: $userSession, error: $error, lastRefresh: $lastRefresh, otpSent: $otpSent, otpContact: $otpContact, otpVerified: $otpVerified, signupCompleted: $signupCompleted)';
   }
 
   @override
@@ -1329,7 +1346,9 @@ class _$AuthStateImpl implements _AuthState {
             (identical(other.otpContact, otpContact) ||
                 other.otpContact == otpContact) &&
             (identical(other.otpVerified, otpVerified) ||
-                other.otpVerified == otpVerified));
+                other.otpVerified == otpVerified) &&
+            (identical(other.signupCompleted, signupCompleted) ||
+                other.signupCompleted == signupCompleted));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1345,6 +1364,7 @@ class _$AuthStateImpl implements _AuthState {
     otpSent,
     otpContact,
     otpVerified,
+    signupCompleted,
   );
 
   /// Create a copy of AuthState
@@ -1372,6 +1392,7 @@ abstract class _AuthState implements AuthState {
     final bool otpSent,
     final String? otpContact,
     final bool otpVerified,
+    final bool signupCompleted,
   }) = _$AuthStateImpl;
 
   factory _AuthState.fromJson(Map<String, dynamic> json) =
@@ -1395,6 +1416,8 @@ abstract class _AuthState implements AuthState {
   String? get otpContact;
   @override
   bool get otpVerified;
+  @override
+  bool get signupCompleted;
 
   /// Create a copy of AuthState
   /// with the given fields replaced by the non-null parameter values.

@@ -1,12 +1,30 @@
 import 'dart:async';
 
 import '../../../core/config/env.dart';
+import '../../../data/models/api_dtos.dart';
 import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../data/sources/mock/mock_app_data_service.dart';
+import '../../../data/sources/mock/mock_consumption_repository.dart';
 
 class DashboardRepository {
   const DashboardRepository();
+
+  Future<List<EnergyPricePoint>> fetchEnergyPrices(String accountId) async {
+    print('[Dashboard] Repository.fetchEnergyPrices useMockApi=${EnvConfig.useMockApi}');
+    print('[Dashboard] Repository.fetchEnergyPrices start accountId=$accountId');
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final prices = EnvConfig.useMockApi
+        ? await MockAppDataService.getEnergyPrices()
+        : null; // Replace with live call when implemented
+    final result = prices ?? [];
+    if (prices == null) {
+      print('[Dashboard] Repository.fetchEnergyPrices [ERROR] No prices found for accountId=$accountId, returning empty list');
+    } else {
+      print('[Dashboard] Repository.fetchEnergyPrices success count=${result.length} accountId=$accountId');
+    }
+    return result;
+  }
 
   Future<AccountBalance> fetchAccountBalance(String accountId) async {
     print('[Dashboard] Repository.fetchAccountBalance useMockApi=${EnvConfig.useMockApi}');
@@ -26,6 +44,51 @@ class DashboardRepository {
       print('[Dashboard] Repository.fetchAccountBalance [ERROR] No balance found for accountId=$accountId, returning default');
     } else {
       print('[Dashboard] Repository.fetchAccountBalance success balance=\$${result.currentBalance.toStringAsFixed(2)} accountId=$accountId');
+    }
+    return result;
+  }
+
+  Future<List<DailyConsumption>> fetch7DayConsumption(String accountId) async {
+    print('[Dashboard] Repository.fetch7DayConsumption useMockApi=${EnvConfig.useMockApi}');
+    print('[Dashboard] Repository.fetch7DayConsumption start accountId=$accountId');
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final repo = MockConsumptionRepository();
+    final endDate = DateTime.now();
+    final startDate = endDate.subtract(const Duration(days: 6));
+    final result = await repo.getDailyConsumptionRange(accountId, startDate, endDate);
+    if (result.success && result.data != null) {
+      print('[Dashboard] Repository.fetch7DayConsumption success count=${result.data!.length} accountId=$accountId');
+      return result.data!;
+    } else {
+      print('[Dashboard] Repository.fetch7DayConsumption [ERROR] No data found for accountId=$accountId, returning empty list');
+      return [];
+    }
+  }
+
+  Future<DashboardData> fetchDashboardData(String accountId) async {
+    print('[Dashboard] Repository.fetchDashboardData useMockApi=${EnvConfig.useMockApi}');
+    print('[Dashboard] Repository.fetchDashboardData start accountId=$accountId');
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final data = EnvConfig.useMockApi
+        ? await MockAppDataService.getDashboardData(accountId)
+        : null; // Replace with live call when implemented
+    final result = data ??
+        DashboardData(
+          dailyCostSummary: DailyCostSummaryData(
+            title: 'Daily Cost',
+            description: 'The information below is an estimate of your current billing cycle.',
+            billingCycle: 'Billing Cycle: Unknown',
+            estimateDisclaimer: '* All dollar values are estimates.',
+          ),
+          energyPrices: EnergyPricesData(
+            title: 'Energy Prices',
+            description: 'Daily electricity rates',
+          ),
+        );
+    if (data == null) {
+      print('[Dashboard] Repository.fetchDashboardData [ERROR] No data found for accountId=$accountId, returning default');
+    } else {
+      print('[Dashboard] Repository.fetchDashboardData success accountId=$accountId');
     }
     return result;
   }

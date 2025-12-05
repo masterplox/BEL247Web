@@ -1,9 +1,11 @@
 import '../../../core/utils/logger.dart';
+import '../../models/api_dtos.dart';
 import '../../models/user.dart' show AccountBalance, UsageSummary, UsagePeriod;
 import 'data_loader.dart';
 
 class MockAppDataService {
   static const String _path = 'assets/data/mock_app_data.json';
+  static const String _energyPricesPath = 'assets/data/mock_energy_prices.json';
 
   static Future<Map<String, dynamic>?> _getAccountJson(String accountId) async {
     print('[MockAppDataService] _getAccountJson path=$_path accountId=$accountId');
@@ -21,6 +23,45 @@ class MockAppDataService {
       print('[MockAppDataService] no account match for accountId=$accountId in path=$_path');
     }
     return result;
+  }
+
+  static Future<List<EnergyPricePoint>?> getEnergyPrices() async {
+    try {
+      final data = await DataLoader.loadJsonFromAssets(_energyPricesPath);
+      final prices = data['energyPrices'] as List<dynamic>?;
+      if (prices == null) {
+        print('[MockAppDataService] energyPrices key missing in json path=$_energyPricesPath');
+        return null;
+      }
+      final result = prices
+          .cast<Map<String, dynamic>?>()
+          .where((p) => p != null)
+          .map((p) => EnergyPricePoint.fromJson(p!))
+          .toList();
+      print('[MockAppDataService] getEnergyPrices ok count=${result.length}');
+      return result;
+    } catch (e, st) {
+      Logger.error('MockAppDataService.getEnergyPrices failed', error: e, stackTrace: st);
+      print('[MockAppDataService][ERROR] getEnergyPrices error=$e');
+      return null;
+    }
+  }
+
+  static Future<DashboardData?> getDashboardData(String accountId) async {
+    try {
+      final data = await DataLoader.loadJsonFromAssets(_path);
+      if (data['dashboard'] == null) {
+        print('[MockAppDataService] dashboard key missing in json path=$_path');
+        return null;
+      }
+      final dashboardData = DashboardData.fromJson(data['dashboard'] as Map<String, dynamic>);
+      print('[MockAppDataService] getDashboardData ok for accountId=$accountId');
+      return dashboardData;
+    } catch (e, st) {
+      Logger.error('MockAppDataService.getDashboardData failed', error: e, stackTrace: st);
+      print('[MockAppDataService][ERROR] getDashboardData accountId=$accountId error=$e');
+      return null;
+    }
   }
 
   static Future<AccountBalance?> getAccountBalance(String accountId) async {

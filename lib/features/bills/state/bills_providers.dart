@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/feature_providers.dart' show accountSwitcherProvider;
 import '../../../data/models/bill.dart';
+import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import 'bills_repository.dart';
 
@@ -133,11 +134,11 @@ class BillsRefreshNotifier extends AsyncNotifier<void> {
       ref.invalidate(billsProvider);
       ref.invalidate(accountBalanceProvider);
       ref.invalidate(usageSummaryProvider);
-      
+      ref.invalidate(billsProvider);
       await Future.wait([
-        ref.read(billsProvider.future),
         ref.read(accountBalanceProvider.future),
         ref.read(usageSummaryProvider.future),
+        ref.read(billsProvider.future),
       ]);
       
       state = const AsyncData(null);
@@ -237,4 +238,19 @@ final billsSummaryProvider = FutureProvider<BillsSummary>((ref) async {
       averagePaymentTime: 0,
     ),
   );
+});
+
+final yearlyConsumptionProvider = FutureProvider<Map<int, List<MonthlyConsumption>>>((ref) async {
+  final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
+  final repo = ref.read(billsRepositoryProvider);
+  final currentYear = DateTime.now().year;
+  final lastYear = currentYear - 1;
+
+  final currentYearData = await repo.fetchYearlyConsumption(activeAccountId, currentYear);
+  final lastYearData = await repo.fetchYearlyConsumption(activeAccountId, lastYear);
+
+  return {
+    currentYear: currentYearData,
+    lastYear: lastYearData,
+  };
 });

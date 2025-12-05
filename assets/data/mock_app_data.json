@@ -48,5 +48,17 @@
         "yearToDate": {"kwh": 2800.0, "cost": 476.00, "averageDaily": 9.2}
       }
     }
-  ]
+  ],
+  "dashboard": {
+    "dailyCostSummary": {
+      "title": "Daily Cost",
+      "description": "The information below is an estimate of your current billing cycle.",
+      "billingCycle": "Billing Cycle: Nov 1, 2025 - Nov 30, 2025",
+      "estimateDisclaimer": "* All dollar values are estimates."
+    },
+    "energyPrices": {
+      "title": "Energy Prices",
+      "description": "Daily electricity rates (2 days future, today, 7 days past)"
+    }
+  }
 }

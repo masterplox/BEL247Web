@@ -1,7 +1,9 @@
 import '../../../core/config/env.dart';
 import '../../../data/models/bill.dart';
+import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../data/sources/mock/mock_app_data_service.dart';
+import '../../../data/sources/mock/mock_bill_repository.dart';
 
 class BillsRepository {
   const BillsRepository();
@@ -138,6 +140,21 @@ class BillsRepository {
       print('[Bills] Repository.fetchAccountBalance success balance=\$${result.currentBalance.toStringAsFixed(2)} accountId=$accountId');
     }
     return result;
+  }
+
+  Future<List<MonthlyConsumption>> fetchYearlyConsumption(String accountId, int year) async {
+    print('[Bills] Repository.fetchYearlyConsumption useMockApi=${EnvConfig.useMockApi}');
+    print('[Bills] Repository.fetchYearlyConsumption start accountId=$accountId year=$year');
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final repo = MockBillRepository(); // In a real app, this would be determined by EnvConfig
+    final result = await repo.getYearlyConsumption(accountId, year);
+    if (result.success && result.data != null) {
+      print('[Bills] Repository.fetchYearlyConsumption success count=${result.data!.length} accountId=$accountId');
+      return result.data!;
+    } else {
+      print('[Bills] Repository.fetchYearlyConsumption [ERROR] No data found for accountId=$accountId, returning empty list');
+      return [];
+    }
   }
 
   Future<UsageSummary> fetchUsageSummary(String accountId) async {

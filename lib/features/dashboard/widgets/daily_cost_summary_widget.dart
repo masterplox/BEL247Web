@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../data/models/api_dtos.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -9,11 +10,15 @@ class DailyCostSummaryWidget extends StatelessWidget {
   const DailyCostSummaryWidget({
     super.key,
     required this.consumption,
+    this.dashboardData,
+    this.sevenDayConsumption,
     this.isLoading = false,
     this.onRefresh,
   });
 
   final DailyConsumption consumption;
+  final DashboardData? dashboardData;
+  final List<DailyConsumption>? sevenDayConsumption;
   final bool isLoading;
   final VoidCallback? onRefresh;
 
@@ -33,7 +38,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Daily Cost',
+                  dashboardData?.dailyCostSummary.title ?? 'Daily Cost',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -41,14 +46,16 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing4),
                 Text(
-                  'The information below is an estimate of your current billing cycle.',
+                  dashboardData?.dailyCostSummary.description ??
+                      'The information below is an estimate of your current billing cycle.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: AppTheme.spacing4),
                 Text(
-                  'Billing Cycle: Nov 1, 2025 - Nov 30, 2025',
+                  dashboardData?.dailyCostSummary.billingCycle ??
+                      'Billing Cycle: Nov 1, 2025 - Nov 30, 2025',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -117,7 +124,8 @@ class DailyCostSummaryWidget extends StatelessWidget {
                   _build7DayChart(context),
                   const SizedBox(height: AppTheme.spacing12),
                   Text(
-                    '* All dollar values are estimates.',
+                    dashboardData?.dailyCostSummary.estimateDisclaimer ??
+                        '* All dollar values are estimates.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontStyle: FontStyle.italic,
@@ -269,15 +277,22 @@ class DailyCostSummaryWidget extends StatelessWidget {
   }
 
   List<double> _get7DayCostData() {
-    // Mock data matching the image: days 22-28
-    // Day 22: ~10.5, Day 23: ~9.5, Day 24: ~8.0 (lowest), Day 25: ~12.5 (highest),
-    // Day 26: ~10.0, Day 27: ~8.5, Day 28: ~11.5
-    return [10.5, 9.5, 8.0, 12.5, 10.0, 8.5, consumption.cost];
+    if (sevenDayConsumption == null || sevenDayConsumption!.isEmpty) {
+      return [10.5, 9.5, 8.0, 12.5, 10.0, 8.5, consumption.cost];
+    }
+    // ensure we have 7 days, padding if necessary
+    final costs = sevenDayConsumption!.map((c) => c.cost).toList();
+    while (costs.length < 7) {
+      costs.insert(0, 0.0);
+    }
+    return costs.sublist(costs.length - 7);
   }
 
   double _getYesterdayCost() {
-    // Mock yesterday cost - should be lower than today
-    return 8.68;
+    if (sevenDayConsumption == null || sevenDayConsumption!.length < 2) {
+      return 8.68;
+    }
+    return sevenDayConsumption![sevenDayConsumption!.length - 2].cost;
   }
 
   double _getMonthToDateCost() {

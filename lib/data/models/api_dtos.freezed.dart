@@ -5782,3 +5782,826 @@ abstract class _UserSettings implements UserSettings {
   _$$UserSettingsImplCopyWith<_$UserSettingsImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
+
+DashboardData _$DashboardDataFromJson(Map<String, dynamic> json) {
+  return _DashboardData.fromJson(json);
+}
+
+/// @nodoc
+mixin _$DashboardData {
+  DailyCostSummaryData get dailyCostSummary =>
+      throw _privateConstructorUsedError;
+  EnergyPricesData get energyPrices => throw _privateConstructorUsedError;
+
+  /// Serializes this DashboardData to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $DashboardDataCopyWith<DashboardData> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $DashboardDataCopyWith<$Res> {
+  factory $DashboardDataCopyWith(
+    DashboardData value,
+    $Res Function(DashboardData) then,
+  ) = _$DashboardDataCopyWithImpl<$Res, DashboardData>;
+  @useResult
+  $Res call({
+    DailyCostSummaryData dailyCostSummary,
+    EnergyPricesData energyPrices,
+  });
+
+  $DailyCostSummaryDataCopyWith<$Res> get dailyCostSummary;
+  $EnergyPricesDataCopyWith<$Res> get energyPrices;
+}
+
+/// @nodoc
+class _$DashboardDataCopyWithImpl<$Res, $Val extends DashboardData>
+    implements $DashboardDataCopyWith<$Res> {
+  _$DashboardDataCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? dailyCostSummary = null, Object? energyPrices = null}) {
+    return _then(
+      _value.copyWith(
+            dailyCostSummary: null == dailyCostSummary
+                ? _value.dailyCostSummary
+                : dailyCostSummary // ignore: cast_nullable_to_non_nullable
+                      as DailyCostSummaryData,
+            energyPrices: null == energyPrices
+                ? _value.energyPrices
+                : energyPrices // ignore: cast_nullable_to_non_nullable
+                      as EnergyPricesData,
+          )
+          as $Val,
+    );
+  }
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $DailyCostSummaryDataCopyWith<$Res> get dailyCostSummary {
+    return $DailyCostSummaryDataCopyWith<$Res>(_value.dailyCostSummary, (
+      value,
+    ) {
+      return _then(_value.copyWith(dailyCostSummary: value) as $Val);
+    });
+  }
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $EnergyPricesDataCopyWith<$Res> get energyPrices {
+    return $EnergyPricesDataCopyWith<$Res>(_value.energyPrices, (value) {
+      return _then(_value.copyWith(energyPrices: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$DashboardDataImplCopyWith<$Res>
+    implements $DashboardDataCopyWith<$Res> {
+  factory _$$DashboardDataImplCopyWith(
+    _$DashboardDataImpl value,
+    $Res Function(_$DashboardDataImpl) then,
+  ) = __$$DashboardDataImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    DailyCostSummaryData dailyCostSummary,
+    EnergyPricesData energyPrices,
+  });
+
+  @override
+  $DailyCostSummaryDataCopyWith<$Res> get dailyCostSummary;
+  @override
+  $EnergyPricesDataCopyWith<$Res> get energyPrices;
+}
+
+/// @nodoc
+class __$$DashboardDataImplCopyWithImpl<$Res>
+    extends _$DashboardDataCopyWithImpl<$Res, _$DashboardDataImpl>
+    implements _$$DashboardDataImplCopyWith<$Res> {
+  __$$DashboardDataImplCopyWithImpl(
+    _$DashboardDataImpl _value,
+    $Res Function(_$DashboardDataImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? dailyCostSummary = null, Object? energyPrices = null}) {
+    return _then(
+      _$DashboardDataImpl(
+        dailyCostSummary: null == dailyCostSummary
+            ? _value.dailyCostSummary
+            : dailyCostSummary // ignore: cast_nullable_to_non_nullable
+                  as DailyCostSummaryData,
+        energyPrices: null == energyPrices
+            ? _value.energyPrices
+            : energyPrices // ignore: cast_nullable_to_non_nullable
+                  as EnergyPricesData,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$DashboardDataImpl implements _DashboardData {
+  const _$DashboardDataImpl({
+    required this.dailyCostSummary,
+    required this.energyPrices,
+  });
+
+  factory _$DashboardDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$DashboardDataImplFromJson(json);
+
+  @override
+  final DailyCostSummaryData dailyCostSummary;
+  @override
+  final EnergyPricesData energyPrices;
+
+  @override
+  String toString() {
+    return 'DashboardData(dailyCostSummary: $dailyCostSummary, energyPrices: $energyPrices)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$DashboardDataImpl &&
+            (identical(other.dailyCostSummary, dailyCostSummary) ||
+                other.dailyCostSummary == dailyCostSummary) &&
+            (identical(other.energyPrices, energyPrices) ||
+                other.energyPrices == energyPrices));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, dailyCostSummary, energyPrices);
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$DashboardDataImplCopyWith<_$DashboardDataImpl> get copyWith =>
+      __$$DashboardDataImplCopyWithImpl<_$DashboardDataImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$DashboardDataImplToJson(this);
+  }
+}
+
+abstract class _DashboardData implements DashboardData {
+  const factory _DashboardData({
+    required final DailyCostSummaryData dailyCostSummary,
+    required final EnergyPricesData energyPrices,
+  }) = _$DashboardDataImpl;
+
+  factory _DashboardData.fromJson(Map<String, dynamic> json) =
+      _$DashboardDataImpl.fromJson;
+
+  @override
+  DailyCostSummaryData get dailyCostSummary;
+  @override
+  EnergyPricesData get energyPrices;
+
+  /// Create a copy of DashboardData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$DashboardDataImplCopyWith<_$DashboardDataImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+DailyCostSummaryData _$DailyCostSummaryDataFromJson(Map<String, dynamic> json) {
+  return _DailyCostSummaryData.fromJson(json);
+}
+
+/// @nodoc
+mixin _$DailyCostSummaryData {
+  String get title => throw _privateConstructorUsedError;
+  String get description => throw _privateConstructorUsedError;
+  String get billingCycle => throw _privateConstructorUsedError;
+  String get estimateDisclaimer => throw _privateConstructorUsedError;
+
+  /// Serializes this DailyCostSummaryData to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of DailyCostSummaryData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $DailyCostSummaryDataCopyWith<DailyCostSummaryData> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $DailyCostSummaryDataCopyWith<$Res> {
+  factory $DailyCostSummaryDataCopyWith(
+    DailyCostSummaryData value,
+    $Res Function(DailyCostSummaryData) then,
+  ) = _$DailyCostSummaryDataCopyWithImpl<$Res, DailyCostSummaryData>;
+  @useResult
+  $Res call({
+    String title,
+    String description,
+    String billingCycle,
+    String estimateDisclaimer,
+  });
+}
+
+/// @nodoc
+class _$DailyCostSummaryDataCopyWithImpl<
+  $Res,
+  $Val extends DailyCostSummaryData
+>
+    implements $DailyCostSummaryDataCopyWith<$Res> {
+  _$DailyCostSummaryDataCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of DailyCostSummaryData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? title = null,
+    Object? description = null,
+    Object? billingCycle = null,
+    Object? estimateDisclaimer = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: null == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String,
+            billingCycle: null == billingCycle
+                ? _value.billingCycle
+                : billingCycle // ignore: cast_nullable_to_non_nullable
+                      as String,
+            estimateDisclaimer: null == estimateDisclaimer
+                ? _value.estimateDisclaimer
+                : estimateDisclaimer // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$DailyCostSummaryDataImplCopyWith<$Res>
+    implements $DailyCostSummaryDataCopyWith<$Res> {
+  factory _$$DailyCostSummaryDataImplCopyWith(
+    _$DailyCostSummaryDataImpl value,
+    $Res Function(_$DailyCostSummaryDataImpl) then,
+  ) = __$$DailyCostSummaryDataImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String title,
+    String description,
+    String billingCycle,
+    String estimateDisclaimer,
+  });
+}
+
+/// @nodoc
+class __$$DailyCostSummaryDataImplCopyWithImpl<$Res>
+    extends _$DailyCostSummaryDataCopyWithImpl<$Res, _$DailyCostSummaryDataImpl>
+    implements _$$DailyCostSummaryDataImplCopyWith<$Res> {
+  __$$DailyCostSummaryDataImplCopyWithImpl(
+    _$DailyCostSummaryDataImpl _value,
+    $Res Function(_$DailyCostSummaryDataImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of DailyCostSummaryData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? title = null,
+    Object? description = null,
+    Object? billingCycle = null,
+    Object? estimateDisclaimer = null,
+  }) {
+    return _then(
+      _$DailyCostSummaryDataImpl(
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: null == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String,
+        billingCycle: null == billingCycle
+            ? _value.billingCycle
+            : billingCycle // ignore: cast_nullable_to_non_nullable
+                  as String,
+        estimateDisclaimer: null == estimateDisclaimer
+            ? _value.estimateDisclaimer
+            : estimateDisclaimer // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$DailyCostSummaryDataImpl implements _DailyCostSummaryData {
+  const _$DailyCostSummaryDataImpl({
+    required this.title,
+    required this.description,
+    required this.billingCycle,
+    required this.estimateDisclaimer,
+  });
+
+  factory _$DailyCostSummaryDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$DailyCostSummaryDataImplFromJson(json);
+
+  @override
+  final String title;
+  @override
+  final String description;
+  @override
+  final String billingCycle;
+  @override
+  final String estimateDisclaimer;
+
+  @override
+  String toString() {
+    return 'DailyCostSummaryData(title: $title, description: $description, billingCycle: $billingCycle, estimateDisclaimer: $estimateDisclaimer)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$DailyCostSummaryDataImpl &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            (identical(other.billingCycle, billingCycle) ||
+                other.billingCycle == billingCycle) &&
+            (identical(other.estimateDisclaimer, estimateDisclaimer) ||
+                other.estimateDisclaimer == estimateDisclaimer));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    title,
+    description,
+    billingCycle,
+    estimateDisclaimer,
+  );
+
+  /// Create a copy of DailyCostSummaryData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$DailyCostSummaryDataImplCopyWith<_$DailyCostSummaryDataImpl>
+  get copyWith =>
+      __$$DailyCostSummaryDataImplCopyWithImpl<_$DailyCostSummaryDataImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$DailyCostSummaryDataImplToJson(this);
+  }
+}
+
+abstract class _DailyCostSummaryData implements DailyCostSummaryData {
+  const factory _DailyCostSummaryData({
+    required final String title,
+    required final String description,
+    required final String billingCycle,
+    required final String estimateDisclaimer,
+  }) = _$DailyCostSummaryDataImpl;
+
+  factory _DailyCostSummaryData.fromJson(Map<String, dynamic> json) =
+      _$DailyCostSummaryDataImpl.fromJson;
+
+  @override
+  String get title;
+  @override
+  String get description;
+  @override
+  String get billingCycle;
+  @override
+  String get estimateDisclaimer;
+
+  /// Create a copy of DailyCostSummaryData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$DailyCostSummaryDataImplCopyWith<_$DailyCostSummaryDataImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+EnergyPricesData _$EnergyPricesDataFromJson(Map<String, dynamic> json) {
+  return _EnergyPricesData.fromJson(json);
+}
+
+/// @nodoc
+mixin _$EnergyPricesData {
+  String get title => throw _privateConstructorUsedError;
+  String get description => throw _privateConstructorUsedError;
+
+  /// Serializes this EnergyPricesData to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of EnergyPricesData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $EnergyPricesDataCopyWith<EnergyPricesData> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $EnergyPricesDataCopyWith<$Res> {
+  factory $EnergyPricesDataCopyWith(
+    EnergyPricesData value,
+    $Res Function(EnergyPricesData) then,
+  ) = _$EnergyPricesDataCopyWithImpl<$Res, EnergyPricesData>;
+  @useResult
+  $Res call({String title, String description});
+}
+
+/// @nodoc
+class _$EnergyPricesDataCopyWithImpl<$Res, $Val extends EnergyPricesData>
+    implements $EnergyPricesDataCopyWith<$Res> {
+  _$EnergyPricesDataCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of EnergyPricesData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? title = null, Object? description = null}) {
+    return _then(
+      _value.copyWith(
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: null == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$EnergyPricesDataImplCopyWith<$Res>
+    implements $EnergyPricesDataCopyWith<$Res> {
+  factory _$$EnergyPricesDataImplCopyWith(
+    _$EnergyPricesDataImpl value,
+    $Res Function(_$EnergyPricesDataImpl) then,
+  ) = __$$EnergyPricesDataImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String title, String description});
+}
+
+/// @nodoc
+class __$$EnergyPricesDataImplCopyWithImpl<$Res>
+    extends _$EnergyPricesDataCopyWithImpl<$Res, _$EnergyPricesDataImpl>
+    implements _$$EnergyPricesDataImplCopyWith<$Res> {
+  __$$EnergyPricesDataImplCopyWithImpl(
+    _$EnergyPricesDataImpl _value,
+    $Res Function(_$EnergyPricesDataImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of EnergyPricesData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? title = null, Object? description = null}) {
+    return _then(
+      _$EnergyPricesDataImpl(
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: null == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$EnergyPricesDataImpl implements _EnergyPricesData {
+  const _$EnergyPricesDataImpl({
+    required this.title,
+    required this.description,
+  });
+
+  factory _$EnergyPricesDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$EnergyPricesDataImplFromJson(json);
+
+  @override
+  final String title;
+  @override
+  final String description;
+
+  @override
+  String toString() {
+    return 'EnergyPricesData(title: $title, description: $description)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$EnergyPricesDataImpl &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.description, description) ||
+                other.description == description));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, title, description);
+
+  /// Create a copy of EnergyPricesData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$EnergyPricesDataImplCopyWith<_$EnergyPricesDataImpl> get copyWith =>
+      __$$EnergyPricesDataImplCopyWithImpl<_$EnergyPricesDataImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$EnergyPricesDataImplToJson(this);
+  }
+}
+
+abstract class _EnergyPricesData implements EnergyPricesData {
+  const factory _EnergyPricesData({
+    required final String title,
+    required final String description,
+  }) = _$EnergyPricesDataImpl;
+
+  factory _EnergyPricesData.fromJson(Map<String, dynamic> json) =
+      _$EnergyPricesDataImpl.fromJson;
+
+  @override
+  String get title;
+  @override
+  String get description;
+
+  /// Create a copy of EnergyPricesData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$EnergyPricesDataImplCopyWith<_$EnergyPricesDataImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+EnergyPricePoint _$EnergyPricePointFromJson(Map<String, dynamic> json) {
+  return _EnergyPricePoint.fromJson(json);
+}
+
+/// @nodoc
+mixin _$EnergyPricePoint {
+  DateTime get date => throw _privateConstructorUsedError;
+  double? get actual => throw _privateConstructorUsedError;
+  double get priceSignal => throw _privateConstructorUsedError;
+
+  /// Serializes this EnergyPricePoint to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of EnergyPricePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $EnergyPricePointCopyWith<EnergyPricePoint> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $EnergyPricePointCopyWith<$Res> {
+  factory $EnergyPricePointCopyWith(
+    EnergyPricePoint value,
+    $Res Function(EnergyPricePoint) then,
+  ) = _$EnergyPricePointCopyWithImpl<$Res, EnergyPricePoint>;
+  @useResult
+  $Res call({DateTime date, double? actual, double priceSignal});
+}
+
+/// @nodoc
+class _$EnergyPricePointCopyWithImpl<$Res, $Val extends EnergyPricePoint>
+    implements $EnergyPricePointCopyWith<$Res> {
+  _$EnergyPricePointCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of EnergyPricePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? date = null,
+    Object? actual = freezed,
+    Object? priceSignal = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            date: null == date
+                ? _value.date
+                : date // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            actual: freezed == actual
+                ? _value.actual
+                : actual // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            priceSignal: null == priceSignal
+                ? _value.priceSignal
+                : priceSignal // ignore: cast_nullable_to_non_nullable
+                      as double,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$EnergyPricePointImplCopyWith<$Res>
+    implements $EnergyPricePointCopyWith<$Res> {
+  factory _$$EnergyPricePointImplCopyWith(
+    _$EnergyPricePointImpl value,
+    $Res Function(_$EnergyPricePointImpl) then,
+  ) = __$$EnergyPricePointImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({DateTime date, double? actual, double priceSignal});
+}
+
+/// @nodoc
+class __$$EnergyPricePointImplCopyWithImpl<$Res>
+    extends _$EnergyPricePointCopyWithImpl<$Res, _$EnergyPricePointImpl>
+    implements _$$EnergyPricePointImplCopyWith<$Res> {
+  __$$EnergyPricePointImplCopyWithImpl(
+    _$EnergyPricePointImpl _value,
+    $Res Function(_$EnergyPricePointImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of EnergyPricePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? date = null,
+    Object? actual = freezed,
+    Object? priceSignal = null,
+  }) {
+    return _then(
+      _$EnergyPricePointImpl(
+        date: null == date
+            ? _value.date
+            : date // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        actual: freezed == actual
+            ? _value.actual
+            : actual // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        priceSignal: null == priceSignal
+            ? _value.priceSignal
+            : priceSignal // ignore: cast_nullable_to_non_nullable
+                  as double,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$EnergyPricePointImpl implements _EnergyPricePoint {
+  const _$EnergyPricePointImpl({
+    required this.date,
+    required this.actual,
+    required this.priceSignal,
+  });
+
+  factory _$EnergyPricePointImpl.fromJson(Map<String, dynamic> json) =>
+      _$$EnergyPricePointImplFromJson(json);
+
+  @override
+  final DateTime date;
+  @override
+  final double? actual;
+  @override
+  final double priceSignal;
+
+  @override
+  String toString() {
+    return 'EnergyPricePoint(date: $date, actual: $actual, priceSignal: $priceSignal)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$EnergyPricePointImpl &&
+            (identical(other.date, date) || other.date == date) &&
+            (identical(other.actual, actual) || other.actual == actual) &&
+            (identical(other.priceSignal, priceSignal) ||
+                other.priceSignal == priceSignal));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, date, actual, priceSignal);
+
+  /// Create a copy of EnergyPricePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$EnergyPricePointImplCopyWith<_$EnergyPricePointImpl> get copyWith =>
+      __$$EnergyPricePointImplCopyWithImpl<_$EnergyPricePointImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$EnergyPricePointImplToJson(this);
+  }
+}
+
+abstract class _EnergyPricePoint implements EnergyPricePoint {
+  const factory _EnergyPricePoint({
+    required final DateTime date,
+    required final double? actual,
+    required final double priceSignal,
+  }) = _$EnergyPricePointImpl;
+
+  factory _EnergyPricePoint.fromJson(Map<String, dynamic> json) =
+      _$EnergyPricePointImpl.fromJson;
+
+  @override
+  DateTime get date;
+  @override
+  double? get actual;
+  @override
+  double get priceSignal;
+
+  /// Create a copy of EnergyPricePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$EnergyPricePointImplCopyWith<_$EnergyPricePointImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}

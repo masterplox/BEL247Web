@@ -521,6 +521,53 @@ class UserSettings with _$UserSettings {
   factory UserSettings.fromJson(Map<String, dynamic> json) => _$UserSettingsFromJson(json);
 }
 
+@freezed
+class DashboardData with _$DashboardData {
+  const factory DashboardData({
+    required DailyCostSummaryData dailyCostSummary,
+    required EnergyPricesData energyPrices,
+  }) = _DashboardData;
+
+  factory DashboardData.fromJson(Map<String, dynamic> json) =>
+      _$DashboardDataFromJson(json);
+}
+
+@freezed
+class DailyCostSummaryData with _$DailyCostSummaryData {
+  const factory DailyCostSummaryData({
+    required String title,
+    required String description,
+    required String billingCycle,
+    required String estimateDisclaimer,
+  }) = _DailyCostSummaryData;
+
+  factory DailyCostSummaryData.fromJson(Map<String, dynamic> json) =>
+      _$DailyCostSummaryDataFromJson(json);
+}
+
+@freezed
+class EnergyPricesData with _$EnergyPricesData {
+  const factory EnergyPricesData({
+    required String title,
+    required String description,
+  }) = _EnergyPricesData;
+
+  factory EnergyPricesData.fromJson(Map<String, dynamic> json) =>
+      _$EnergyPricesDataFromJson(json);
+}
+
+@freezed
+class EnergyPricePoint with _$EnergyPricePoint {
+  const factory EnergyPricePoint({
+    required DateTime date,
+    required double? actual,
+    required double priceSignal,
+  }) = _EnergyPricePoint;
+
+  factory EnergyPricePoint.fromJson(Map<String, dynamic> json) =>
+      _$EnergyPricePointFromJson(json);
+}
+
 /// Validation result class
 class ValidationResult {
 

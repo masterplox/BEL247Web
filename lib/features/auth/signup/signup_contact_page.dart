@@ -26,10 +26,16 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
   @override
   Widget build(BuildContext context) {
     ref.listen(authNotifierProvider, (previous, next) {
-      if (next.otpSent) {
-        context.go('/signup/verify');
+      // Only navigate to verify if OTP was sent AND signup is not completed
+      // This prevents navigation after signup is complete
+      if (next.otpSent && !next.signupCompleted && !(previous?.otpSent ?? false)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.go('/signup/verify');
+          }
+        });
       }
-      if (next.error != null) {
+      if (next.error != null && previous?.error != next.error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(next.error!)),
         );

@@ -5,7 +5,6 @@ import '../../../core/providers/feature_providers.dart'
     show accountSwitcherProvider;
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import '../services/cost_calculation_service.dart';
 import '../state/daily_bill_providers.dart';
 import '../widgets/alert_banner_widget.dart';
 import '../widgets/daily_bill_widget.dart';
@@ -49,32 +48,32 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Bill Breakdown'),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              final currentDate =
-                  ref.read(dailyBillProvider).currentConsumption?.date ??
-                  DateTime.now();
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: currentDate,
-                firstDate: DateTime(currentDate.year - 2, 1, 1),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-              );
-              if (picked != null) {
-                ref
-                    .read(dailyBillProvider.notifier)
-                    .loadDailyConsumption(picked);
-              }
-            },
-            icon: const Icon(Icons.calendar_today),
-            tooltip: 'Choose date',
-          ),
-          IconButton(
-            onPressed: _loadData,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-          ),
+        actions: const [
+          // IconButton(
+          //   onPressed: () async {
+          //     final currentDate =
+          //         ref.read(dailyBillProvider).currentConsumption?.date ??
+          //         DateTime.now();
+          //     final picked = await showDatePicker(
+          //       context: context,
+          //       initialDate: currentDate,
+          //       firstDate: DateTime(currentDate.year - 2, 1, 1),
+          //       lastDate: DateTime.now().add(const Duration(days: 365)),
+          //     );
+          //     if (picked != null) {
+          //       ref
+          //           .read(dailyBillProvider.notifier)
+          //           .loadDailyConsumption(picked);
+          //     }
+          //   },
+          //   icon: const Icon(Icons.calendar_today),
+          //   tooltip: 'Choose date',
+          // ),
+          // IconButton(
+          //   onPressed: _loadData,
+          //   icon: const Icon(Icons.refresh),
+          //   tooltip: 'Refresh',
+          // ),
         ],
       ),
       body: AlertBannerManager(

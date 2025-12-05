@@ -151,7 +151,16 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                         ),
                   ),
                 ),
-                const SizedBox(width: AppTheme.spacing16), // Space for chevron
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Actions',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -256,6 +265,11 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
     final monthName = DateFormat('MMMM').format(period.startDate);
     final year = period.startDate.year;
     return '$monthName $year';
+  }
+
+  String _formatBillingPeriodDetailed(BillingPeriod period) {
+    final formatter = DateFormat('d MMM yyyy');
+    return '${formatter.format(period.startDate)} - ${formatter.format(period.endDate)}';
   }
 
   Widget _buildLedgerRow(BuildContext context, LedgerEntry entry, bool isExpanded, {required bool isMobile}) => Column(
@@ -388,9 +402,33 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                   ),
                 ),
                 // Chevron
-                Icon(
-                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.download_outlined),
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                        tooltip: entry.isPayment ? 'Download Receipt' : 'Download Bill',
+                        onPressed: () {
+                          if (entry.isPayment) {
+                            if (entry.payment != null) {
+                              widget.onDownloadReceipt?.call(entry.payment!);
+                            }
+                          } else {
+                            if (entry.bill != null) {
+                              widget.onDownloadBill?.call(entry.bill!);
+                            }
+                          }
+                        },
+                      ),
+                      Icon(
+                        isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -519,20 +557,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
         _buildDetailRow(context, 'Electric Payment', 'BZ\$${entry.amount.abs().toStringAsFixed(2)}'),
         _buildDetailRow(context, 'Outstanding Balance', 'BZ\$${entry.accountBalance.toStringAsFixed(2)}'),
         const SizedBox(height: AppTheme.spacing16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton.icon(
-              onPressed: () => widget.onDownloadReceipt?.call(payment),
-              icon: const Icon(Icons.download, size: 18),
-              label: const Text('Download Receipt'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -540,6 +564,10 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
   Widget _buildBillDetails(BuildContext context, LedgerEntry entry) {
     final bill = entry.bill;
     if (bill == null) return const SizedBox.shrink();
+
+    // Calculate outstanding balance
+    final outstandingBalance = bill.amounts.previousBalance + bill.amounts.totalAmount - bill.payment.paidAmount;
+    final gst = bill.amounts.taxes * 0.125; // Assuming GST is 12.5% of total taxes. This might need adjustment.
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,44 +579,26 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
               ),
         ),
         const SizedBox(height: AppTheme.spacing16),
+        _buildDetailRow(context, 'Bill Number', bill.billNumber),
+        _buildDetailRow(context, 'Billing Period', _formatBillingPeriodDetailed(bill.billingPeriod)),
+        _buildDetailRow(context, 'Due Date', _formatDate(bill.dueDate)),
+        const Divider(height: AppTheme.spacing24),
+        _buildDetailRow(context, 'Previous Balance', 'BZ\$${bill.amounts.previousBalance.toStringAsFixed(2)}'),
+        _buildDetailRow(context, 'Less Payment', '-BZ\$${bill.payment.paidAmount.toStringAsFixed(2)}'),
         _buildDetailRow(
           context,
-          'Energy Charge',
-          'BZ\$${bill.usage.generationCharge.toStringAsFixed(2)}',
+          'Outstanding Balance',
+          'BZ\$${outstandingBalance.toStringAsFixed(2)}',
         ),
-        _buildDetailRow(
-          context,
-          'Service Fee',
-          'BZ\$${bill.amounts.fees.toStringAsFixed(2)}',
-        ),
-        _buildDetailRow(
-          context,
-          'Taxes',
-          'BZ\$${bill.amounts.taxes.toStringAsFixed(2)}',
-        ),
+        const Divider(height: AppTheme.spacing24),
+        _buildDetailRow(context, 'Consumption', '${bill.usage.kwhUsed.toStringAsFixed(2)} kWh'),
+        _buildDetailRow(context, 'GST 12.5%', 'BZ\$${gst.toStringAsFixed(2)}'),
         const Divider(height: AppTheme.spacing24),
         _buildDetailRow(
           context,
-          'Total Amount',
+          'Total Due',
           'BZ\$${bill.amounts.totalAmount.toStringAsFixed(2)}',
           isTotal: true,
-        ),
-        _buildDetailRow(
-          context,
-          'Due Date',
-          _formatDate(bill.dueDate),
-        ),
-        const SizedBox(height: AppTheme.spacing16),
-        Center(
-          child: ElevatedButton.icon(
-            onPressed: () => widget.onDownloadBill?.call(bill),
-            icon: const Icon(Icons.download, size: 18),
-            label: const Text('Download Bill'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
         ),
       ],
     );

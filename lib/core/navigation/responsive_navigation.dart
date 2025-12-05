@@ -8,6 +8,7 @@ import '../../theme/colors.dart';
 import '../widgets/account_switcher.dart';
 import '../widgets/centered_content.dart';
 import '../widgets/notice_banner.dart';
+import '../widgets/sidebar_nav_item.dart';
 import 'navigation_providers.dart';
 
 /// Responsive navigation widget that shows sidebar on desktop/tablet and bottom nav on mobile
@@ -40,14 +41,8 @@ class ResponsiveNavigation extends ConsumerWidget {
         navigationNotifier: navigationNotifier,
         child: child,
       );
-    } else if (navigation.shouldShowBottomNav) {
-      return _BottomNavLayout(
-        navigation: navigation,
-        navigationNotifier: navigationNotifier,
-        child: child,
-      );
     } else {
-      // Fallback for very small screens
+      // Fallback for smaller screens (mobile)
       return _BottomNavLayout(
         navigation: navigation,
         navigationNotifier: navigationNotifier,
@@ -81,9 +76,9 @@ class _SidebarLayout extends StatelessWidget {
                   navigation: navigation,
                   navigationNotifier: navigationNotifier,
                 ),
-                  Expanded(
-                    child: CenteredContent(child: child),
-                  ),
+                Expanded(
+                  child: CenteredContent(child: child),
+                ),
               ],
             ),
           ),
@@ -109,9 +104,9 @@ class _BottomNavLayout extends StatelessWidget {
       body: Column(
         children: [
           const NoticeBanner(),
-            Expanded(
-              child: CenteredContent(child: child),
-            ),
+          Expanded(
+            child: CenteredContent(child: child),
+          ),
         ],
       ),
       bottomNavigationBar: _BottomNavigationBar(
@@ -233,8 +228,11 @@ class _SidebarMenu extends StatelessWidget {
         final item = NavigationConfig.items[index];
         final isSelected = navigation.selectedIndex == index;
 
-        return _SidebarMenuItem(
-          item: item,
+        return SidebarNavItem(
+          label: item.label,
+          icon: item.icon,
+          activeIcon: item.activeIcon,
+          badge: item.badge,
           isSelected: isSelected,
           isExpanded: navigation.isSidebarOpen,
           onTap: () {
@@ -243,88 +241,6 @@ class _SidebarMenu extends StatelessWidget {
           },
         );
       },
-    );
-}
-
-/// Individual sidebar menu item
-class _SidebarMenuItem extends StatelessWidget {
-  const _SidebarMenuItem({
-    required this.item,
-    required this.isSelected,
-    required this.isExpanded,
-    required this.onTap,
-  });
-
-  final NavigationItem item;
-  final bool isSelected;
-  final bool isExpanded;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing8,
-        vertical: AppTheme.spacing4,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radius8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing12,
-              vertical: AppTheme.spacing12,
-            ),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryLight.withOpacity(0.1) : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppTheme.radius8),
-              border: isSelected
-                  ? Border.all(color: AppColors.primaryLight.withOpacity(0.3))
-                  : null,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isSelected ? (item.activeIcon ?? item.icon) : item.icon,
-                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                  size: 24,
-                ),
-                if (isExpanded) ...[
-                  const SizedBox(width: AppTheme.spacing12),
-                  Expanded(
-                    child: Text(
-                      item.label,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                    ),
-                  ),
-                  if (item.badge != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing8,
-                        vertical: AppTheme.spacing4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(AppTheme.radius12),
-                      ),
-                      child: Text(
-                        item.badge!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
     );
 }
 

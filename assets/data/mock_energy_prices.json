@@ -1,0 +1,54 @@
+{
+  "energyPrices": [
+    {
+      "date": "2025-11-21T00:00:00Z",
+      "actual": 0.401,
+      "priceSignal": 0.364
+    },
+    {
+      "date": "2025-11-22T00:00:00Z",
+      "actual": 0.361,
+      "priceSignal": 0.353
+    },
+    {
+      "date": "2025-11-23T00:00:00Z",
+      "actual": 0.417,
+      "priceSignal": 0.333
+    },
+    {
+      "date": "2025-11-24T00:00:00Z",
+      "actual": 0.308,
+      "priceSignal": 0.327
+    },
+    {
+      "date": "2025-11-25T00:00:00Z",
+      "actual": 0.383,
+      "priceSignal": 0.328
+    },
+    {
+      "date": "2025-11-26T00:00:00Z",
+      "actual": 0.307,
+      "priceSignal": 0.332
+    },
+    {
+      "date": "2025-11-27T00:00:00Z",
+      "actual": 0.329,
+      "priceSignal": 0.353
+    },
+    {
+      "date": "2025-11-28T00:00:00Z",
+      "actual": null,
+      "priceSignal": 0.333
+    },
+    {
+      "date": "2025-11-29T00:00:00Z",
+      "actual": null,
+      "priceSignal": 0.349
+    },
+    {
+      "date": "2025-11-30T00:00:00Z",
+      "actual": null,
+      "priceSignal": 0.364
+    }
+  ]
+}

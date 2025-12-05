@@ -571,3 +571,67 @@ Map<String, dynamic> _$$UserSettingsImplToJson(_$UserSettingsImpl instance) =>
       'analyticsEnabled': instance.analyticsEnabled,
       'crashReportingEnabled': instance.crashReportingEnabled,
     };
+
+_$DashboardDataImpl _$$DashboardDataImplFromJson(Map<String, dynamic> json) =>
+    _$DashboardDataImpl(
+      dailyCostSummary: DailyCostSummaryData.fromJson(
+        json['dailyCostSummary'] as Map<String, dynamic>,
+      ),
+      energyPrices: EnergyPricesData.fromJson(
+        json['energyPrices'] as Map<String, dynamic>,
+      ),
+    );
+
+Map<String, dynamic> _$$DashboardDataImplToJson(_$DashboardDataImpl instance) =>
+    <String, dynamic>{
+      'dailyCostSummary': instance.dailyCostSummary,
+      'energyPrices': instance.energyPrices,
+    };
+
+_$DailyCostSummaryDataImpl _$$DailyCostSummaryDataImplFromJson(
+  Map<String, dynamic> json,
+) => _$DailyCostSummaryDataImpl(
+  title: json['title'] as String,
+  description: json['description'] as String,
+  billingCycle: json['billingCycle'] as String,
+  estimateDisclaimer: json['estimateDisclaimer'] as String,
+);
+
+Map<String, dynamic> _$$DailyCostSummaryDataImplToJson(
+  _$DailyCostSummaryDataImpl instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'description': instance.description,
+  'billingCycle': instance.billingCycle,
+  'estimateDisclaimer': instance.estimateDisclaimer,
+};
+
+_$EnergyPricesDataImpl _$$EnergyPricesDataImplFromJson(
+  Map<String, dynamic> json,
+) => _$EnergyPricesDataImpl(
+  title: json['title'] as String,
+  description: json['description'] as String,
+);
+
+Map<String, dynamic> _$$EnergyPricesDataImplToJson(
+  _$EnergyPricesDataImpl instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'description': instance.description,
+};
+
+_$EnergyPricePointImpl _$$EnergyPricePointImplFromJson(
+  Map<String, dynamic> json,
+) => _$EnergyPricePointImpl(
+  date: DateTime.parse(json['date'] as String),
+  actual: (json['actual'] as num?)?.toDouble(),
+  priceSignal: (json['priceSignal'] as num).toDouble(),
+);
+
+Map<String, dynamic> _$$EnergyPricePointImplToJson(
+  _$EnergyPricePointImpl instance,
+) => <String, dynamic>{
+  'date': instance.date.toIso8601String(),
+  'actual': instance.actual,
+  'priceSignal': instance.priceSignal,
+};

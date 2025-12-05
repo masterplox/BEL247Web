@@ -76,6 +76,7 @@ class AuthState with _$AuthState {
     @Default(false) bool otpSent,
     String? otpContact,
     @Default(false) bool otpVerified,
+    @Default(false) bool signupCompleted,
   }) = _AuthState;
 
   factory AuthState.fromJson(Map<String, dynamic> json) =>

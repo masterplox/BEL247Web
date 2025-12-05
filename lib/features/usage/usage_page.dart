@@ -14,19 +14,19 @@ class UsagePage extends ConsumerWidget {
           centerTitle: true,
           backgroundColor: AppColors.surface,
           elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                // TODO: Implement refresh functionality
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () {
-                // TODO: Implement export functionality
-              },
-            ),
+          actions: const [
+            // IconButton(
+            //   icon: const Icon(Icons.refresh),
+            //   onPressed: () {
+            //     // TODO: Implement refresh functionality
+            //   },
+            // ),
+            // IconButton(
+            //   icon: const Icon(Icons.download),
+            //   onPressed: () {
+            //     // TODO: Implement export functionality
+            //   },
+            // ),
           ],
         ),
         body: const ConsumptionLayout(),

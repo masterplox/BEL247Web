@@ -6,19 +6,24 @@ import '../../features/auth/login_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/signup/signup_contact_page.dart';
 import '../../features/auth/signup/signup_credentials_page.dart';
+import '../../features/auth/signup/signup_success_page.dart';
 import '../../features/auth/signup/signup_verify_otp_page.dart';
 import '../../features/bills/bills_page.dart';
 import '../../features/daily_bill/pages/daily_bill_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/usage/usage_page.dart';
-import '../navigation/navigation_wrapper.dart';
+import '../navigation/responsive_navigation.dart';
 import '../services/url_encryption_service.dart';
 import '../utils/logger.dart';
 
 /// Router configuration with encrypted URL parameters
 class AppRouter {
+  static final _rootNavigatorKey = GlobalKey<NavigatorState>();
+  static final _shellNavigatorKey = GlobalKey<NavigatorState>();
+
   static final GoRouter _router = GoRouter(
     initialLocation: '/login',
+    navigatorKey: _rootNavigatorKey,
     debugLogDiagnostics: true,
     
     // Global redirect function for authentication
@@ -78,95 +83,88 @@ class AppRouter {
             name: 'signup-credentials',
             builder: (context, state) => const SignupCredentialsPage(),
           ),
+          GoRoute(
+            path: 'success',
+            name: 'signup-success',
+            builder: (context, state) {
+              final args = state.extra as Map<String, String>?;
+              if (args == null || !args.containsKey('email') || !args.containsKey('password')) {
+                // Handle error case, maybe redirect to login
+                return const Scaffold(
+                  body: Center(
+                    child: Text('Error: Missing credentials.'),
+                  ),
+                );
+              }
+              return SignupSuccessPage(
+                email: args['email']!,
+                password: args['password']!,
+              );
+            },
+          ),
         ],
       ),
       
-      // Protected routes (wrapped with NavigationWrapper for sidebar/bottom nav)
-      GoRoute(
-        path: '/dashboard',
-        name: 'dashboard',
-        builder: (context, state) => const NavigationWrapper(
-          child: DashboardPage(),
-        ),
-      ),
-      
-      GoRoute(
-        path: '/bills',
-        name: 'bills',
-        builder: (context, state) => const NavigationWrapper(
-          child: BillsPage(),
-        ),
-      ),
-      
-      GoRoute(
-        path: '/bills/:billId',
-        name: 'bill-detail',
-        builder: (context, state) {
-          final billId = state.pathParameters['billId'];
-          final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
-          
-          Logger.debug('Navigating to bill detail: $billId');
-          Logger.debug('Encrypted params: $encryptedParams');
-          
-          return const NavigationWrapper(
-            child: BillsPage(),
-          );
-        },
-      ),
-      
-      GoRoute(
-        path: '/usage',
-        name: 'usage',
-        builder: (context, state) => const NavigationWrapper(
-          child: UsagePage(),
-        ),
-      ),
-      
-      GoRoute(
-        path: '/usage/:period',
-        name: 'usage-period',
-        builder: (context, state) {
-          final period = state.pathParameters['period'];
-          final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
-          
-          Logger.debug('Navigating to usage period: $period');
-          Logger.debug('Encrypted params: $encryptedParams');
-          
-          return const NavigationWrapper(
-            child: UsagePage(),
-          );
-        },
-      ),
-      
-      // GoRoute(
-      //   path: '/daily-bill',
-      //   name: 'daily-bill',
-      //   builder: (context, state) {
-      //     final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
-          
-      //     Logger.debug('Navigating to daily bill');
-      //     Logger.debug('Encrypted params: $encryptedParams');
-          
-      //     return const NavigationWrapper(
-      //       child: DailyBillPage(),
-      //     );
-      //   },
-      // ),
-      
-      GoRoute(
-        path: '/daily-bill/:date',
-        name: 'daily-bill-date',
-        builder: (context, state) {
-          final date = state.pathParameters['date'];
-          final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
-          
-          Logger.debug('Navigating to daily bill for date: $date');
-          Logger.debug('Encrypted params: $encryptedParams');
-          
-          return const NavigationWrapper(
-            child: DailyBillPage(),
-          );
-        },
+      // Protected routes (wrapped with a shell route for persistent navigation)
+      ShellRoute(
+        navigatorKey: _shellNavigatorKey,
+        builder: (context, state, child) => ResponsiveNavigation(child: child),
+        routes: [
+          GoRoute(
+            path: '/dashboard',
+            name: 'dashboard',
+            builder: (context, state) => const DashboardPage(),
+          ),
+          GoRoute(
+            path: '/bills',
+            name: 'bills',
+            builder: (context, state) => const BillsPage(),
+          ),
+          GoRoute(
+            path: '/bills/:billId',
+            name: 'bill-detail',
+            builder: (context, state) {
+              final billId = state.pathParameters['billId'];
+              final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
+              
+              Logger.debug('Navigating to bill detail: $billId');
+              Logger.debug('Encrypted params: $encryptedParams');
+              
+              return const BillsPage();
+            },
+          ),
+          GoRoute(
+            path: '/usage',
+            name: 'usage',
+            builder: (context, state) => const UsagePage(),
+          ),
+          GoRoute(
+            path: '/usage/:period',
+            name: 'usage-period',
+            builder: (context, state) {
+              final period = state.pathParameters['period'];
+              final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
+              
+              Logger.debug('Navigating to usage period: $period');
+              Logger.debug('Encrypted params: $encryptedParams');
+              
+              return const UsagePage();
+            },
+          ),
+          GoRoute(
+            path: '/daily-bill/:date',
+            name: 'daily-bill-date',
+            builder: (context, state) {
+              final date = state.pathParameters['date'];
+              final encryptedParams = UrlEncryptionService.instance.extractEncryptedParams(state);
+              
+              Logger.debug('Navigating to daily bill for date: $date');
+              Logger.debug('Encrypted params: $encryptedParams');
+              
+              return const DailyBillPage();
+            },
+          ),
+        ],
       ),
       
       // Redirect routes for encrypted navigation
@@ -180,28 +178,19 @@ class AppRouter {
           Logger.debug('Secure route: $route');
           Logger.debug('Encrypted params: $encryptedParams');
           
-          // Redirect to appropriate route based on the secure route
+          // This part of the logic might need to be re-evaluated with ShellRoute
+          // For now, returning the pages directly.
           switch (route) {
             case 'dashboard':
-              return const NavigationWrapper(
-                child: DashboardPage(),
-              );
+              return const DashboardPage();
             case 'bills':
-              return const NavigationWrapper(
-                child: BillsPage(),
-              );
+              return const BillsPage();
             case 'usage':
-              return const NavigationWrapper(
-                child: UsagePage(),
-              );
+              return const UsagePage();
             case 'daily-bill':
-              return const NavigationWrapper(
-                child: DailyBillPage(),
-              );
+              return const DailyBillPage();
             default:
-              return const NavigationWrapper(
-                child: DashboardPage(),
-              );
+              return const DashboardPage();
           }
         },
       ),

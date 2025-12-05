@@ -131,9 +131,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         Logger.info('Signup successful for: $email');
         state = state.copyWith(
           isLoading: false,
-          isAuthenticated: true,
-          userSession: response.data!.userSession,
-          lastRefresh: DateTime.now(),
+          signupCompleted: true,
+          // We don't authenticate immediately, we wait for the user to click through the success page
+          // isAuthenticated: true, 
+          // userSession: response.data!.userSession,
+          // lastRefresh: DateTime.now(),
           error: null,
         );
       } else {
@@ -360,6 +362,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Reset OTP sent state
   void resetOtpState() {
     state = state.copyWith(otpSent: false, otpContact: null, otpVerified: false);
+  }
+
+  /// Reset all signup-related state (use this when signup flow is complete)
+  void resetSignupState() {
+    state = state.copyWith(
+      otpSent: false,
+      otpContact: null,
+      otpVerified: false,
+      signupCompleted: false,
+    );
   }
 
   /// Check if user is authenticated

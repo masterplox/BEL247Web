@@ -1,12 +1,14 @@
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/logger.dart';
 import '../../models/bill.dart';
+import '../../models/consumption.dart';
 import '../../repositories/bill_repository.dart';
 import 'data_loader.dart';
 
 /// Mock implementation of BillRepository using local JSON data
 class MockBillRepository implements BillRepository {
   static const String _billsDataPath = 'assets/data/mock_bills.json';
+  static const String _consumptionDataPath = 'assets/data/mock_consumption.json';
 
   @override
   Future<ApiResponse<BillsResponse>> getBills(String userId) async {
@@ -209,6 +211,33 @@ class MockBillRepository implements BillRepository {
     } catch (e, stackTrace) {
       Logger.error('MockBillRepository: Failed to get upcoming bills', error: e, stackTrace: stackTrace);
       return ApiResponse.error('Failed to retrieve upcoming bills: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<List<MonthlyConsumption>>> getYearlyConsumption(String userId, int year) async {
+    try {
+      Logger.info('MockBillRepository: Getting yearly consumption for user: $userId, year: $year');
+
+      final Map<String, dynamic> consumptionData = await DataLoader.loadJsonFromAssets(_consumptionDataPath);
+      final Map<String, dynamic> monthlyDataByYear =
+          consumptionData['monthlyConsumption'] as Map<String, dynamic>;
+
+      final String yearString = year.toString();
+      if (monthlyDataByYear.containsKey(yearString)) {
+        final List<dynamic> monthlyData = monthlyDataByYear[yearString] as List<dynamic>;
+        final monthlyConsumptionList =
+            monthlyData.map((item) => MonthlyConsumption.fromJson(item as Map<String, dynamic>)).toList();
+
+        Logger.info('MockBillRepository: Successfully retrieved ${monthlyConsumptionList.length} months of consumption data');
+        return ApiResponse.success(monthlyConsumptionList);
+      } else {
+        Logger.info('MockBillRepository: No monthly consumption data found for year $year');
+        return ApiResponse.success([]); // Return empty list if no data for the year
+      }
+    } catch (e, stackTrace) {
+      Logger.error('MockBillRepository: Failed to get yearly consumption', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Failed to retrieve yearly consumption: ${e.toString()}');
     }
   }
 

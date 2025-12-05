@@ -92,60 +92,317 @@
         {"hour": 22, "kwh": 1.0, "cost": 0.12},
         {"hour": 23, "kwh": 0.7, "cost": 0.08}
       ]
+    },
+    {
+      "date": "2023-01-27T00:00:00Z",
+      "totalKwh": 13.5,
+      "cost": 1.62,
+      "hourlyBreakdown": [
+        {"hour": 0, "kwh": 0.3, "cost": 0.04},
+        {"hour": 1, "kwh": 0.2, "cost": 0.02},
+        {"hour": 2, "kwh": 0.2, "cost": 0.02},
+        {"hour": 3, "kwh": 0.3, "cost": 0.04},
+        {"hour": 4, "kwh": 0.4, "cost": 0.05},
+        {"hour": 5, "kwh": 0.5, "cost": 0.06},
+        {"hour": 6, "kwh": 0.7, "cost": 0.08},
+        {"hour": 7, "kwh": 1.1, "cost": 0.13},
+        {"hour": 8, "kwh": 1.4, "cost": 0.17},
+        {"hour": 9, "kwh": 1.2, "cost": 0.14},
+        {"hour": 10, "kwh": 1.0, "cost": 0.12},
+        {"hour": 11, "kwh": 0.9, "cost": 0.11},
+        {"hour": 12, "kwh": 1.1, "cost": 0.13},
+        {"hour": 13, "kwh": 1.3, "cost": 0.16},
+        {"hour": 14, "kwh": 1.5, "cost": 0.18},
+        {"hour": 15, "kwh": 1.7, "cost": 0.20},
+        {"hour": 16, "kwh": 1.6, "cost": 0.19},
+        {"hour": 17, "kwh": 1.8, "cost": 0.22},
+        {"hour": 18, "kwh": 2.0, "cost": 0.24},
+        {"hour": 19, "kwh": 1.7, "cost": 0.20},
+        {"hour": 20, "kwh": 1.4, "cost": 0.17},
+        {"hour": 21, "kwh": 1.1, "cost": 0.13},
+        {"hour": 22, "kwh": 0.8, "cost": 0.10},
+        {"hour": 23, "kwh": 0.5, "cost": 0.06}
+      ]
     }
   ],
-  "monthlyConsumption": [
-    {
-      "month": "2024-01",
-      "totalKwh": 456.7,
-      "totalCost": 89.75,
-      "averageDaily": 15.2,
-      "peakDay": "2024-01-15",
-      "peakKwh": 18.3,
-      "lowestDay": "2024-01-03",
-      "lowestKwh": 12.1
-    },
-    {
-      "month": "2023-12",
-      "totalKwh": 523.4,
-      "totalCost": 98.50,
-      "averageDaily": 16.9,
-      "peakDay": "2023-12-22",
-      "peakKwh": 22.1,
-      "lowestDay": "2023-12-05",
-      "lowestKwh": 11.8
-    },
-    {
-      "month": "2023-11",
-      "totalKwh": 412.3,
-      "totalCost": 76.25,
-      "averageDaily": 13.7,
-      "peakDay": "2023-11-18",
-      "peakKwh": 16.9,
-      "lowestDay": "2023-11-02",
-      "lowestKwh": 9.2
-    },
-    {
-      "month": "2023-10",
-      "totalKwh": 678.9,
-      "totalCost": 112.40,
-      "averageDaily": 21.9,
-      "peakDay": "2023-10-15",
-      "peakKwh": 28.4,
-      "lowestDay": "2023-10-03",
-      "lowestKwh": 15.6
-    },
-    {
-      "month": "2023-09",
-      "totalKwh": 789.2,
-      "totalCost": 134.85,
-      "averageDaily": 26.3,
-      "peakDay": "2023-09-12",
-      "peakKwh": 32.1,
-      "lowestDay": "2023-09-28",
-      "lowestKwh": 18.7
-    }
-  ],
+  "monthlyConsumption": {
+    "2025": [
+      {
+        "month": "2025-01",
+        "totalKwh": 470.1,
+        "totalCost": 92.5,
+        "averageDaily": 15.2,
+        "peakDay": "2025-01-18",
+        "peakKwh": 18.9,
+        "lowestDay": "2025-01-06",
+        "lowestKwh": 12.5
+      },
+      {
+        "month": "2025-02",
+        "totalKwh": 435.8,
+        "totalCost": 85.3,
+        "averageDaily": 15,
+        "peakDay": "2025-02-15",
+        "peakKwh": 18.1,
+        "lowestDay": "2025-02-03",
+        "lowestKwh": 11.9
+      },
+      {
+        "month": "2025-03",
+        "totalKwh": 495.0,
+        "totalCost": 98.0,
+        "averageDaily": 16.0,
+        "peakDay": "2025-03-20",
+        "peakKwh": 20.0,
+        "lowestDay": "2025-03-05",
+        "lowestKwh": 13.0
+      },
+      {
+        "month": "2025-04",
+        "totalKwh": 525.0,
+        "totalCost": 104.0,
+        "averageDaily": 17.5,
+        "peakDay": "2025-04-18",
+        "peakKwh": 22.0,
+        "lowestDay": "2025-04-02",
+        "lowestKwh": 14.0
+      },
+      {
+        "month": "2025-05",
+        "totalKwh": 560.8,
+        "totalCost": 110.5,
+        "averageDaily": 18.1,
+        "peakDay": "2025-05-22",
+        "peakKwh": 23.5,
+        "lowestDay": "2025-05-01",
+        "lowestKwh": 15.0
+      },
+      {
+        "month": "2025-06",
+        "totalKwh": 600.2,
+        "totalCost": 118.0,
+        "averageDaily": 20.0,
+        "peakDay": "2025-06-15",
+        "peakKwh": 25.0,
+        "lowestDay": "2025-06-04",
+        "lowestKwh": 16.0
+      },
+      {
+        "month": "2025-07",
+        "totalKwh": 640.5,
+        "totalCost": 126.0,
+        "averageDaily": 20.6,
+        "peakDay": "2025-07-19",
+        "peakKwh": 26.5,
+        "lowestDay": "2025-07-06",
+        "lowestKwh": 17.2
+      },
+      {
+        "month": "2025-08",
+        "totalKwh": 670.0,
+        "totalCost": 132.0,
+        "averageDaily": 21.6,
+        "peakDay": "2025-08-14",
+        "peakKwh": 28.0,
+        "lowestDay": "2025-08-02",
+        "lowestKwh": 18.0
+      },
+      {
+        "month": "2025-09",
+        "totalKwh": 630.7,
+        "totalCost": 124.5,
+        "averageDaily": 21.0,
+        "peakDay": "2025-09-08",
+        "peakKwh": 26.0,
+        "lowestDay": "2025-09-23",
+        "lowestKwh": 17.5
+      },
+      {
+        "month": "2025-10",
+        "totalKwh": 560.0,
+        "totalCost": 110.0,
+        "averageDaily": 18.1,
+        "peakDay": "2025-10-12",
+        "peakKwh": 23.0,
+        "lowestDay": "2025-10-28",
+        "lowestKwh": 15.5
+      },
+      {
+        "month": "2025-11",
+        "totalKwh": 510.5,
+        "totalCost": 101.0,
+        "averageDaily": 17.0,
+        "peakDay": "2025-11-20",
+        "peakKwh": 21.0,
+        "lowestDay": "2025-11-03",
+        "lowestKwh": 14.2
+      }
+    ],
+    "2024": [
+      {
+        "month": "2024-01",
+        "totalKwh": 456.7,
+        "totalCost": 89.75,
+        "averageDaily": 15.2,
+        "peakDay": "2024-01-15",
+        "peakKwh": 18.3,
+        "lowestDay": "2024-01-03",
+        "lowestKwh": 12.1
+      },
+      {
+        "month": "2024-02",
+        "totalKwh": 420.5,
+        "totalCost": 82.1,
+        "averageDaily": 14.5,
+        "peakDay": "2024-02-18",
+        "peakKwh": 17.5,
+        "lowestDay": "2024-02-05",
+        "lowestKwh": 11.2
+      },
+      {
+        "month": "2024-03",
+        "totalKwh": 480.2,
+        "totalCost": 94.5,
+        "averageDaily": 15.5,
+        "peakDay": "2024-03-22",
+        "peakKwh": 19.1,
+        "lowestDay": "2024-03-09",
+        "lowestKwh": 12.8
+      },
+      {
+        "month": "2024-04",
+        "totalKwh": 510.8,
+        "totalCost": 100.5,
+        "averageDaily": 17.0,
+        "peakDay": "2024-04-25",
+        "peakKwh": 20.5,
+        "lowestDay": "2024-04-08",
+        "lowestKwh": 13.5
+      },
+      {
+        "month": "2024-05",
+        "totalKwh": 550.1,
+        "totalCost": 108.0,
+        "averageDaily": 17.7,
+        "peakDay": "2024-05-20",
+        "peakKwh": 21.8,
+        "lowestDay": "2024-05-02",
+        "lowestKwh": 14.1
+      },
+      {
+        "month": "2024-06",
+        "totalKwh": 580.9,
+        "totalCost": 115.3,
+        "averageDaily": 19.3,
+        "peakDay": "2024-06-18",
+        "peakKwh": 24.0,
+        "lowestDay": "2024-06-03",
+        "lowestKwh": 15.7
+      },
+      {
+        "month": "2024-07",
+        "totalKwh": 620.0,
+        "totalCost": 123.5,
+        "averageDaily": 20.0,
+        "peakDay": "2024-07-22",
+        "peakKwh": 25.5,
+        "lowestDay": "2024-07-07",
+        "lowestKwh": 16.2
+      },
+      {
+        "month": "2024-08",
+        "totalKwh": 650.5,
+        "totalCost": 129.8,
+        "averageDaily": 21.0,
+        "peakDay": "2024-08-15",
+        "peakKwh": 26.8,
+        "lowestDay": "2024-08-01",
+        "lowestKwh": 17.0
+      },
+      {
+        "month": "2024-09",
+        "totalKwh": 610.3,
+        "totalCost": 121.0,
+        "averageDaily": 20.3,
+        "peakDay": "2024-09-05",
+        "peakKwh": 25.1,
+        "lowestDay": "2024-09-21",
+        "lowestKwh": 16.5
+      },
+      {
+        "month": "2024-10",
+        "totalKwh": 540.7,
+        "totalCost": 107.5,
+        "averageDaily": 17.4,
+        "peakDay": "2024-10-10",
+        "peakKwh": 22.3,
+        "lowestDay": "2024-10-25",
+        "lowestKwh": 14.8
+      },
+      {
+        "month": "2024-11",
+        "totalKwh": 490.2,
+        "totalCost": 97.0,
+        "averageDaily": 16.3,
+        "peakDay": "2024-11-19",
+        "peakKwh": 20.0,
+        "lowestDay": "2024-11-04",
+        "lowestKwh": 13.1
+      },
+      {
+        "month": "2024-12",
+        "totalKwh": 515.6,
+        "totalCost": 102.5,
+        "averageDaily": 16.6,
+        "peakDay": "2024-12-24",
+        "peakKwh": 21.5,
+        "lowestDay": "2024-12-08",
+        "lowestKwh": 12.9
+      }
+    ],
+    "2023": [
+      {
+        "month": "2023-12",
+        "totalKwh": 523.4,
+        "totalCost": 98.5,
+        "averageDaily": 16.9,
+        "peakDay": "2023-12-22",
+        "peakKwh": 22.1,
+        "lowestDay": "2023-12-05",
+        "lowestKwh": 11.8
+      },
+      {
+        "month": "2023-11",
+        "totalKwh": 412.3,
+        "totalCost": 76.25,
+        "averageDaily": 13.7,
+        "peakDay": "2023-11-18",
+        "peakKwh": 16.9,
+        "lowestDay": "2023-11-02",
+        "lowestKwh": 9.2
+      },
+      {
+        "month": "2023-10",
+        "totalKwh": 678.9,
+        "totalCost": 112.4,
+        "averageDaily": 21.9,
+        "peakDay": "2023-10-15",
+        "peakKwh": 28.4,
+        "lowestDay": "2023-10-03",
+        "lowestKwh": 15.6
+      },
+      {
+        "month": "2023-09",
+        "totalKwh": 789.2,
+        "totalCost": 134.85,
+        "averageDaily": 26.3,
+        "peakDay": "2023-09-12",
+        "peakKwh": 32.1,
+        "lowestDay": "2023-09-28",
+        "lowestKwh": 18.7
+      }
+    ]
+  },
   "yearlyConsumption": [
     {
       "year": 2024,

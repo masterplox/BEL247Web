@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/widgets/notice_banner_helper.dart';
 import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../theme/app_theme.dart';
@@ -9,7 +8,7 @@ import '../../../theme/colors.dart';
 import 'state/dashboard_providers.dart';
 import 'widgets/account_balance_widget.dart';
 import 'widgets/daily_cost_summary_widget.dart';
-import 'widgets/energy_prices_widget.dart';
+import 'widgets/energy_price_signal_dashboard.dart';
 import 'widgets/energy_usage_overview_widget.dart';
 
 class DashboardPage extends ConsumerWidget {
@@ -22,33 +21,33 @@ class DashboardPage extends ConsumerWidget {
           centerTitle: true,
           backgroundColor: AppColors.surface,
           elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-            ),
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {},
-            ),
-            // Test button for notice banner - Remove this after testing
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () {
-                if (NoticeBannerHelper.isVisible(ref)) {
-                  NoticeBannerHelper.hide(ref);
-                } else {
-                  NoticeBannerHelper.showMaintenanceNotice(
-                    ref,
-                    location: 'Belize City area',
-                    date: DateTime(2025, 10, 5),
-                    startTime: const TimeOfDay(hour: 6, minute: 0),
-                    endTime: const TimeOfDay(hour: 10, minute: 0),
-                  );
-                }
-              },
-              tooltip: 'Toggle Notice Banner',
-            ),
+          actions: const [
+            // IconButton(
+            //   icon: const Icon(Icons.refresh),
+            //   onPressed: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
+            // ),
+            // IconButton(
+            //   icon: const Icon(Icons.notifications_outlined),
+            //   onPressed: () {},
+            // ),
+            // // Test button for notice banner - Remove this after testing
+            // IconButton(
+            //   icon: const Icon(Icons.info_outline),
+            //   onPressed: () {
+            //     if (NoticeBannerHelper.isVisible(ref)) {
+            //       NoticeBannerHelper.hide(ref);
+            //     } else {
+            //       NoticeBannerHelper.showMaintenanceNotice(
+            //         ref,
+            //         location: 'Belize City area',
+            //         date: DateTime(2025, 10, 5),
+            //         startTime: const TimeOfDay(hour: 6, minute: 0),
+            //         endTime: const TimeOfDay(hour: 10, minute: 0),
+            //       );
+            //     }
+            //   },
+            //   tooltip: 'Toggle Notice Banner',
+            // ),
           ],
         ),
         body: Container(
@@ -203,8 +202,11 @@ class DailyCostSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(dailyConsumptionProvider);
-    return data.when(
+    final consumptionData = ref.watch(dailyConsumptionProvider);
+    final dashboardData = ref.watch(dashboardDataProvider);
+    final sevenDayData = ref.watch(sevenDayConsumptionProvider);
+
+    return dashboardData.when(
       loading: () => DailyCostSummaryWidget(
         consumption: DailyConsumption(
           date: DateTime.now(),
@@ -222,10 +224,44 @@ class DailyCostSummaryCard extends ConsumerWidget {
           hourlyBreakdown: [],
         ),
       ),
-      data: (consumption) => DailyCostSummaryWidget(
-        consumption: consumption,
-        onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-      ),
+      data: (dashboard) => consumptionData.when(
+          loading: () => DailyCostSummaryWidget(
+            consumption: DailyConsumption(
+              date: DateTime.now(),
+              totalKwh: 0,
+              cost: 0,
+              hourlyBreakdown: [],
+            ),
+            dashboardData: dashboard,
+            isLoading: true,
+          ),
+          error: (e, st) => DailyCostSummaryWidget(
+            consumption: DailyConsumption(
+              date: DateTime.now(),
+              totalKwh: 0,
+              cost: 0,
+              hourlyBreakdown: [],
+            ),
+            dashboardData: dashboard,
+          ),
+          data: (consumption) => sevenDayData.when(
+            loading: () => DailyCostSummaryWidget(
+              consumption: consumption,
+              dashboardData: dashboard,
+              isLoading: true,
+            ),
+            error: (e, st) => DailyCostSummaryWidget(
+              consumption: consumption,
+              dashboardData: dashboard,
+            ),
+            data: (sevenDay) => DailyCostSummaryWidget(
+              consumption: consumption,
+              dashboardData: dashboard,
+              sevenDayConsumption: sevenDay,
+              onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
+            ),
+          ),
+        ),
     );
   }
 }
@@ -267,13 +303,19 @@ class EnergyPricesCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(dailyConsumptionProvider);
+    final data = ref.watch(energyPricesProvider);
     return data.when(
-      loading: () => const EnergyPricesWidget(
+      loading: () => const EnergyPriceSignalDashboard(
+        prices: null,
         isLoading: true,
       ),
-      error: (e, st) => const EnergyPricesWidget(),
-      data: (consumption) => EnergyPricesWidget(
+      error: (e, st) => const EnergyPriceSignalDashboard(
+        prices: null,
+        isLoading: false,
+      ),
+      data: (prices) => EnergyPriceSignalDashboard(
+        prices: prices,
+        isLoading: false,
         onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
       ),
     );

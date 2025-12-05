@@ -27,13 +27,24 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
   @override
   Widget build(BuildContext context) {
     ref.listen(authNotifierProvider, (previous, next) {
-      if (next.otpVerified) {
-        context.go('/signup/credentials');
+      // Navigate only when otpVerified becomes true from false
+      if (next.otpVerified && !(previous?.otpVerified ?? false)) {
+        // Use a post-frame callback to ensure navigation happens after build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.go('/signup/credentials');
+          }
+        });
       }
-      if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!)),
-        );
+      // Show error only when a new error occurs
+      if (next.error != null && previous?.error != next.error) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(next.error!)),
+            );
+          }
+        });
       }
     });
 
@@ -131,7 +142,7 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
                   validator: (s) => s == '12345' ? null : 'Pin is incorrect',
                   pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
                   showCursor: true,
-                  onCompleted: print,
+                  onCompleted: (_) => _handleVerify(),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -176,8 +187,28 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
       );
 
   void _handleVerify() {
-    if (_formKey.currentState!.validate()) {
-      ref.read(authNotifierProvider.notifier).verifyOtp(_pinController.text);
+    final formState = _formKey.currentState;
+    if (formState == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Form not initialized')),
+      );
+      return;
+    }
+
+    if (formState.validate()) {
+      final otp = _pinController.text.trim();
+      if (otp.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter the verification code')),
+        );
+        return;
+      }
+      ref.read(authNotifierProvider.notifier).verifyOtp(otp);
+    } else {
+      // Validation failed - the error should already be shown by the validator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid verification code')),
+      );
     }
   }
 }
