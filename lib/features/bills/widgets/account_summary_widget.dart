@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_line_chart.dart';
@@ -344,6 +345,12 @@ class AccountSummaryWidget extends ConsumerWidget {
       }
     }
 
+    // Create month abbreviations array
+    final monthAbbreviations = List.generate(12, (index) {
+      final date = DateTime(2024, index + 1, 1);
+      return DateFormat('MMM').format(date);
+    });
+
     final lineChartData = LineChartData(
       gridData: const FlGridData(show: false),
       titlesData: FlTitlesData(
@@ -351,23 +358,23 @@ class AccountSummaryWidget extends ConsumerWidget {
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 22,
+            reservedSize: 30,
+            interval: 1,
             getTitlesWidget: (value, meta) {
-              String text;
-              switch (value.toInt()) {
-                case 0:
-                  text = 'Jan';
-                  break;
-                case 5:
-                  text = 'Jun';
-                  break;
-                case 11:
-                  text = 'Dec';
-                  break;
-                default:
-                  return Container();
+              final index = value.toInt();
+              if (index >= 0 && index < monthAbbreviations.length) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: AppText(
+                      monthAbbreviations[index],
+                      style: AppTextStyle.caption,
+                    ),
+                  ),
+                );
               }
-              return AppText(text, style: AppTextStyle.caption); // Assuming caption is small enough
+              return const SizedBox.shrink();
             },
           ),
           axisNameWidget: const AppText('Months', style: AppTextStyle.caption),

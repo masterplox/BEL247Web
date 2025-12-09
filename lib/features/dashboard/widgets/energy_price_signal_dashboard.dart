@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_line_chart.dart';
 import '../../../core/widgets/app_text.dart';
 import '../../../data/models/api_dtos.dart';
 import '../../../theme/app_theme.dart';
@@ -233,157 +234,13 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
           const SizedBox(height: AppTheme.spacing16),
           SizedBox(
             height: isMobile ? 250 : isTablet ? 300 : 350,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  drawHorizontalLine: true,
-                  horizontalInterval: (maxY - minY) / 4,
-                  getDrawingHorizontalLine: (value) => const FlLine(
-                    color: AppColors.border,
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index >= 0 && index < dates.length) {
-                          final date = dates[index];
-                          final formatter = DateFormat('EEE\nd MMM');
-                          return SideTitleWidget(
-                            axisSide: meta.axisSide,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: AppText(
-                                formatter.format(date),
-                                style: AppTextStyle.caption,
-                                color: index == todayIndex
-                                    ? AppColors.primary
-                                    : AppColors.textSecondary,
-                                fontWeight: index == todayIndex
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                      interval: (maxY - minY) / 4,
-                      getTitlesWidget: (value, meta) => AppText(
-                        value.toStringAsFixed(2),
-                        style: AppTextStyle.caption,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border.all(color: AppColors.border),
-                ),
-                minX: 0,
-                maxX: (prices.length - 1).toDouble(),
+            child: AppLineChart(
+              lineChartData: _buildPriceTrendChartData(
+                prices: prices,
+                dates: dates,
                 minY: minY,
                 maxY: maxY,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: prices.asMap().entries.map((entry) => FlSpot(entry.key.toDouble(), entry.value)).toList(),
-                    isCurved: true,
-                    color: AppColors.primary,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        final isPeak = _isPeakPoint(prices, index);
-                        final isMin = _isMinPoint(prices, index);
-                        return FlDotCirclePainter(
-                          radius: (isPeak || isMin) ? 5 : 3,
-                          color: (isPeak || isMin)
-                              ? AppColors.peak
-                              : AppColors.primary,
-                          strokeWidth: 2,
-                          strokeColor: AppColors.white,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          _getPriceColor(prices.last).withOpacity(0.3),
-                          _getPriceColor(prices.first).withOpacity(0.1),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => AppColors.grey800,
-                    tooltipRoundedRadius: AppTheme.radius8,
-                    tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
-                    tooltipMargin: 8,
-                    getTooltipItems: (touchedSpots) => touchedSpots.map((touchedSpot) {
-                        final index = touchedSpot.x.toInt();
-                        if (index >= 0 && index < prices.length) {
-                          return LineTooltipItem(
-                            'BZ\$${prices[index].toStringAsFixed(3)}\n${DateFormat('MMM d').format(dates[index])}',
-                            const TextStyle(
-                              color: AppColors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          );
-                        }
-                        return null;
-                      }).toList(),
-                  ),
-                  handleBuiltInTouches: true,
-                  getTouchLineStart: (data, index) => 0,
-                  getTouchLineEnd: (data, index) => double.infinity,
-                ),
-                extraLinesData: ExtraLinesData(
-                  verticalLines: [
-                    if (todayIndex != null)
-                      VerticalLine(
-                        x: todayIndex.toDouble(),
-                        color: AppColors.primary.withOpacity(0.3),
-                        strokeWidth: 2,
-                        dashArray: [5, 5],
-                        label: VerticalLineLabel(
-                          show: true,
-                          alignment: Alignment.topCenter,
-                          padding: const EdgeInsets.only(bottom: 4),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          labelResolver: (line) => 'Today',
-                        ),
-                      ),
-                  ],
-                ),
+                todayIndex: todayIndex,
               ),
             ),
           ),
@@ -391,6 +248,164 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
       ),
     );
   }
+
+  LineChartData _buildPriceTrendChartData({
+    required List<double> prices,
+    required List<DateTime> dates,
+    required double minY,
+    required double maxY,
+    required int? todayIndex,
+  }) => LineChartData(
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        drawHorizontalLine: true,
+        horizontalInterval: (maxY - minY) / 4,
+        getDrawingHorizontalLine: (value) => const FlLine(
+          color: AppColors.border,
+          strokeWidth: 1,
+          dashArray: [4, 4],
+        ),
+      ),
+      titlesData: FlTitlesData(
+        show: true,
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 50,
+            interval: 1,
+            getTitlesWidget: (value, meta) {
+              final index = value.toInt();
+              if (index >= 0 && index < dates.length) {
+                final date = dates[index];
+                final formatter = DateFormat('EEE\nd MMM');
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: AppText(
+                      formatter.format(date),
+                      style: AppTextStyle.caption,
+                      color: index == todayIndex
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                      fontWeight: index == todayIndex
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                );
+              }
+              return const Text('');
+            },
+          ),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 50,
+            interval: (maxY - minY) / 4,
+            getTitlesWidget: (value, meta) => AppText(
+              value.toStringAsFixed(2),
+              style: AppTextStyle.caption,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+      borderData: FlBorderData(
+        show: true,
+        border: Border.all(color: AppColors.border),
+      ),
+      minX: 0,
+      maxX: (prices.length - 1).toDouble(),
+      minY: minY,
+      maxY: maxY,
+      lineBarsData: [
+        LineChartBarData(
+          spots: prices.asMap().entries.map((entry) => FlSpot(entry.key.toDouble(), entry.value)).toList(),
+          isCurved: true,
+          color: AppColors.primary,
+          barWidth: 3,
+          isStrokeCapRound: true,
+          dotData: FlDotData(
+            show: true,
+            getDotPainter: (spot, percent, barData, index) {
+              final isPeak = _isPeakPoint(prices, index);
+              final isMin = _isMinPoint(prices, index);
+              return FlDotCirclePainter(
+                radius: (isPeak || isMin) ? 5 : 3,
+                color: (isPeak || isMin)
+                    ? AppColors.peak
+                    : AppColors.primary,
+                strokeWidth: 2,
+                strokeColor: AppColors.white,
+              );
+            },
+          ),
+          belowBarData: BarAreaData(
+            show: true,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                _getPriceColor(prices.last).withOpacity(0.3),
+                _getPriceColor(prices.first).withOpacity(0.1),
+              ],
+            ),
+          ),
+        ),
+      ],
+      lineTouchData: LineTouchData(
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipColor: (touchedSpot) => AppColors.grey800,
+          tooltipRoundedRadius: AppTheme.radius8,
+          tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+          tooltipMargin: 8,
+          getTooltipItems: (touchedSpots) => touchedSpots.map((touchedSpot) {
+              final index = touchedSpot.x.toInt();
+              if (index >= 0 && index < prices.length) {
+                return LineTooltipItem(
+                  'BZ\$${prices[index].toStringAsFixed(3)}\n${DateFormat('MMM d').format(dates[index])}',
+                  const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                );
+              }
+              return null;
+            }).toList(),
+        ),
+        handleBuiltInTouches: true,
+        getTouchLineStart: (data, index) => 0,
+        getTouchLineEnd: (data, index) => double.infinity,
+      ),
+      extraLinesData: ExtraLinesData(
+        verticalLines: [
+          if (todayIndex != null)
+            VerticalLine(
+              x: todayIndex.toDouble(),
+              color: AppColors.primary.withOpacity(0.3),
+              strokeWidth: 2,
+              dashArray: [5, 5],
+              label: VerticalLineLabel(
+                show: true,
+                alignment: Alignment.topCenter,
+                padding: const EdgeInsets.only(bottom: 4),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (line) => 'Today',
+              ),
+            ),
+        ],
+      ),
+    );
 
   // Helper methods
   _TodayData? _getTodayData() {

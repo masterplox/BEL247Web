@@ -13,6 +13,14 @@ class AppBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if custom titlesData is provided by looking for non-default reservedSize or interval
+    final bottomSideTitles = barChartData.titlesData.bottomTitles.sideTitles;
+    final leftSideTitles = barChartData.titlesData.leftTitles.sideTitles;
+    // If reservedSize is not the default (30) or interval is set, it's customized
+    final hasCustomBottomTitles = bottomSideTitles.reservedSize != 30 || 
+                                   bottomSideTitles.interval != null;
+    final hasCustomLeftTitles = leftSideTitles.reservedSize != 32;
+    
     return BarChart(
       barChartData.copyWith(
         // Apply common styling here
@@ -33,32 +41,36 @@ class AppBarChart extends StatelessWidget {
           show: true,
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 30,
-              getTitlesWidget: (value, meta) {
-                // Default bottom title behavior
-                return SideTitleWidget(
-                  axisSide: meta.axisSide,
-                  child: Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+          bottomTitles: hasCustomBottomTitles
+              ? barChartData.titlesData.bottomTitles
+              : AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      // Default bottom title behavior
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 32,
-              getTitlesWidget: (value, meta) => Text(
-                value.toInt().toString(),
-                style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-              ),
-            ),
-          ),
+                ),
+          leftTitles: hasCustomLeftTitles
+              ? barChartData.titlesData.leftTitles
+              : AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 32,
+                    getTitlesWidget: (value, meta) => Text(
+                      value.toInt().toString(),
+                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
         ),
       ),
     );

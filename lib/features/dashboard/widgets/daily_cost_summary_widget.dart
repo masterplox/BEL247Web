@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../data/models/api_dtos.dart';
 import '../../../data/models/consumption.dart';
@@ -148,7 +149,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
           color: isHighlighted
-              ? Theme.of((context)).colorScheme.primaryContainer.withOpacity(0.1)
+              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1)
               : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
@@ -185,7 +186,8 @@ class DailyCostSummaryWidget extends StatelessWidget {
 
   Widget _build7DayChart(BuildContext context) {
     final data = _get7DayCostData();
-    final now = DateTime.now();
+    final dates = _get7DayDates();
+    final dateFormatter = DateFormat('EEE d MMM');
     
     return SizedBox(
       height: 200,
@@ -212,20 +214,26 @@ class DailyCostSummaryWidget extends StatelessWidget {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 30,
+                reservedSize: 50,
                 interval: 1,
                 getTitlesWidget: (value, meta) {
-                  final day = now.subtract(Duration(days: 6 - value.toInt()));
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      day.day.toString(),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
+                  final index = value.toInt();
+                  if (index >= 0 && index < dates.length) {
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          dateFormatter.format(dates[index]),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 10,
+                          ),
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
+                  return const Text('');
                 },
               ),
             ),
@@ -271,6 +279,32 @@ class DailyCostSummaryWidget extends StatelessWidget {
               belowBarData: BarAreaData(show: false),
             ),
           ],
+          lineTouchData: LineTouchData(
+            enabled: true,
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (touchedSpot) => AppColors.grey800,
+              tooltipRoundedRadius: AppTheme.radius8,
+              tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+              tooltipMargin: 8,
+              getTooltipItems: (touchedSpots) => touchedSpots.map((touchedSpot) {
+                final index = touchedSpot.x.toInt();
+                if (index >= 0 && index < data.length && index < dates.length) {
+                  return LineTooltipItem(
+                    '\$${data[index].toStringAsFixed(2)}\n${dateFormatter.format(dates[index])}',
+                    const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                }
+                return null;
+              }).toList(),
+            ),
+            handleBuiltInTouches: true,
+            getTouchLineStart: (data, index) => 0,
+            getTouchLineEnd: (data, index) => double.infinity,
+          ),
         ),
       ),
     );
@@ -283,9 +317,24 @@ class DailyCostSummaryWidget extends StatelessWidget {
     // ensure we have 7 days, padding if necessary
     final costs = sevenDayConsumption!.map((c) => c.cost).toList();
     while (costs.length < 7) {
-      costs.insert(0, 0.0);
+      costs.insert(0, 0);
     }
     return costs.sublist(costs.length - 7);
+  }
+
+  List<DateTime> _get7DayDates() {
+    if (sevenDayConsumption == null || sevenDayConsumption!.isEmpty) {
+      // Generate dates for the last 7 days
+      final now = DateTime.now();
+      return List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+    }
+    // ensure we have 7 days, padding if necessary
+    final dates = sevenDayConsumption!.map((c) => c.date).toList();
+    while (dates.length < 7) {
+      final firstDate = dates.isNotEmpty ? dates.first : DateTime.now();
+      dates.insert(0, firstDate.subtract(const Duration(days: 1)));
+    }
+    return dates.sublist(dates.length - 7);
   }
 
   double _getYesterdayCost() {

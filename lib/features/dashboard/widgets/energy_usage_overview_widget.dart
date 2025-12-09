@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_bar_chart.dart';
 import '../../../core/widgets/app_card.dart';
@@ -98,8 +99,12 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
   Widget _buildBarChart(BuildContext context) {
     // Mock data for the last 7 days from the second image
     final dailyConsumption = [33.0, 32.0, 50.0, 36.0, 40.0, 39.0, 43.0];
-    final days = ['Mon 17', 'Tue 18', 'Wed 19', 'Thu 20', 'Fri 21', 'Sat 22', 'Sun 23'];
     const maxY = 60.0;
+    
+    // Generate dates for the last 7 days
+    final now = DateTime.now();
+    final dates = List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+    final dateFormatter = DateFormat('EEE d MMM');
 
     final barGroups = List.generate(
       dailyConsumption.length,
@@ -126,6 +131,16 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
             getTooltipColor: (group) => Theme.of(context).colorScheme.secondary,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final kwh = rod.toY;
+              final index = group.x.toInt();
+              if (index >= 0 && index < dates.length) {
+                return BarTooltipItem(
+                  '${dateFormatter.format(dates[index])}\n${kwh.toStringAsFixed(1)} kWh',
+                  TextStyle(
+                    color: Theme.of(context).colorScheme.onSecondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }
               return BarTooltipItem(
                 '${kwh.toStringAsFixed(1)} kWh',
                 TextStyle(
@@ -141,18 +156,25 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              reservedSize: 50,
+              interval: 1,
               getTitlesWidget: (double value, TitleMeta meta) {
                 final index = value.toInt();
-                if (index < 0 || index >= days.length) {
+                if (index < 0 || index >= dates.length) {
                   return const SizedBox.shrink();
                 }
                 return SideTitleWidget(
                   axisSide: meta.axisSide,
                   space: 4,
-                  child: AppText(days[index], style: AppTextStyle.caption),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: AppText(
+                      dateFormatter.format(dates[index]),
+                      style: AppTextStyle.caption,
+                    ),
+                  ),
                 );
               },
-              reservedSize: 30,
             ),
           ),
           leftTitles: AxisTitles(
