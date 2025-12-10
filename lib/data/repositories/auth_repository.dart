@@ -32,6 +32,9 @@ abstract class AuthRepository extends BaseRepository {
   /// Register a new user
   Future<ApiResponse<AuthResponse>> signup(SignUpRequest request);
 
+  /// Reset password using phone, new password, and OTP
+  Future<ApiResponse<void>> resetPassword(PasswordResetRequest request);
+
   /// Check if user is authenticated
   Future<bool> isAuthenticated();
   
@@ -333,6 +336,31 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<ApiResponse<void>> resetPassword(PasswordResetRequest request) async {
+    try {
+      Logger.info('Resetting password for: ${request.phone}');
+      
+      // Validate request
+      final validation = _validatePasswordResetRequest(request);
+      if (!validation.isValid) {
+        return ApiResponse.error(
+          'Validation failed: ${validation.errors.join(', ')}',
+        );
+      }
+
+      // Simulate API call delay
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      // Mock password reset success
+      Logger.info('Password reset successful for: ${request.phone}');
+      return ApiResponse.success(null);
+    } catch (e, stackTrace) {
+      Logger.error('Password reset error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Password reset failed: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<bool> isAuthenticated() async {
     try {
       final hasCredentials = await TokenStorageService.hasValidCredentials();
@@ -435,6 +463,61 @@ class MockAuthRepository implements AuthRepository {
         errors.add('Invalid email or phone number format');
         fieldErrors['contact'] = 'Invalid email or phone number format';
       }
+    }
+
+    return AuthValidationResult(
+      isValid: errors.isEmpty,
+      errors: errors,
+      fieldErrors: fieldErrors,
+    );
+  }
+
+  /// Validate password reset request
+  AuthValidationResult _validatePasswordResetRequest(PasswordResetRequest request) {
+    final errors = <String>[];
+    final fieldErrors = <String, String>{};
+
+    if (request.phone.isEmpty) {
+      errors.add('Contact information is required');
+      fieldErrors['phone'] = 'Contact information is required';
+    } else {
+      // Accept both email and phone number formats
+      final isEmail = _isValidEmail(request.phone);
+      final phoneRegex = RegExp(r'^\+?[\d\s-()]+$');
+      final digitsOnly = request.phone.replaceAll(RegExp(r'[\s-()]'), '');
+      final isPhone = phoneRegex.hasMatch(request.phone) && digitsOnly.length >= 7;
+      
+      if (!isEmail && !isPhone) {
+        errors.add('Invalid email or phone number format');
+        fieldErrors['phone'] = 'Invalid email or phone number format';
+      }
+    }
+
+    if (request.newPassword.isEmpty) {
+      errors.add('New password is required');
+      fieldErrors['newPassword'] = 'New password is required';
+    } else if (request.newPassword.length < 6) {
+      errors.add('New password must be at least 6 characters');
+      fieldErrors['newPassword'] = 'New password must be at least 6 characters';
+    }
+
+    if (request.confirmPassword.isEmpty) {
+      errors.add('Confirm password is required');
+      fieldErrors['confirmPassword'] = 'Confirm password is required';
+    } else if (request.newPassword != request.confirmPassword) {
+      errors.add('Passwords do not match');
+      fieldErrors['confirmPassword'] = 'Passwords do not match';
+    }
+
+    if (request.otp.isEmpty) {
+      errors.add('OTP code is required');
+      fieldErrors['otp'] = 'OTP code is required';
+    } else if (request.otp.length != 5) {
+      errors.add('OTP code must be 5 digits');
+      fieldErrors['otp'] = 'OTP code must be 5 digits';
+    } else if (request.otp != '12345') {
+      errors.add('Invalid OTP code');
+      fieldErrors['otp'] = 'Invalid OTP code';
     }
 
     return AuthValidationResult(

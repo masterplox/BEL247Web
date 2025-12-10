@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/feature_providers.dart'
     show accountSwitcherProvider;
+import '../../../core/utils/formatting_utils.dart';
+import '../../../core/widgets/app_alert_item.dart';
+import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_state.dart';
+import '../../../core/widgets/app_stat_card.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
 import '../state/daily_bill_providers.dart';
@@ -157,81 +162,19 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     );
   }
 
-  Widget _buildErrorState(BuildContext context, String error) => Center(
-    child: Card(
-      margin: const EdgeInsets.all(AppTheme.spacing16),
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacing24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: AppTheme.spacing16),
-            Text(
-              'Error Loading Data',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: AppTheme.spacing8),
-            Text(
-              error,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppTheme.spacing16),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  Widget _buildErrorState(BuildContext context, String error) => AppErrorState(
+        title: 'Error Loading Data',
+        message: error,
+        onRetry: _loadData,
+      );
 
-  Widget _buildEmptyState(BuildContext context) => Center(
-    child: Card(
-      margin: const EdgeInsets.all(AppTheme.spacing16),
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacing24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.receipt_long,
-              size: 64,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
-            const SizedBox(height: AppTheme.spacing16),
-            Text(
-              'No Daily Bill Data',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: AppTheme.spacing8),
-            Text(
-              'Daily consumption data is not available for the selected date.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppTheme.spacing16),
-            ElevatedButton.icon(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Load Data'),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  Widget _buildEmptyState(BuildContext context) => AppEmptyState(
+        title: 'No Daily Bill Data',
+        message: 'Daily consumption data is not available for the selected date.',
+        icon: Icons.receipt_long,
+        actionLabel: 'Load Data',
+        onAction: _loadData,
+      );
 
   Widget _buildAlertsSection(BuildContext context, List<dynamic> alerts) =>
       Card(
@@ -272,55 +215,16 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         ),
       );
 
-  Widget _buildAlertItem(BuildContext context, dynamic alert) => Container(
-    margin: const EdgeInsets.only(bottom: AppTheme.spacing8),
-    padding: const EdgeInsets.all(AppTheme.spacing12),
-    decoration: BoxDecoration(
-      color: _getAlertColor(alert.severity).withOpacity(0.1),
-      borderRadius: BorderRadius.circular(AppTheme.radius8),
-      border: Border.all(
-        color: _getAlertColor(alert.severity).withOpacity(0.3),
-      ),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          _getAlertIcon(alert.type),
-          color: _getAlertColor(alert.severity),
-          size: 20,
-        ),
-        const SizedBox(width: AppTheme.spacing8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                alert.message,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppTheme.spacing4),
-              Text(
-                _formatAlertTime(alert.timestamp),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-        if (!alert.isRead)
-          IconButton(
-            onPressed: () {
-              ref.read(dailyBillProvider.notifier).markAlertAsRead(alert.id);
-            },
-            icon: const Icon(Icons.check, size: 16),
-            color: Theme.of(context).textTheme.bodySmall?.color,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-          ),
-      ],
-    ),
-  );
+  Widget _buildAlertItem(BuildContext context, dynamic alert) => AppAlertItem(
+        message: alert.message,
+        timestamp: FormattingUtils.formatAlertTime(alert.timestamp),
+        severityColor: _getAlertColor(alert.severity),
+        icon: _getAlertIcon(alert.type),
+        isRead: alert.isRead,
+        onMarkRead: () {
+          ref.read(dailyBillProvider.notifier).markAlertAsRead(alert.id);
+        },
+      );
 
   Widget _buildStatCard({
     required String title,
@@ -328,50 +232,13 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     String? subtitle,
     Color? color,
     IconData? icon,
-  }) => Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppTheme.radius12),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(AppTheme.spacing16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, color: color ?? Theme.of(context).textTheme.bodySmall?.color, size: 18),
-            const SizedBox(height: AppTheme.spacing8),
-          ],
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall,
-          ),
-          const SizedBox(height: AppTheme.spacing8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: color ?? Theme.of(context).textTheme.bodyLarge?.color,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(width: AppTheme.spacing4),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
+  }) => AppStatCard(
+        title: title,
+        value: value,
+        subtitle: subtitle,
+        color: color,
+        icon: icon,
+      );
 
   Widget _buildPeakTile(current) {
     final peak = current.peakUsages.isNotEmpty
@@ -470,7 +337,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primaryLight.withOpacity(0.06), Colors.white],
+          colors: [AppColors.primaryLight.withValues(alpha: 0.06), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -563,18 +430,4 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
     }
   }
 
-  String _formatAlertTime(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${difference.inDays}d ago';
-    }
-  }
 }

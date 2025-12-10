@@ -2,6 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/app_card.dart';
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../data/models/api_dtos.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
@@ -24,13 +26,8 @@ class DailyCostSummaryWidget extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   @override
-  Widget build(BuildContext context) => Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radius12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacing20),
+  Widget build(BuildContext context) => AppCard(
+      padding: const EdgeInsets.all(AppTheme.spacing20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -135,7 +132,6 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 ],
               ),
           ],
-        ),
       ),
     );
 
@@ -149,7 +145,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
           color: isHighlighted
-              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1)
+              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1)
               : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
@@ -191,8 +187,22 @@ class DailyCostSummaryWidget extends StatelessWidget {
     
     return SizedBox(
       height: 200,
-      child: LineChart(
-        LineChartData(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final chartWidth = constraints.maxWidth;
+          
+          // Calculate responsive interval for x-axis labels (7 days)
+          final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+            screenWidth: screenWidth,
+            chartWidth: chartWidth,
+            maxValue: 6, // 7 days (0-6)
+            minLabelSpacing: 60,
+            defaultInterval: 1,
+          );
+          
+          return LineChart(
+            LineChartData(
           gridData: FlGridData(
             show: true,
             drawVerticalLine: true,
@@ -215,7 +225,7 @@ class DailyCostSummaryWidget extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 50,
-                interval: 1,
+                interval: xAxisInterval,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < dates.length) {
@@ -281,21 +291,14 @@ class DailyCostSummaryWidget extends StatelessWidget {
           ],
           lineTouchData: LineTouchData(
             enabled: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (touchedSpot) => AppColors.grey800,
-              tooltipRoundedRadius: AppTheme.radius8,
-              tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
-              tooltipMargin: 8,
+            touchTooltipData: WidgetBuilderUtils.buildLineTooltipData(
+              context,
               getTooltipItems: (touchedSpots) => touchedSpots.map((touchedSpot) {
                 final index = touchedSpot.x.toInt();
                 if (index >= 0 && index < data.length && index < dates.length) {
                   return LineTooltipItem(
                     '\$${data[index].toStringAsFixed(2)}\n${dateFormatter.format(dates[index])}',
-                    const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    const TextStyle(), // Will be styled by buildLineTooltipData
                   );
                 }
                 return null;
@@ -306,6 +309,8 @@ class DailyCostSummaryWidget extends StatelessWidget {
             getTouchLineEnd: (data, index) => double.infinity,
           ),
         ),
+          );
+        },
       ),
     );
   }

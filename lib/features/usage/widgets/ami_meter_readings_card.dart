@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/formatting_utils.dart';
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_bar_chart.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_switch.dart';
@@ -54,6 +56,10 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
   void _setSelectedTab(_UsageTab tab) {
     setState(() {
       _selected = tab;
+      // Reset compare when switching away from year
+      if (tab != _UsageTab.year) {
+        _compareYear = false;
+      }
       if (tab == _UsageTab.week) {
         _selectedWeekStart = _startOfWeek(_selectedDate);
       } else if (tab == _UsageTab.month) {
@@ -221,8 +227,10 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
           Row(
             children: [
               Expanded(child: _buildPeriodSelector(context)),
-              const SizedBox(width: AppTheme.spacing12),
-              _buildCompareToggle(),
+              if (_selected == _UsageTab.year) ...[
+                const SizedBox(width: AppTheme.spacing12),
+                _buildCompareToggle(),
+              ],
             ],
           ),
           const SizedBox(height: AppTheme.spacing12),
@@ -246,7 +254,7 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
           const SizedBox(height: AppTheme.spacing16),
           // Summary row
           _buildSummary(),
-          if (_compareYear) ...[
+          if (_selected == _UsageTab.year && _compareYear) ...[
             const SizedBox(height: AppTheme.spacing16),
             _buildPreviousYearSummary(),
           ],
@@ -254,17 +262,20 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
       ),
     );
 
-  Widget _buildTabs(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          _tab('Day', _UsageTab.day),
-          const SizedBox(width:16),
-          _tab('Week', _UsageTab.week),
-          const SizedBox(width:16),
-          _tab('Month', _UsageTab.month),
-          const SizedBox(width:16),
-          _tab('Year', _UsageTab.year),
-        ],
+  Widget _buildTabs(BuildContext context) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            _tab('Day', _UsageTab.day),
+            const SizedBox(width:16),
+            _tab('Week', _UsageTab.week),
+            const SizedBox(width:16),
+            _tab('Month', _UsageTab.month),
+            const SizedBox(width:16),
+            _tab('Year', _UsageTab.year),
+          ],
+        ),
       );
 
   Widget _buildPeriodSelector(BuildContext context) => Row(
@@ -355,7 +366,7 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
         return rangeAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load data')),
-          data: (days) => _DailyChart(days: days),
+          data: (days) => _DailyChart(days: days, isWeekView: true),
         );
       case _UsageTab.month:
         final start = _startOfMonth(_selectedMonth);
@@ -371,7 +382,7 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
         return rangeAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load data')),
-          data: (days) => _DailyChart(days: days),
+          data: (days) => _DailyChart(days: days, isWeekView: false),
         );
       case _UsageTab.year:
         final start = DateTime(_selectedYear, 1, 1);
@@ -496,15 +507,18 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
     );
   }
 
-  Widget _buildTouLegend() => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _legendItem(AppColors.peak, 'Peak'),
-          const SizedBox(width: AppTheme.spacing16),
-          _legendItem(AppColors.midPeak, 'Mid Peak'),
-          const SizedBox(width: AppTheme.spacing16),
-          _legendItem(AppColors.offPeak, 'Off Peak'),
-        ],
+  Widget _buildTouLegend() => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _legendItem(AppColors.peak, 'Peak'),
+            const SizedBox(width: AppTheme.spacing16),
+            _legendItem(AppColors.midPeak, 'Mid Peak'),
+            const SizedBox(width: AppTheme.spacing16),
+            _legendItem(AppColors.offPeak, 'Off Peak'),
+          ],
+        ),
       );
 
   Widget _legendItem(Color color, String text) => Row(
@@ -513,7 +527,7 @@ class _AmiMeterReadingsCardState extends ConsumerState<AmiMeterReadingsCard> {
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.25),
+              color: color.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -534,13 +548,13 @@ class _HourlyChart extends StatelessWidget {
   Color _getTouColorForHour(int hour) {
     if (hour < 11) {
       // Off Peak: midnight to 11am (0-10)
-      return AppColors.offPeak.withOpacity(0.25);
+      return AppColors.offPeak.withValues(alpha: 0.25);
     } else if (hour < 21) {
       // Peak: 11am to 9pm (11-20)
-      return AppColors.peak.withOpacity(0.25);
+      return AppColors.peak.withValues(alpha: 0.25);
     } else {
       // Mid Peak: 9pm to midnight (21-23)
-      return AppColors.midPeak.withOpacity(0.25);
+      return AppColors.midPeak.withValues(alpha: 0.25);
     }
   }
 
@@ -582,18 +596,44 @@ class _HourlyChart extends StatelessWidget {
         minY: 0,
         alignment: BarChartAlignment.spaceBetween,
         barGroups: groups,
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: 1, // Show all hours
+              getTitlesWidget: (value, meta) {
+                final hour = value.toInt();
+                if (hour >= 0 && hour < 24) {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: AppText(
+                        _formatHourLabel(hour),
+                        style: AppTextStyle.caption,
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
         barTouchData: BarTouchData(
           enabled: true,
-          touchTooltipData: BarTouchTooltipData(
-            tooltipRoundedRadius: AppTheme.radius8,
-            tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+          touchTooltipData: WidgetBuilderUtils.buildBarTooltipData(
+            context,
+            // textColor: AppColors.textPrimary,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final hour = group.x;
               final kwh = rod.toY;
               final cost = kwh * 0.35;
               return BarTooltipItem(
                 '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh\nCost: BZ\$${cost.toStringAsFixed(2)}',
-                const TextStyle(color: AppColors.textPrimary),
+                const TextStyle(), // Will be styled by buildBarTooltipData
               );
             },
           ),
@@ -606,6 +646,12 @@ class _HourlyChart extends StatelessWidget {
     final period = h >= 12 ? 'pm' : 'am';
     final hour12 = h % 12 == 0 ? 12 : h % 12;
     return '${hour12.toString().padLeft(2, '0')}:00 $period';
+  }
+
+  String _formatHourLabel(int h) {
+    final period = h >= 12 ? 'pm' : 'am';
+    final hour12 = h % 12 == 0 ? 12 : h % 12;
+    return '$hour12$period';
   }
 }
 
@@ -636,16 +682,55 @@ class _SummaryRow extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.spacing12),
         ],
-        Row(
-          children: [
-            Expanded(child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true)),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: _statTile(context, 'Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: _statTile(context, 'Average usage', '${avg.toStringAsFixed(2)} kWh')),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isMobile = screenWidth < 768;
+            
+            if (isMobile) {
+              // On mobile, use a 2x2 grid
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true),
+                      ),
+                      const SizedBox(width: AppTheme.spacing12),
+                      Expanded(
+                        child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spacing12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _statTile(context, 'Peak Usage', '${peak.toStringAsFixed(2)} kWh'),
+                      ),
+                      const SizedBox(width: AppTheme.spacing12),
+                      Expanded(
+                        child: _statTile(context, 'Average usage', '${avg.toStringAsFixed(2)} kWh'),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            } else {
+              // On tablet/desktop, use a single row
+              return Row(
+                children: [
+                  Expanded(child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true)),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(child: _statTile(context, 'Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(child: _statTile(context, 'Average usage', '${avg.toStringAsFixed(2)} kWh')),
+                ],
+              );
+            }
+          },
         ),
       ],
     );
@@ -655,7 +740,7 @@ class _SummaryRow extends StatelessWidget {
       Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
-          color: highlighted ? AppColors.primaryLight.withOpacity(0.2) : AppColors.grey50,
+          color: highlighted ? AppColors.primaryLight.withValues(alpha: 0.2) : AppColors.grey50,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
           border: Border.all(color: AppColors.border),
         ),
@@ -680,7 +765,7 @@ class _SummaryRow extends StatelessWidget {
       Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
-          color: highlighted ? AppColors.primaryLight.withOpacity(0.2) : AppColors.grey50,
+          color: highlighted ? AppColors.primaryLight.withValues(alpha: 0.2) : AppColors.grey50,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
           border: Border.all(color: AppColors.border),
         ),
@@ -703,8 +788,9 @@ class _SummaryRow extends StatelessWidget {
 }
 
 class _DailyChart extends StatelessWidget {
-  const _DailyChart({required this.days});
+  const _DailyChart({required this.days, required this.isWeekView});
   final List<DailyConsumption> days;
+  final bool isWeekView;
 
   @override
   Widget build(BuildContext context) {
@@ -734,18 +820,53 @@ class _DailyChart extends StatelessWidget {
         minY: 0,
         alignment: BarChartAlignment.spaceBetween,
         barGroups: groups,
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: isWeekView ? 1 : (days.length > 15 ? 2 : 1), // Show every day for week, every 2 days for month if many days
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < days.length) {
+                  final date = days[index].date;
+                  String label;
+                  if (isWeekView) {
+                    // Week view: Show day abbreviations (Sun, Mon, Tue, etc.)
+                    label = DateFormat('EEE').format(date);
+                  } else {
+                    // Month view: Show day number (1, 2, 3, etc.)
+                    label = date.day.toString();
+                  }
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: AppText(
+                        label,
+                        style: AppTextStyle.caption,
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
         barTouchData: BarTouchData(
           enabled: true,
-          touchTooltipData: BarTouchTooltipData(
-            tooltipRoundedRadius: AppTheme.radius8,
-            tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+          touchTooltipData: WidgetBuilderUtils.buildBarTooltipData(
+            context,
+            // textColor: AppColors.textPrimary,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final idx = group.x.toInt();
               final kwh = rod.toY;
               final date = days[idx].date;
               return BarTooltipItem(
                 '${date.month}/${date.day}\n${kwh.toStringAsFixed(1)} kWh',
-                const TextStyle(color: AppColors.textPrimary),
+                const TextStyle(), // Will be styled by buildBarTooltipData
               );
             },
           ),
@@ -847,18 +968,46 @@ class _YearlyChart extends StatelessWidget {
               minY: 0,
               alignment: BarChartAlignment.spaceBetween,
               barGroups: groups,
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final monthIndex = value.toInt();
+                      if (monthIndex >= 0 && monthIndex < 12) {
+                        // Show month abbreviations (Jan, Feb, Mar, etc.)
+                        final monthName = FormattingUtils.getMonthName(monthIndex + 1);
+                        return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: AppText(
+                              monthName,
+                              style: AppTextStyle.caption,
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+              ),
               barTouchData: BarTouchData(
                 enabled: true,
-                touchTooltipData: BarTouchTooltipData(
-                  tooltipRoundedRadius: AppTheme.radius8,
-                  tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+                touchTooltipData: WidgetBuilderUtils.buildBarTooltipData(
+                  context,
+                  // textColor: AppColors.textPrimary,
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final monthIndex = group.x.toInt();
                     final value = rod.toY;
                     final monthName = DateFormat('MMMM').format(DateTime(year, monthIndex + 1, 1));
                     return BarTooltipItem(
                       '$monthName\n${value.toStringAsFixed(1)} kWh',
-                      const TextStyle(color: AppColors.textPrimary),
+                      const TextStyle(), // Will be styled by buildBarTooltipData
                     );
                   },
                 ),
@@ -913,16 +1062,55 @@ class _SummaryRowFromDays extends StatelessWidget {
               style: AppTextStyle.subtitle,
             ),
             const SizedBox(height: AppTheme.spacing8),
-            Row(
-              children: [
-                Expanded(child: _SummaryRow._statTileStatic('Total kWh', 'N/A', highlighted: true)),
-                const SizedBox(width: AppTheme.spacing16),
-                Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'N/A')),
-                const SizedBox(width: AppTheme.spacing16),
-                Expanded(child: _SummaryRow._statTileStatic('Peak Usage', 'N/A')),
-                const SizedBox(width: AppTheme.spacing16),
-                Expanded(child: _SummaryRow._statTileStatic('Average usage', 'N/A')),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final isMobile = screenWidth < 768;
+                
+                if (isMobile) {
+                  // On mobile, use a 2x2 grid
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SummaryRow._statTileStatic('Total kWh', 'N/A', highlighted: true),
+                          ),
+                          const SizedBox(width: AppTheme.spacing12),
+                          Expanded(
+                            child: _SummaryRow._statTileStatic('Est. Cost', 'N/A'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.spacing12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SummaryRow._statTileStatic('Peak Usage', 'N/A'),
+                          ),
+                          const SizedBox(width: AppTheme.spacing12),
+                          Expanded(
+                            child: _SummaryRow._statTileStatic('Average usage', 'N/A'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                } else {
+                  // On tablet/desktop, use a single row
+                  return Row(
+                    children: [
+                      Expanded(child: _SummaryRow._statTileStatic('Total kWh', 'N/A', highlighted: true)),
+                      const SizedBox(width: AppTheme.spacing16),
+                      Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'N/A')),
+                      const SizedBox(width: AppTheme.spacing16),
+                      Expanded(child: _SummaryRow._statTileStatic('Peak Usage', 'N/A')),
+                      const SizedBox(width: AppTheme.spacing16),
+                      Expanded(child: _SummaryRow._statTileStatic('Average usage', 'N/A')),
+                    ],
+                  );
+                }
+              },
             ),
           ],
         );
@@ -944,16 +1132,55 @@ class _SummaryRowFromDays extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.spacing12),
         ],
-        Row(
-          children: [
-            Expanded(child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true)),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: _SummaryRow._statTileStatic('Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: _SummaryRow._statTileStatic('Average usage', '${avg.toStringAsFixed(2)} kWh')),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isMobile = screenWidth < 768;
+            
+            if (isMobile) {
+              // On mobile, use a 2x2 grid
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true),
+                      ),
+                      const SizedBox(width: AppTheme.spacing12),
+                      Expanded(
+                        child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spacing12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryRow._statTileStatic('Peak Usage', '${peak.toStringAsFixed(2)} kWh'),
+                      ),
+                      const SizedBox(width: AppTheme.spacing12),
+                      Expanded(
+                        child: _SummaryRow._statTileStatic('Average usage', '${avg.toStringAsFixed(2)} kWh'),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            } else {
+              // On tablet/desktop, use a single row
+              return Row(
+                children: [
+                  Expanded(child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true)),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(child: _SummaryRow._statTileStatic('Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(child: _SummaryRow._statTileStatic('Average usage', '${avg.toStringAsFixed(2)} kWh')),
+                ],
+              );
+            }
+          },
         ),
       ],
     );

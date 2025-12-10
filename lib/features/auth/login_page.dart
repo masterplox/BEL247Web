@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/utils/logger.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/app_error_state.dart';
 import '../../core/widgets/app_text.dart';
 import '../../data/models/auth.dart';
 import '../../theme/colors.dart';
@@ -125,14 +126,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
         const SizedBox(height: 16),
-        AppText(
+        const AppText(
           'BEL247',
           style: AppTextStyle.title,
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
         ),
         const SizedBox(height: 8),
-        AppText(
+        const AppText(
           'Energy Management Portal',
           style: AppTextStyle.body,
           color: AppColors.textSecondary,
@@ -258,44 +259,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
 
-  Widget _buildErrorDisplay(String error) => Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppColors.error,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AppText(
-              error,
-              color: AppColors.error,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20),
-            onPressed: () {
-              ref.read(authNotifierProvider.notifier).clearError();
-            },
-          ),
-        ],
-      ),
-    );
+  Widget _buildErrorDisplay(String error) => AppErrorState(
+        message: error,
+        icon: Icons.error_outline,
+        onRetry: () {
+          ref.read(authNotifierProvider.notifier).clearError();
+        },
+        padding: const EdgeInsets.all(16),
+      );
 
   Widget _buildAdditionalOptions() => Column(
       children: [
         AppButton(
           onPressed: () {
-            // TODO: Implement forgot password
             Logger.info('Forgot password clicked');
+            context.go('/forgot-password');
           },
           text: 'Forgot Password?',
           buttonType: AppButtonType.text,

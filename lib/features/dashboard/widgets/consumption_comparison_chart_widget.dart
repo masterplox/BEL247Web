@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/widget_builder_utils.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -18,9 +20,8 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing20),
+  Widget build(BuildContext context) => AppCard(
+        padding: const EdgeInsets.all(AppTheme.spacing20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -34,7 +35,6 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
               _buildLegend(context),
             ],
           ),
-        ),
       );
 
   Widget _buildHeader(BuildContext context) => Row(
@@ -42,7 +42,7 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppTheme.spacing8),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
+              color: AppColors.info.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppTheme.radius8),
             ),
             child: const Icon(
@@ -102,8 +102,22 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radius8),
           border: Border.all(color: AppColors.border),
         ),
-        child: LineChart(
-          LineChartData(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final chartWidth = constraints.maxWidth;
+            
+            // Calculate responsive interval for x-axis labels (24 hours)
+            final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+              screenWidth: screenWidth,
+              chartWidth: chartWidth,
+              maxValue: 23, // 24 hours (0-23)
+              minLabelSpacing: 60,
+              defaultInterval: 6, // Show every 6 hours by default
+            );
+            
+            return LineChart(
+              LineChartData(
             gridData: FlGridData(
               show: true,
               drawVerticalLine: true,
@@ -130,34 +144,31 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 30,
-                  interval: 1,
+                  interval: xAxisInterval,
                   getTitlesWidget: (double value, TitleMeta meta) {
                     const style = TextStyle(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     );
-                    Widget text;
-                    switch (value.toInt()) {
-                      case 0:
-                        text = const Text('6AM', style: style);
-                        break;
-                      case 6:
-                        text = const Text('12PM', style: style);
-                        break;
-                      case 12:
-                        text = const Text('6PM', style: style);
-                        break;
-                      case 18:
-                        text = const Text('12AM', style: style);
-                        break;
-                      default:
-                        text = const Text('', style: style);
-                        break;
+                    final hour = value.toInt();
+                    // Show labels at key hours, but respect the interval
+                    String label = '';
+                    if (hour == 0) {
+                      label = '12AM';
+                    } else if (hour == 6) {
+                      label = '6AM';
+                    } else if (hour == 12) {
+                      label = '12PM';
+                    } else if (hour == 18) {
+                      label = '6PM';
+                    } else {
+                      // For other hours, show if they match the interval pattern
+                      label = '${hour.toString().padLeft(2, '0')}:00';
                     }
                     return SideTitleWidget(
                       axisSide: meta.axisSide,
-                      child: text,
+                      child: Text(label, style: style),
                     );
                   },
                 ),
@@ -192,7 +203,7 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
                 spots: _getYesterdaySpots(),
                 isCurved: true,
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.3)],
+                  colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.3)],
                 ),
                 barWidth: 3,
                 isStrokeCapRound: true,
@@ -201,8 +212,8 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
                   show: true,
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.3),
-                      AppColors.primary.withOpacity(0.1),
+                      AppColors.primary.withValues(alpha: 0.3),
+                      AppColors.primary.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -214,7 +225,7 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
                 spots: _getAverageSpots(),
                 isCurved: true,
                 gradient: LinearGradient(
-                  colors: [AppColors.secondary, AppColors.secondary.withOpacity(0.3)],
+                  colors: [AppColors.secondary, AppColors.secondary.withValues(alpha: 0.3)],
                 ),
                 barWidth: 3,
                 isStrokeCapRound: true,
@@ -223,8 +234,8 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
                   show: true,
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.secondary.withOpacity(0.3),
-                      AppColors.secondary.withOpacity(0.1),
+                      AppColors.secondary.withValues(alpha: 0.3),
+                      AppColors.secondary.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -233,6 +244,8 @@ class ConsumptionComparisonChartWidget extends StatelessWidget {
               ),
             ],
           ),
+            );
+          },
         ),
       );
 
@@ -337,9 +350,8 @@ class CompactConsumptionComparisonChartWidget extends StatelessWidget {
   final bool isLoading;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
+  Widget build(BuildContext context) => AppCard(
+        padding: const EdgeInsets.all(AppTheme.spacing16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -410,7 +422,6 @@ class CompactConsumptionComparisonChartWidget extends StatelessWidget {
                 ),
             ],
           ),
-        ),
       );
 
   List<FlSpot> _getYesterdaySpots() => List.generate(24, (index) {

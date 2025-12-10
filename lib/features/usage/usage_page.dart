@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../theme/colors.dart';
 import 'widgets/consumption_layout.dart';
 
 class UsagePage extends ConsumerWidget {
@@ -12,7 +11,6 @@ class UsagePage extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Energy Consumption'),
           centerTitle: true,
-          backgroundColor: AppColors.surface,
           elevation: 0,
           actions: const [
             // IconButton(

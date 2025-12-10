@@ -20,9 +20,9 @@ class NavigationState {
   final bool isDesktop;
 
   /// Check if sidebar should be visible
-  /// On desktop/tablet, sidebar is always visible (snapped)
+  /// On desktop/tablet, sidebar is always visible (even when collapsed to show icons)
   /// On mobile, sidebar is never visible (use bottom nav instead)
-  bool get shouldShowSidebar => (isDesktop || isTablet) && isSidebarOpen;
+  bool get shouldShowSidebar => isDesktop || isTablet;
 
   /// Check if bottom navigation should be visible
   bool get shouldShowBottomNav => isMobile;
@@ -149,22 +149,41 @@ class NavigationConfig {
 /// Navigation notifier for managing navigation state
 class NavigationNotifier extends StateNotifier<NavigationState> {
   NavigationNotifier() : super(const NavigationState());
+  
+  // Track if sidebar was manually toggled to preserve state during resizes
+  bool _sidebarManuallyToggled = false;
 
   /// Update screen size information
   /// Automatically opens sidebar for desktop/tablet (snapped behavior)
+  /// Only resets sidebar state if screen size category changed
   void updateScreenSize(Size screenSize) {
     final isMobile = screenSize.width < 600;
     final isTablet = screenSize.width >= 600 && screenSize.width < 1200;
     final isDesktop = screenSize.width >= 1200;
 
-    // Automatically open sidebar for desktop/tablet, close for mobile
+    // Check if screen size category changed
+    final sizeCategoryChanged = 
+        state.isMobile != isMobile || 
+        state.isTablet != isTablet || 
+        state.isDesktop != isDesktop;
+
+    // Only auto-open/close sidebar if screen size category changed
+    // If sidebar was manually toggled, preserve its state even when category changes
     final shouldOpenSidebar = isDesktop || isTablet;
+    final newSidebarState = sizeCategoryChanged && !_sidebarManuallyToggled
+        ? shouldOpenSidebar 
+        : state.isSidebarOpen;
+    
+    // Reset manual toggle flag when category changes (user can toggle again)
+    if (sizeCategoryChanged) {
+      _sidebarManuallyToggled = false;
+    }
 
     state = state.copyWith(
       isMobile: isMobile,
       isTablet: isTablet,
       isDesktop: isDesktop,
-      isSidebarOpen: shouldOpenSidebar, // Auto-open on desktop/tablet
+      isSidebarOpen: newSidebarState,
     );
   }
 
@@ -178,6 +197,9 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
   void toggleSidebar() {
     // Don't allow closing sidebar on mobile (mobile uses bottom nav)
     if (state.isMobile) return;
+    
+    // Mark as manually toggled to preserve state during resizes
+    _sidebarManuallyToggled = true;
     
     // On desktop/tablet, allow toggling but ensure it stays open on navigation
     state = state.copyWith(isSidebarOpen: !state.isSidebarOpen);
@@ -196,26 +218,25 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
   }
 
   /// Set selected index
-  /// Ensures sidebar stays open on desktop/tablet when switching items
+  /// Preserves current sidebar state instead of forcing it open
   void setSelectedIndex(int index) {
-    // Keep sidebar open on desktop/tablet when selecting items
-    final keepSidebarOpen = state.isDesktop || state.isTablet;
+    // Preserve current sidebar state instead of forcing it open
     state = state.copyWith(
       selectedIndex: index,
-      isSidebarOpen: keepSidebarOpen ? true : state.isSidebarOpen,
+      // Don't modify isSidebarOpen - preserve user's manual toggle
     );
   }
 
   /// Navigate to route and update selected index
-  /// Sidebar stays open on desktop/tablet (snapped behavior)
+  /// Preserves current sidebar state instead of forcing it open
   void navigateToRoute(String route) {
     final index = NavigationConfig.items.indexWhere((item) => item.route == route);
-    if (index != -1) {
-      // Keep sidebar open on desktop/tablet when navigating
-      final keepSidebarOpen = state.isDesktop || state.isTablet;
+    if (index != -1 && index != state.selectedIndex) {
+      // Only update if the route actually changed
+      // Preserve current sidebar state instead of forcing it open
       state = state.copyWith(
         selectedIndex: index,
-        isSidebarOpen: keepSidebarOpen ? true : state.isSidebarOpen,
+        // Don't modify isSidebarOpen - preserve user's manual toggle
       );
     }
   }

@@ -1,0 +1,119 @@
+import 'package:intl/intl.dart';
+
+import '../../data/models/bill.dart';
+
+/// Utility class for formatting dates, times, amounts, and other common data types.
+class FormattingUtils {
+  FormattingUtils._(); // Private constructor to prevent instantiation
+
+  // Date formatting
+  /// Formats a date as "DD MMM YYYY" (e.g., "15 Jan 2024")
+  static String formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  /// Formats a date as "DD/MM/YYYY"
+  static String formatDateShort(DateTime date) => '${date.day}/${date.month}/${date.year}';
+
+  /// Formats a date with relative time (Today, Yesterday, X days ago, etc.)
+  static String formatDateRelative(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final difference = dateOnly.difference(today).inDays;
+
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Tomorrow';
+    } else if (difference == -1) {
+      return 'Yesterday';
+    } else if (difference > 0) {
+      return 'In $difference days';
+    } else {
+      return '${difference.abs()} days ago';
+    }
+  }
+
+  /// Formats a date for alert timestamps (Just now, Xm ago, Xh ago, Xd ago)
+  static String formatAlertTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
+    }
+  }
+
+  /// Formats a billing period as "MMMM YYYY" (e.g., "January 2024")
+  static String formatBillingPeriod(BillingPeriod period) {
+    final monthName = DateFormat('MMMM').format(period.startDate);
+    final year = period.startDate.year;
+    return '$monthName $year';
+  }
+
+  /// Formats a billing period in detail as "D MMM YYYY - D MMM YYYY"
+  static String formatBillingPeriodDetailed(BillingPeriod period) {
+    final formatter = DateFormat('d MMM yyyy');
+    return '${formatter.format(period.startDate)} - ${formatter.format(period.endDate)}';
+  }
+
+  /// Formats an hour as "HH:00" or "HH:45" for intervals
+  static String formatHour(int hour, {bool isInterval = false}) {
+    if (isInterval) {
+      return '${hour.toString().padLeft(2, '0')}:45';
+    }
+    return '${hour.toString().padLeft(2, '0')}:00';
+  }
+
+  // Amount formatting
+  /// Formats an amount as currency with BZ$ prefix
+  static String formatAmount(double amount) {
+    final absAmount = amount.abs();
+    if (amount < 0) {
+      return '-BZ\$${absAmount.toStringAsFixed(2)}';
+    } else {
+      return 'BZ\$${absAmount.toStringAsFixed(2)}';
+    }
+  }
+
+  /// Formats an amount as currency without sign handling
+  static String formatCurrency(double amount) => 'BZ\$${amount.toStringAsFixed(2)}';
+
+  /// Formats kWh consumption
+  static String formatKwh(double kwh) => '${kwh.toStringAsFixed(2)} kWh';
+
+  // Time formatting
+  /// Formats time as "HH:mm"
+  static String formatTime(DateTime dateTime) => '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+  // Month name helpers
+  /// Gets abbreviated month name (Jan, Feb, etc.)
+  static String getMonthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
+
+  /// Gets full month name (January, February, etc.)
+  static String getMonthNameFull(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[month - 1];
+  }
+}
+

@@ -29,7 +29,7 @@ class AppDataTable extends StatelessWidget {
             columnSpacing: columnSpacing.clamp(24.0, double.infinity),
             // You can add more customization here
             // For example:
-            // headingRowColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+            // headingRowColor: MaterialStateProperty.all(Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
             // dataRowColor: MaterialStateProperty.all(Theme.of(context).colorScheme.surface),
             // dividerThickness: 1,
           ),

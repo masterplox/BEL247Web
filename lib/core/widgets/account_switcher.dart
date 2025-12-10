@@ -30,7 +30,7 @@ class AccountSwitcherCard extends ConsumerWidget {
         margin: const EdgeInsets.all(AppTheme.spacing8),
         padding: const EdgeInsets.all(AppTheme.spacing8),
         decoration: BoxDecoration(
-          color: AppColors.primaryLight.withOpacity(0.1),
+          color: AppColors.primaryLight.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Center(
@@ -67,15 +67,15 @@ class AccountSwitcherCard extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(AppTheme.spacing12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withOpacity(0.1),
+                  color: AppColors.primaryLight.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTheme.radius8),
                   border: Border.all(
-                    color: AppColors.primaryLight.withOpacity(0.3),
+                    color: AppColors.primaryLight.withValues(alpha: 0.3),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -281,8 +281,8 @@ class _AccountCard extends StatelessWidget {
                       height: 48,
                       decoration: BoxDecoration(
                         color: account.accountType == 'commercial'
-                            ? const Color(0xFF8B5CF6).withOpacity(0.1)
-                            : AppColors.primaryLight.withOpacity(0.1),
+                            ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                            : AppColors.primaryLight.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppTheme.radius8),
                       ),
                       child: Icon(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/app_card.dart';
 import '../../../data/models/user.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -18,26 +19,17 @@ class AccountBalanceWidget extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   @override
-  Widget build(BuildContext context) => Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radius12),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-          border: const Border(
-            left: BorderSide(
-              color: AppColors.primary,
-              width: 4,
-            ),
-          ),
+  Widget build(BuildContext context) => AppCard(
+      padding: const EdgeInsets.all(AppTheme.spacing20),
+      border: const Border(
+        left: BorderSide(
+          color: AppColors.primary,
+          width: 4,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
               // Title
               Text(
                 'Account Balance',
@@ -102,8 +94,6 @@ class AccountBalanceWidget extends StatelessWidget {
                   ],
                 ),
             ],
-          ),
-        ),
       ),
     );
 

@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
 import '../services/cost_calculation_service.dart';
@@ -27,7 +26,7 @@ class DailyConsumptionBreakdownWidget extends ConsumerWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primaryLight.withOpacity(0.06), Colors.white],
+          colors: [AppColors.primaryLight.withValues(alpha: 0.06), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

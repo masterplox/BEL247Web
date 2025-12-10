@@ -1,15 +1,15 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/utils/formatting_utils.dart';
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_line_chart.dart';
 import '../../../core/widgets/app_text.dart';
 import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../theme/app_theme.dart';
-import '../../../theme/colors.dart';
 
 class AccountSummaryWidget extends ConsumerWidget {
   const AccountSummaryWidget({
@@ -69,18 +69,18 @@ class AccountSummaryWidget extends ConsumerWidget {
   Widget _buildCurrentBalance(BuildContext context) => Container(
         padding: const EdgeInsets.all(AppTheme.spacing16),
         decoration: BoxDecoration(
-          color: _getBalanceColor(context).withOpacity(0.1),
+          color: WidgetBuilderUtils.getBalanceColor(context, accountBalance.currentBalance).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius8),
           border: Border.all(
-            color: _getBalanceColor(context).withOpacity(0.3),
+            color: WidgetBuilderUtils.getBalanceColor(context, accountBalance.currentBalance).withValues(alpha: 0.3),
             width: 1,
           ),
         ),
         child: Row(
           children: [
             Icon(
-              _getBalanceIcon(),
-              color: _getBalanceColor(context),
+              WidgetBuilderUtils.getBalanceIcon(accountBalance.currentBalance),
+              color: WidgetBuilderUtils.getBalanceColor(context, accountBalance.currentBalance),
               size: 32,
             ),
             const SizedBox(width: AppTheme.spacing12),
@@ -114,7 +114,7 @@ class AccountSummaryWidget extends ConsumerWidget {
               context,
               'Past due',
               'BZ\$${accountBalance.lastPaymentAmount.toStringAsFixed(2)}',
-              _formatDate(accountBalance.lastPaymentDate),
+              FormattingUtils.formatDateRelative(accountBalance.lastPaymentDate),
               Icons.payment,
             ),
           ),
@@ -123,7 +123,7 @@ class AccountSummaryWidget extends ConsumerWidget {
             child: _buildInfoItem(
               context,
               'Next Due',
-              _formatDate(accountBalance.nextDueDate),
+              FormattingUtils.formatDateRelative(accountBalance.nextDueDate),
               _getDaysUntilDue(),
               Icons.schedule,
             ),
@@ -153,13 +153,6 @@ class AccountSummaryWidget extends ConsumerWidget {
                     context,
                     'Usage',
                     '${usageSummary.yearToDate.kwh.toStringAsFixed(0)} kWh',
-                  ),
-                ),
-                Expanded(
-                  child: _buildYTDItem(
-                    context,
-                    'Cost',
-                    'BZ\$${usageSummary.yearToDate.cost.toStringAsFixed(2)}',
                   ),
                 ),
                 Expanded(
@@ -244,67 +237,21 @@ class AccountSummaryWidget extends ConsumerWidget {
           vertical: AppTheme.spacing4,
         ),
         decoration: BoxDecoration(
-          color: _getBalanceColor(context).withOpacity(0.1),
+          color: WidgetBuilderUtils.getBalanceColor(context, accountBalance.currentBalance).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius4),
           border: Border.all(
-            color: _getBalanceColor(context).withOpacity(0.3),
+            color: WidgetBuilderUtils.getBalanceColor(context, accountBalance.currentBalance).withValues(alpha: 0.3),
             width: 1,
           ),
         ),
         child: AppText(
-          _getBalanceStatusText(),
+          WidgetBuilderUtils.getBalanceStatusText(accountBalance.currentBalance),
           style: AppTextStyle.caption, // Approximating fontSize: 12
           fontWeight: FontWeight.w500,
-          color: _getBalanceColor(context),
+          color: WidgetBuilderUtils.getBalanceColor(context, accountBalance.currentBalance),
         ),
       );
 
-  Color _getBalanceColor(BuildContext context) {
-    if (accountBalance.currentBalance > 0) {
-      return Theme.of(context).colorScheme.error; // Positive balance means we owe money
-    } else if (accountBalance.currentBalance < 0) {
-      return Theme.of(context).colorScheme.primary; // Negative balance means credit
-    } else {
-      return Theme.of(context).textTheme.bodySmall?.color ?? AppColors.textSecondary; // Zero balance
-    }
-  }
-
-  IconData _getBalanceIcon() {
-    if (accountBalance.currentBalance > 0) {
-      return Icons.warning;
-    } else if (accountBalance.currentBalance < 0) {
-      return Icons.check_circle;
-    } else {
-      return Icons.account_balance_wallet;
-    }
-  }
-
-  String _getBalanceStatusText() {
-    if (accountBalance.currentBalance > 0) {
-      return 'Amount Due';
-    } else if (accountBalance.currentBalance < 0) {
-      return 'Credit';
-    } else {
-      return 'Current';
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = date.difference(now).inDays;
-    
-    if (difference == 0) {
-      return 'Today';
-    } else if (difference == 1) {
-      return 'Tomorrow';
-    } else if (difference == -1) {
-      return 'Yesterday';
-    } else if (difference > 0) {
-      return 'In $difference days';
-    } else {
-      return '${difference.abs()} days ago';
-    }
-  }
 
   String _getDaysUntilDue() {
     final now = DateTime.now();
@@ -346,10 +293,7 @@ class AccountSummaryWidget extends ConsumerWidget {
     }
 
     // Create month abbreviations array
-    final monthAbbreviations = List.generate(12, (index) {
-      final date = DateTime(2024, index + 1, 1);
-      return DateFormat('MMM').format(date);
-    });
+    final monthAbbreviations = List.generate(12, (index) => FormattingUtils.getMonthName(index + 1));
 
     final lineChartData = LineChartData(
       gridData: const FlGridData(show: false),
@@ -407,13 +351,72 @@ class AccountSummaryWidget extends ConsumerWidget {
           belowBarData: BarAreaData(show: false),
         ),
       ],
+      lineTouchData: LineTouchData(
+        enabled: true,
+        touchTooltipData: WidgetBuilderUtils.buildLineTooltipData(
+          context,
+          getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+            final monthIndex = spot.x.toInt();
+            final kwh = spot.y;
+            String label;
+            
+            // Validate month index
+            if (monthIndex >= 0 && monthIndex < monthAbbreviations.length) {
+              // Determine which line this spot belongs to based on barIndex
+              if (spot.barIndex == 0) {
+                // This year (primary color)
+                label = '$currentYear: ${monthAbbreviations[monthIndex]}\n${kwh.toStringAsFixed(1)} kWh';
+              } else {
+                // Last year (secondary color)
+                label = '$lastYear: ${monthAbbreviations[monthIndex]}\n${kwh.toStringAsFixed(1)} kWh';
+              }
+            } else {
+              // Fallback if index is invalid
+              label = '${kwh.toStringAsFixed(1)} kWh';
+            }
+            
+            return LineTooltipItem(
+              label,
+              const TextStyle(), // Will be styled by buildLineTooltipData
+            );
+          }).toList(),
+        ),
+      ),
     );
 
     return Column(
       children: [
         SizedBox(
           height: 120,
-          child: AppLineChart(lineChartData: lineChartData),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = MediaQuery.of(context).size.width;
+              final chartWidth = constraints.maxWidth;
+              final maxX = 11.0; // 12 months (0-11)
+              
+              // Calculate responsive interval for x-axis labels
+              final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+                screenWidth: screenWidth,
+                chartWidth: chartWidth,
+                maxValue: maxX,
+                minLabelSpacing: 50,
+                defaultInterval: 2, // Show every 2 months by default
+              );
+              
+              // Update the lineChartData with responsive interval
+              final responsiveLineChartData = lineChartData.copyWith(
+                titlesData: lineChartData.titlesData.copyWith(
+                  bottomTitles: lineChartData.titlesData.bottomTitles.copyWith(
+                    sideTitles: lineChartData.titlesData.bottomTitles.sideTitles.copyWith(
+                      interval: xAxisInterval,
+                    ),
+                  ),
+                ),
+              );
+              
+              return AppLineChart(lineChartData: responsiveLineChartData);
+            },
+          ),
         ),
         const SizedBox(height: AppTheme.spacing8),
         Row(

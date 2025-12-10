@@ -349,6 +349,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Reset password using phone, new password, and OTP
+  Future<void> resetPassword({
+    required String phone,
+    required String newPassword,
+    required String confirmPassword,
+    required String otp,
+  }) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      final request = PasswordResetRequest(
+        phone: phone,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+        otp: otp,
+      );
+
+      final response = await _authRepository.resetPassword(request);
+      
+      if (response.success) {
+        Logger.info('Password reset successful for: $phone');
+        state = state.copyWith(
+          isLoading: false,
+          error: null,
+        );
+      } else {
+        Logger.warning('Password reset failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error ?? 'Password reset failed',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Password reset error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Password reset failed: ${e.toString()}',
+      );
+    }
+  }
+
   /// Update user session with new data
   void updateUserSession(UserSession session) {
     state = state.copyWith(userSession: session);

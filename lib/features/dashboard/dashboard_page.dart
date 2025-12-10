@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_responsive_layout.dart';
 import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../theme/app_theme.dart';
-import '../../../theme/colors.dart';
 import 'state/dashboard_providers.dart';
 import 'widgets/account_balance_widget.dart';
 import 'widgets/daily_cost_summary_widget.dart';
@@ -19,7 +19,6 @@ class DashboardPage extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Dashboard'),
           centerTitle: true,
-          backgroundColor: AppColors.surface,
           elevation: 0,
           actions: const [
             // IconButton(
@@ -50,10 +49,7 @@ class DashboardPage extends ConsumerWidget {
             // ),
           ],
         ),
-        body: Container(
-          color: AppColors.background,
-          child: const DashboardLayout(),
-        ),
+        body: const DashboardLayout(),
       );
 }
 
@@ -61,16 +57,10 @@ class DashboardLayout extends ConsumerWidget {
   const DashboardLayout({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth >= AppTheme.desktopBreakpoint) {
-            return const DesktopDashboardLayout();
-          } else if (constraints.maxWidth >= AppTheme.tabletBreakpoint) {
-            return const TabletDashboardLayout();
-          } else {
-            return const MobileDashboardLayout();
-          }
-        },
+  Widget build(BuildContext context, WidgetRef ref) => const AppResponsiveLayout(
+        mobile: MobileDashboardLayout(),
+        tablet: TabletDashboardLayout(),
+        desktop: DesktopDashboardLayout(),
       );
 }
 
@@ -141,25 +131,11 @@ class DashboardHeader extends StatelessWidget {
   const DashboardHeader({super.key});
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Welcome back!',
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppTheme.spacing8),
-          Text(
-            'Here\'s your energy usage overview',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-          ),
-        ],
-      );
+  Widget build(BuildContext context) {
+    // Note: This widget is currently unused but kept for potential future use
+    // If used, should be replaced with AppPageHeader
+    return const SizedBox.shrink();
+  }
 }
 
 // Cards now consume providers

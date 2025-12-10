@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/utils/formatting_utils.dart';
+import '../../../core/utils/widget_builder_utils.dart';
+import '../../../core/widgets/app_empty_state.dart';
 import '../../../data/models/bill.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -207,7 +209,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
       allEntries.add(LedgerEntry(
         id: 'bill_${bill.id}',
         date: bill.issueDate,
-        description: _formatBillingPeriod(bill.billingPeriod),
+        description: FormattingUtils.formatBillingPeriod(bill.billingPeriod),
         amount: bill.amounts.totalAmount,
         accountBalance: runningBalance,
         isPayment: false,
@@ -261,16 +263,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
     return entries;
   }
 
-  String _formatBillingPeriod(BillingPeriod period) {
-    final monthName = DateFormat('MMMM').format(period.startDate);
-    final year = period.startDate.year;
-    return '$monthName $year';
-  }
-
-  String _formatBillingPeriodDetailed(BillingPeriod period) {
-    final formatter = DateFormat('d MMM yyyy');
-    return '${formatter.format(period.startDate)} - ${formatter.format(period.endDate)}';
-  }
 
   Widget _buildLedgerRow(BuildContext context, LedgerEntry entry, bool isExpanded, {required bool isMobile}) => Column(
       children: [
@@ -299,11 +291,11 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                   flex: 2,
                   child: Row(
                     children: [
-                      _buildDateIcon(entry.isPayment),
+                      WidgetBuilderUtils.buildDateIcon(context, entry.isPayment),
                       const SizedBox(width: AppTheme.spacing8),
                       Flexible(
                         child: Text(
-                          _formatDate(entry.date),
+                          FormattingUtils.formatDate(entry.date),
                           style: Theme.of(context).textTheme.bodyMedium,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -348,7 +340,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
                     child: Text(
-                      _formatAmount(entry.amount),
+                      FormattingUtils.formatAmount(entry.amount),
                       textAlign: TextAlign.end,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
@@ -386,7 +378,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                             vertical: AppTheme.spacing4,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(AppTheme.radius4),
                           ),
                           child: Text(
@@ -446,14 +438,14 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDateIcon(entry.isPayment),
+              WidgetBuilderUtils.buildDateIcon(context, entry.isPayment),
               const SizedBox(width: AppTheme.spacing8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _formatDate(entry.date),
+                      FormattingUtils.formatDate(entry.date),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     Text(
@@ -478,7 +470,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _formatAmount(entry.amount),
+                FormattingUtils.formatAmount(entry.amount),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: entry.isPayment ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
@@ -507,29 +499,6 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
         ],
       );
 
-  Widget _buildDateIcon(bool isPayment) {
-    if (isPayment) {
-      return Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          Icons.check,
-          size: 16,
-          color: Theme.of(context).colorScheme.onPrimary,
-        ),
-      );
-    } else {
-      return Icon(
-        Icons.description,
-        color: Theme.of(context).colorScheme.secondary,
-        size: 24,
-      );
-    }
-  }
 
   Widget _buildExpandedDetails(BuildContext context, LedgerEntry entry) => Container(
       padding: const EdgeInsets.all(AppTheme.spacing16),
@@ -580,8 +549,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
         ),
         const SizedBox(height: AppTheme.spacing16),
         _buildDetailRow(context, 'Bill Number', bill.billNumber),
-        _buildDetailRow(context, 'Billing Period', _formatBillingPeriodDetailed(bill.billingPeriod)),
-        _buildDetailRow(context, 'Due Date', _formatDate(bill.dueDate)),
+        _buildDetailRow(context, 'Billing Period', FormattingUtils.formatBillingPeriodDetailed(bill.billingPeriod)),
+        _buildDetailRow(context, 'Due Date', FormattingUtils.formatDate(bill.dueDate)),
         const Divider(height: AppTheme.spacing24),
         _buildDetailRow(context, 'Previous Balance', 'BZ\$${bill.amounts.previousBalance.toStringAsFixed(2)}'),
         _buildDetailRow(context, 'Less Payment', '-BZ\$${bill.payment.paidAmount.toStringAsFixed(2)}'),
@@ -609,69 +578,12 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
     String label,
     String value, {
     bool isTotal = false,
-  }) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                  fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
-                ),
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-                  color: isTotal ? Theme.of(context).textTheme.bodyLarge?.color : null,
-                ),
-          ),
-        ],
-      ),
-    );
+  }) => WidgetBuilderUtils.buildDetailRow(context, label, value, isTotal: isTotal);
 
-  Widget _buildEmptyState(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(AppTheme.spacing32),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 64,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
-            const SizedBox(height: AppTheme.spacing16),
-            Text(
-              'No transactions found',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppTheme.spacing8),
-            Text(
-              'Your bills and payments will appear here',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  String _formatAmount(double amount) {
-    final absAmount = amount.abs();
-    if (amount < 0) {
-      return '-BZ\$${absAmount.toStringAsFixed(2)}';
-    } else {
-      return 'BZ\$${absAmount.toStringAsFixed(2)}';
-    }
-  }
+  Widget _buildEmptyState(BuildContext context) => const AppEmptyState(
+        title: 'No transactions found',
+        message: 'Your bills and payments will appear here',
+        icon: Icons.receipt_long_outlined,
+      );
 }
 

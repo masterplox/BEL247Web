@@ -148,13 +148,13 @@ class AverageComparisonWidget extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.spacing12),
       decoration: BoxDecoration(
         color: costSavings.isSavings
-            ? AppColors.success.withOpacity(0.1)
-            : AppColors.error.withOpacity(0.1),
+            ? AppColors.success.withValues(alpha: 0.1)
+            : AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radius8),
         border: Border.all(
           color: costSavings.isSavings
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.error.withOpacity(0.3),
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.error.withValues(alpha: 0.3),
         ),
       ),
       child: Column(

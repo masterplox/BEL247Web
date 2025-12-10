@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/auth/forgot_password/forgot_password_page.dart';
+import '../../features/auth/forgot_password/reset_password_page.dart';
 import '../../features/auth/signup/signup_contact_page.dart';
 import '../../features/auth/signup/signup_credentials_page.dart';
 import '../../features/auth/signup/signup_success_page.dart';
@@ -34,7 +36,10 @@ class AppRouter {
       
       final isLoggedIn = authState.isAuthenticated;
       final isInitialized = authState.isInitialized;
-      final isPublicRoute = state.matchedLocation == '/login' || state.matchedLocation.startsWith('/signup');
+      final isPublicRoute = state.matchedLocation == '/login' 
+          || state.matchedLocation.startsWith('/signup')
+          || state.matchedLocation == '/forgot-password'
+          || state.matchedLocation == '/reset-password';
       
       Logger.debug('Router redirect check - isInitialized: $isInitialized, isLoggedIn: $isLoggedIn, isPublicRoute: $isPublicRoute');
       
@@ -67,6 +72,19 @@ class AppRouter {
         path: '/login',
         name: 'login',
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        name: 'reset-password',
+        builder: (context, state) {
+          final contact = state.uri.queryParameters['contact'];
+          return ResetPasswordPage(contact: contact);
+        },
       ),
       GoRoute(
         path: '/signup',

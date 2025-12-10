@@ -68,9 +68,9 @@ class DailyBillWidget extends ConsumerWidget {
     width: double.infinity,
     padding: const EdgeInsets.all(AppTheme.spacing20),
     decoration: BoxDecoration(
-      color: AppColors.primaryLight.withOpacity(0.15),
+      color: AppColors.primaryLight.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(AppTheme.radius12),
-      border: Border.all(color: AppColors.primaryLight.withOpacity(0.4)),
+      border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.4)),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,9 +151,9 @@ class DailyBillWidget extends ConsumerWidget {
   Widget _buildPeakInterval(BuildContext context, PeakUsage? peakUsage) => Container(
       padding: const EdgeInsets.all(AppTheme.spacing12),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radius8),
-        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,9 +195,9 @@ class DailyBillWidget extends ConsumerWidget {
   Widget _buildLowInterval(BuildContext context, LowUsage? lowUsage) => Container(
       padding: const EdgeInsets.all(AppTheme.spacing12),
       decoration: BoxDecoration(
-        color: AppColors.success.withOpacity(0.1),
+        color: AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radius8),
-        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -42,9 +42,9 @@ class SidebarNavItem extends StatelessWidget {
               vertical: AppTheme.spacing12,
             ),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryLight.withOpacity(0.1) : Colors.transparent,
+              color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.1) : Colors.transparent,
               borderRadius: BorderRadius.circular(AppTheme.radius8),
-              border: isSelected ? Border.all(color: AppColors.primaryLight.withOpacity(0.3)) : null,
+              border: isSelected ? Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)) : null,
             ),
             child: Row(
               children: [

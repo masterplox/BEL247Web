@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -102,10 +103,12 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
             _buildChartHeader(context),
             const SizedBox(height: AppTheme.spacing16),
             Expanded(
-              child: LineChart(
-                _buildChartData(),
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
+              child: LayoutBuilder(
+                builder: (context, constraints) => LineChart(
+                  _buildChartData(context, constraints.maxWidth),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                ),
               ),
             ),
           ],
@@ -157,11 +160,21 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
         ],
       );
 
-  LineChartData _buildChartData() {
+  LineChartData _buildChartData(BuildContext context, double chartWidth) {
     final hourlyData = widget.consumptionData?.hourlyBreakdown ?? [];
     final maxValue = hourlyData.isNotEmpty 
         ? hourlyData.map((h) => h.kwh).reduce((a, b) => a > b ? a : b)
         : 100.0;
+
+    // Calculate responsive interval for x-axis labels based on chart width
+    final screenWidth = MediaQuery.of(context).size.width;
+    final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+      screenWidth: screenWidth,
+      chartWidth: chartWidth,
+      maxValue: 23, // 24 hours (0-23)
+      minLabelSpacing: 50,
+      defaultInterval: 4,
+    );
 
     return LineChartData(
       gridData: FlGridData(
@@ -190,7 +203,7 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 30,
-            interval: 4,
+            interval: xAxisInterval,
             getTitlesWidget: (value, meta) {
               final hour = value.toInt();
               return Text(
@@ -233,20 +246,17 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
       ],
       lineTouchData: LineTouchData(
         enabled: true,
-        touchTooltipData: LineTouchTooltipData(
-          tooltipRoundedRadius: AppTheme.radius8,
-          tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+        touchTooltipData: WidgetBuilderUtils.buildLineTooltipData(
+          context,
+          textColor: AppColors.textPrimary,
           getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
-              final hour = spot.x.toInt();
-              final kwh = spot.y;
-              return LineTooltipItem(
-                '$hour:00\n${kwh.toStringAsFixed(1)} kWh',
-                const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              );
-            }).toList(),
+            final hour = spot.x.toInt();
+            final kwh = spot.y;
+            return LineTooltipItem(
+              '$hour:00\n${kwh.toStringAsFixed(1)} kWh',
+              const TextStyle(), // Will be styled by buildLineTooltipData
+            );
+          }).toList(),
         ),
         touchCallback: (event, response) {
           if (response?.lineBarSpots?.isNotEmpty ?? false) {
@@ -293,7 +303,7 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
       ),
       belowBarData: BarAreaData(
         show: true,
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
       ),
     );
   }
@@ -346,7 +356,7 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
                   vertical: AppTheme.spacing4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTheme.radius4),
                 ),
                 child: Text(

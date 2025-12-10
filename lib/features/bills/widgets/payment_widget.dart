@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_card.dart';
 import '../../../data/models/user.dart';
 import '../../../theme/app_theme.dart';
 
@@ -41,13 +42,8 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
+  Widget build(BuildContext context) => AppCard(
+        padding: const EdgeInsets.all(AppTheme.spacing16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -70,7 +66,6 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
                   _buildPaymentForm(),
               ],
             ),
-          ),
         );
 
   Widget _buildProcessingState() => const Center(
@@ -142,7 +137,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
             const SizedBox(height: AppTheme.spacing8),
             Row(
               children: [
-                _buildQuickAmountButton('Past Due', widget.accountBalance.currentBalance),
+                _buildQuickAmountButton('Past Due', widget.accountBalance.lastPaymentAmount),
                 const SizedBox(width: AppTheme.spacing8),
                 _buildQuickAmountButton('Full Balance', widget.accountBalance.currentBalance),
               ],
@@ -179,20 +174,46 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
             ),
             const SizedBox(height: AppTheme.spacing8),
             DropdownButtonFormField<PaymentMethodType>(
-              initialValue: _selectedPaymentMethod,
+              value: _selectedPaymentMethod,
+              isExpanded: true,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
               items: _availableMethods.map((method) => DropdownMenuItem(
                   value: method,
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_getPaymentMethodIcon(method)),
+                      Icon(_getPaymentMethodIcon(method), size: 20),
                       const SizedBox(width: AppTheme.spacing8),
-                      Text(_getPaymentMethodLabel(method)),
+                      Flexible(
+                        child: Text(
+                          _getPaymentMethodLabel(method),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
                     ],
                   ),
                 )).toList(),
+              selectedItemBuilder: (context) => _availableMethods.map((method) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_getPaymentMethodIcon(method), size: 20),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Flexible(
+                      child: Text(
+                        _getPaymentMethodLabel(method),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {

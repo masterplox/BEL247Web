@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_data_table.dart';
 import '../../../core/widgets/app_text.dart';
@@ -79,8 +80,23 @@ class EnergyPricesWidget extends StatelessWidget {
     
     return SizedBox(
       height: 250,
-      child: LineChart(
-        LineChartData(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final chartWidth = constraints.maxWidth;
+          final maxX = (dates.length - 1).toDouble();
+          
+          // Calculate responsive interval for x-axis labels
+          final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+            screenWidth: screenWidth,
+            chartWidth: chartWidth,
+            maxValue: maxX,
+            minLabelSpacing: 70, // Longer date format needs more space
+            defaultInterval: maxX > 30 ? 7 : 1,
+          );
+          
+          return LineChart(
+            LineChartData(
           gridData: FlGridData(
             show: true,
             drawVerticalLine: true,
@@ -103,7 +119,7 @@ class EnergyPricesWidget extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 50,
-                interval: 1,
+                interval: xAxisInterval,
                 getTitlesWidget: (value, meta) {
                   if (value.toInt() >= 0 && value.toInt() < dates.length) {
                     final date = dates[value.toInt()];
@@ -162,6 +178,8 @@ class EnergyPricesWidget extends StatelessWidget {
             ),
           ],
         ),
+          );
+        },
       ),
     );
   }
@@ -185,7 +203,7 @@ class EnergyPricesWidget extends StatelessWidget {
       final formatter = DateFormat('EEE, d MMM');
       
       return DataRow(
-        color: isToday ? WidgetStateProperty.all(Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1)) : null,
+        color: isToday ? WidgetStateProperty.all(Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1)) : null,
         cells: [
           DataCell(
             Row(

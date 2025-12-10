@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/app_error_state.dart';
+import '../../core/widgets/app_loading_state.dart';
+import '../../core/widgets/app_page_header.dart';
+import '../../core/widgets/app_responsive_layout.dart';
 import '../../data/models/user.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -17,11 +22,10 @@ class BillsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-        backgroundColor: AppColors.background,
+        //backgroundColor: AppColors.background,
         appBar: AppBar(
           title: const Text('Bills & Receipts'),
           centerTitle: true,
-          backgroundColor: AppColors.surface,
           elevation: 0,
           actions: const [
             // IconButton(
@@ -40,16 +44,10 @@ class BillsLayout extends ConsumerWidget {
   const BillsLayout({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth >= AppTheme.desktopBreakpoint) {
-            return const DesktopBillsLayout();
-          } else if (constraints.maxWidth >= AppTheme.tabletBreakpoint) {
-            return const TabletBillsLayout();
-          } else {
-            return const MobileBillsLayout();
-          }
-        },
+  Widget build(BuildContext context, WidgetRef ref) => const AppResponsiveLayout(
+        mobile: MobileBillsLayout(),
+        tablet: TabletBillsLayout(),
+        desktop: DesktopBillsLayout(),
       );
 }
 
@@ -148,24 +146,9 @@ class BillsHeader extends StatelessWidget {
   const BillsHeader({super.key});
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Bills & Receipts',
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: AppTheme.spacing8),
-          Text(
-            'Manage your billing history, payments, and account summary',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-          ),
-        ],
+  Widget build(BuildContext context) => const AppPageHeader(
+        title: 'Bills & Receipts',
+        subtitle: 'Manage your billing history, payments, and account summary',
       );
 }
 
@@ -179,27 +162,10 @@ class AccountSummaryCard extends ConsumerWidget {
     final yearlyConsumptionAsync = ref.watch(yearlyConsumptionProvider);
     
     return accountBalanceAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppTheme.spacing32),
-          child: CircularProgressIndicator(),
-        ),
-      ),
-      error: (e, st) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
-          child: Column(
-            children: [
-              const Icon(Icons.error, color: AppColors.error),
-              const SizedBox(height: AppTheme.spacing8),
-              Text('Error loading account summary: $e'),
-            ],
-          ),
-        ),
+      loading: () => const AppLoadingState(),
+      error: (e, st) => AppErrorState(
+        message: 'Error loading account summary: $e',
+        onRetry: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
       ),
       data: (accountBalance) => usageSummaryAsync.when(
         loading: () => AccountSummaryWidget(
@@ -253,27 +219,10 @@ class PaymentCard extends ConsumerWidget {
     final accountBalanceAsync = ref.watch(accountBalanceProvider);
     
     return accountBalanceAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppTheme.spacing32),
-          child: CircularProgressIndicator(),
-        ),
-      ),
-      error: (e, st) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
-          child: Column(
-            children: [
-              const Icon(Icons.error, color: AppColors.error),
-              const SizedBox(height: AppTheme.spacing8),
-              Text('Error loading account balance: $e'),
-            ],
-          ),
-        ),
+      loading: () => const AppLoadingState(),
+      error: (e, st) => AppErrorState(
+        message: 'Error loading account balance: $e',
+        onRetry: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
       ),
       data: (accountBalance) => PaymentWidget(
         accountBalance: accountBalance,
@@ -308,11 +257,7 @@ class AccountLedgerCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final billsAsync = ref.watch(billsProvider);
     
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radius12),
-      ),
+    return AppCard(
       child: SizedBox(
         height: 600, // Fixed height for the card
         child: billsAsync.when(

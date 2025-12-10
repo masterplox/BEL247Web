@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -31,8 +32,23 @@ class DailyConsumptionChart extends ConsumerWidget {
     return Container(
       height: 300,
       padding: const EdgeInsets.all(AppTheme.spacing16),
-      child: LineChart(
-        LineChartData(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final chartWidth = constraints.maxWidth;
+          final maxX = (consumptionData!.length - 1).toDouble();
+          
+          // Calculate responsive interval for x-axis labels
+          final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+            screenWidth: screenWidth,
+            chartWidth: chartWidth,
+            maxValue: maxX,
+            minLabelSpacing: 60,
+            defaultInterval: maxX > 30 ? 7 : 1, // Show weekly labels for long periods, daily for short
+          );
+          
+          return LineChart(
+            LineChartData(
           gridData: FlGridData(
             show: true,
             drawVerticalLine: true,
@@ -59,7 +75,7 @@ class DailyConsumptionChart extends ConsumerWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: 1,
+                interval: xAxisInterval,
                 getTitlesWidget: (value, meta) {
                   if (value.toInt() < consumptionData!.length) {
                     final date = consumptionData![value.toInt()].date;
@@ -101,7 +117,7 @@ class DailyConsumptionChart extends ConsumerWidget {
             ),
           ),
           minX: 0,
-          maxX: (consumptionData!.length - 1).toDouble(),
+          maxX: maxX,
           minY: 0,
           maxY: _getMaxYValue(),
           lineBarsData: [
@@ -110,24 +126,21 @@ class DailyConsumptionChart extends ConsumerWidget {
           ],
           lineTouchData: LineTouchData(
             enabled: true,
-            touchTooltipData: LineTouchTooltipData(
-              tooltipRoundedRadius: AppTheme.radius8,
-              tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
+            touchTooltipData: WidgetBuilderUtils.buildLineTooltipData(
+              context,
+              textColor: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
               getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
-                  final index = spot.x.toInt();
-                  if (index < consumptionData!.length) {
-                    final data = consumptionData![index];
-                    return LineTooltipItem(
-                      '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh\n\$${data.cost.toStringAsFixed(2)}',
-                      const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    );
-                  }
-                  return null;
-                }).where((item) => item != null).toList(),
+                final index = spot.x.toInt();
+                if (index < consumptionData!.length) {
+                  final data = consumptionData![index];
+                  return LineTooltipItem(
+                    '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh\n\$${data.cost.toStringAsFixed(2)}',
+                    const TextStyle(), // Will be styled by buildLineTooltipData
+                  );
+                }
+                return null;
+              }).whereType<LineTooltipItem>().toList(),
             ),
             touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
               if (event is FlTapUpEvent && (touchResponse?.lineBarSpots?.isNotEmpty ?? false)) {
@@ -140,7 +153,9 @@ class DailyConsumptionChart extends ConsumerWidget {
               }
             },
           ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -222,7 +237,7 @@ class DailyConsumptionChart extends ConsumerWidget {
       ),
       belowBarData: BarAreaData(
         show: true,
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
       ),
     );
   }

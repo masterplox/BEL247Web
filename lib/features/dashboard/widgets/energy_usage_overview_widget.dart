@@ -2,9 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_bar_chart.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_switch.dart';
 import '../../../core/widgets/app_text.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
@@ -28,7 +28,7 @@ class EnergyUsageOverviewWidget extends StatefulWidget {
 }
 
 class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
-  bool _showPreviousYear = false;
+  final bool _showPreviousYear = false;
 
   @override
   Widget build(BuildContext context) => AppCard(
@@ -36,10 +36,10 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Flexible(
+                Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -57,20 +57,20 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
                     ],
                   ),
                 ),
-                Row(
-                  children: [
-                    const AppText('Compare Last Year', style: AppTextStyle.caption),
-                    const SizedBox(width: AppTheme.spacing8),
-                    AppSwitch(
-                      value: _showPreviousYear,
-                      onChanged: (value) {
-                        setState(() {
-                          _showPreviousYear = value;
-                        });
-                      },
-                    ),
-                  ],
-                )
+                // Row(
+                //   children: [
+                //     const AppText('Compare Last Year', style: AppTextStyle.caption),
+                //     const SizedBox(width: AppTheme.spacing8),
+                //     AppSwitch(
+                //       value: _showPreviousYear,
+                //       onChanged: (value) {
+                //         setState(() {
+                //           _showPreviousYear = value;
+                //         });
+                //       },
+                //     ),
+                //   ],
+                // )
               ],
             ),
             const SizedBox(height: AppTheme.spacing20),
@@ -121,43 +121,55 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
       ),
     );
 
-    return AppBarChart(
-      barChartData: BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: maxY,
-        barTouchData: BarTouchData(
-          enabled: true,
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (group) => Theme.of(context).colorScheme.secondary,
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final kwh = rod.toY;
-              final index = group.x.toInt();
-              if (index >= 0 && index < dates.length) {
-                return BarTooltipItem(
-                  '${dateFormatter.format(dates[index])}\n${kwh.toStringAsFixed(1)} kWh',
-                  TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              }
-              return BarTooltipItem(
-                '${kwh.toStringAsFixed(1)} kWh',
-                TextStyle(
-                  color: Theme.of(context).colorScheme.onSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              );
-            },
-          ),
-        ),
-        titlesData: FlTitlesData(
-          show: true,
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 50,
-              interval: 1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final chartWidth = constraints.maxWidth;
+        final maxX = (dailyConsumption.length - 1).toDouble();
+        
+        // Calculate responsive interval for x-axis labels
+        final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+          screenWidth: screenWidth,
+          chartWidth: chartWidth,
+          maxValue: maxX,
+          minLabelSpacing: 70,
+          defaultInterval: 1,
+        );
+        
+        return AppBarChart(
+          barChartData: BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: maxY,
+            barTouchData: BarTouchData(
+              enabled: true,
+              touchTooltipData: WidgetBuilderUtils.buildBarTooltipData(
+                context,
+                // backgroundColor: Theme.of(context).colorScheme.secondary,
+                // textColor: Theme.of(context).colorScheme.onSecondary,
+                fontWeight: FontWeight.bold,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  final kwh = rod.toY;
+                  final index = group.x.toInt();
+                  if (index >= 0 && index < dates.length) {
+                    return BarTooltipItem(
+                      '${dateFormatter.format(dates[index])}\n${kwh.toStringAsFixed(1)} kWh',
+                      const TextStyle(), // Will be styled by buildBarTooltipData
+                    );
+                  }
+                  return BarTooltipItem(
+                    '${kwh.toStringAsFixed(1)} kWh',
+                    const TextStyle(), // Will be styled by buildBarTooltipData
+                  );
+                },
+              ),
+            ),
+            titlesData: FlTitlesData(
+              show: true,
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 50,
+                  interval: xAxisInterval,
               getTitlesWidget: (double value, TitleMeta meta) {
                 final index = value.toInt();
                 if (index < 0 || index >= dates.length) {
@@ -195,7 +207,9 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
         ),
         barGroups: barGroups,
         gridData: const FlGridData(show: false),
-      ),
+          ),
+        );
+      },
     );
   }
 

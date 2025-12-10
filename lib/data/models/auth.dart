@@ -181,3 +181,17 @@ class SignUpRequest with _$SignUpRequest {
   factory SignUpRequest.fromJson(Map<String, dynamic> json) =>
       _$SignUpRequestFromJson(json);
 }
+
+/// Password reset request model
+@freezed
+class PasswordResetRequest with _$PasswordResetRequest {
+  const factory PasswordResetRequest({
+    required String phone,
+    required String newPassword,
+    required String confirmPassword,
+    required String otp,
+  }) = _PasswordResetRequest;
+
+  factory PasswordResetRequest.fromJson(Map<String, dynamic> json) =>
+      _$PasswordResetRequestFromJson(json);
+}

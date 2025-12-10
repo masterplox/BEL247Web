@@ -103,9 +103,9 @@ class UsageStatisticsPanel extends ConsumerWidget {
       Container(
         padding: const EdgeInsets.all(AppTheme.spacing12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [

@@ -199,7 +199,7 @@ class _BillDownloadWidgetState extends ConsumerState<BillDownloadWidget> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: _getStatusColor(bill.paymentStatus).withOpacity(0.1),
+          color: _getStatusColor(bill.paymentStatus).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Icon(

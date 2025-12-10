@@ -26,11 +26,12 @@ class ResponsiveNavigation extends ConsumerWidget {
     final navigationNotifier = ref.watch(navigationNotifierProvider);
 
     // Update screen size and sync with current route when widget builds
+    // Only update if screen size actually changed to avoid resetting manual sidebar toggle
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final screenSize = MediaQuery.of(context).size;
       navigationNotifier.updateScreenSize(screenSize);
       
-      // Sync navigation state with current route
+      // Sync navigation state with current route (only updates if route changed)
       final currentLocation = GoRouterState.of(context).matchedLocation;
       navigationNotifier.navigateToRoute(currentLocation);
     });
@@ -174,16 +175,18 @@ class _SidebarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing16,
+      padding: EdgeInsets.symmetric(
+        horizontal: isExpanded ? AppTheme.spacing16 : AppTheme.spacing4,
         vertical: AppTheme.spacing8,
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.flash_on,
             color: AppColors.primary,
-            size: 32,
+            size: isExpanded ? 32 : 20,
           ),
           if (isExpanded) ...[
             const SizedBox(width: AppTheme.spacing12),
@@ -194,16 +197,24 @@ class _SidebarHeader extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ],
+          ] else
+            const SizedBox(width: AppTheme.spacing4),
           IconButton(
             onPressed: onToggle,
             icon: Icon(
               isExpanded ? Icons.chevron_left : Icons.chevron_right,
               color: AppColors.textSecondary,
+              size: 20,
             ),
             tooltip: isExpanded ? 'Collapse sidebar' : 'Expand sidebar',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 28,
+              minHeight: 28,
+            ),
           ),
         ],
       ),
@@ -300,9 +311,11 @@ class _SidebarFooter extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing12),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement logout
-                    ref.read(authNotifierProvider.notifier).logout();
+                  onPressed: () async {
+                    await ref.read(authNotifierProvider.notifier).logout();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
                   },
                   icon: const Icon(
                     Icons.arrow_forward,
@@ -341,9 +354,11 @@ class _SidebarFooter extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing8),
                 IconButton(
-                  onPressed: () {
-                    // TODO: Implement logout
-                    ref.read(authNotifierProvider.notifier).logout();
+                  onPressed: () async {
+                    await ref.read(authNotifierProvider.notifier).logout();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
                   },
                   icon: const Icon(
                     Icons.logout,

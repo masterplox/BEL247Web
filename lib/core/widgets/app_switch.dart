@@ -18,9 +18,9 @@ class AppSwitch extends StatelessWidget {
       // You can add more customization here to match your theme
       // For example:
       // activeColor: Theme.of(context).colorScheme.primary,
-      // activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+      // activeTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
       // inactiveThumbColor: Colors.grey,
-      // inactiveTrackColor: Colors.grey.withOpacity(0.5),
+      // inactiveTrackColor: Colors.grey.withValues(alpha: 0.5),
     );
   }
 }

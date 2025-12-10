@@ -227,3 +227,21 @@ Map<String, dynamic> _$$SignUpRequestImplToJson(_$SignUpRequestImpl instance) =>
       'password': instance.password,
       'contact': instance.contact,
     };
+
+_$PasswordResetRequestImpl _$$PasswordResetRequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$PasswordResetRequestImpl(
+  phone: json['phone'] as String,
+  newPassword: json['newPassword'] as String,
+  confirmPassword: json['confirmPassword'] as String,
+  otp: json['otp'] as String,
+);
+
+Map<String, dynamic> _$$PasswordResetRequestImplToJson(
+  _$PasswordResetRequestImpl instance,
+) => <String, dynamic>{
+  'phone': instance.phone,
+  'newPassword': instance.newPassword,
+  'confirmPassword': instance.confirmPassword,
+  'otp': instance.otp,
+};

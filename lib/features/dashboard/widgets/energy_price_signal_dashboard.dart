@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_line_chart.dart';
 import '../../../core/widgets/app_text.dart';
@@ -67,11 +68,11 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
               SizedBox(height: isMobile ? AppTheme.spacing16 : AppTheme.spacing24),
               
               // Tier 2: 10-Day Price Trend Chart
-              if (isMobile)
-                _buildMobileChartToggle()
-              else
-                const SizedBox.shrink(),
-              if (!isMobile || _showChart)
+              // if (isMobile)
+              //   _buildMobileChartToggle()
+              // else
+              //   const SizedBox.shrink(),
+              // if (!isMobile || _showChart)
                 _buildTenDayChart(context, isMobile, isTablet),
             ],
           ),
@@ -93,14 +94,15 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
     final lastUpdated = DateTime.now();
 
     return AppCard(
-      // color: priceColor.withOpacity(0.1),
+      // color: priceColor.withValues(alpha: 0.1),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
+              Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -112,6 +114,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
                     const SizedBox(height: AppTheme.spacing8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         AppText(
                           r'BZ$',
@@ -122,7 +125,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
                         Text(
                           currentPrice.toStringAsFixed(3),
                           style: TextStyle(
-                            fontSize: isMobile ? 48 : 64,
+                            fontSize: isMobile ? 36 : 64,
                             fontWeight: FontWeight.bold,
                             color: priceColor,
                             height: 1,
@@ -133,6 +136,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
                   ],
                 ),
               ),
+              const SizedBox(width: AppTheme.spacing8),
               _buildPeakBadge(touPeriod),
             ],
           ),
@@ -234,14 +238,32 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
           const SizedBox(height: AppTheme.spacing16),
           SizedBox(
             height: isMobile ? 250 : isTablet ? 300 : 350,
-            child: AppLineChart(
-              lineChartData: _buildPriceTrendChartData(
-                prices: prices,
-                dates: dates,
-                minY: minY,
-                maxY: maxY,
-                todayIndex: todayIndex,
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final chartWidth = constraints.maxWidth;
+                final maxX = (prices.length - 1).toDouble();
+                
+                // Calculate responsive interval for x-axis labels
+                final xAxisInterval = WidgetBuilderUtils.calculateResponsiveInterval(
+                  screenWidth: screenWidth,
+                  chartWidth: chartWidth,
+                  maxValue: maxX,
+                  minLabelSpacing: 70,
+                  defaultInterval: maxX > 30 ? 7 : 1,
+                );
+                
+                return AppLineChart(
+                  lineChartData: _buildPriceTrendChartData(
+                    prices: prices,
+                    dates: dates,
+                    minY: minY,
+                    maxY: maxY,
+                    todayIndex: todayIndex,
+                    xAxisInterval: xAxisInterval,
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -255,6 +277,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
     required double minY,
     required double maxY,
     required int? todayIndex,
+    double? xAxisInterval,
   }) => LineChartData(
       gridData: FlGridData(
         show: true,
@@ -275,7 +298,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 50,
-            interval: 1,
+            interval: xAxisInterval ?? 1,
             getTitlesWidget: (value, meta) {
               final index = value.toInt();
               if (index >= 0 && index < dates.length) {
@@ -351,33 +374,26 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                _getPriceColor(prices.last).withOpacity(0.3),
-                _getPriceColor(prices.first).withOpacity(0.1),
+                _getPriceColor(prices.last).withValues(alpha: 0.3),
+                _getPriceColor(prices.first).withValues(alpha: 0.1),
               ],
             ),
           ),
         ),
       ],
       lineTouchData: LineTouchData(
-        touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (touchedSpot) => AppColors.grey800,
-          tooltipRoundedRadius: AppTheme.radius8,
-          tooltipPadding: const EdgeInsets.all(AppTheme.spacing8),
-          tooltipMargin: 8,
+        touchTooltipData: WidgetBuilderUtils.buildLineTooltipData(
+          context,
           getTooltipItems: (touchedSpots) => touchedSpots.map((touchedSpot) {
-              final index = touchedSpot.x.toInt();
-              if (index >= 0 && index < prices.length) {
-                return LineTooltipItem(
-                  'BZ\$${prices[index].toStringAsFixed(3)}\n${DateFormat('MMM d').format(dates[index])}',
-                  const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                );
-              }
-              return null;
-            }).toList(),
+            final index = touchedSpot.x.toInt();
+            if (index >= 0 && index < prices.length) {
+              return LineTooltipItem(
+                'BZ\$${prices[index].toStringAsFixed(3)}\n${DateFormat('MMM d').format(dates[index])}',
+                const TextStyle(), // Will be styled by buildLineTooltipData
+              );
+            }
+            return null;
+          }).toList(),
         ),
         handleBuiltInTouches: true,
         getTouchLineStart: (data, index) => 0,
@@ -388,7 +404,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
           if (todayIndex != null)
             VerticalLine(
               x: todayIndex.toDouble(),
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               strokeWidth: 2,
               dashArray: [5, 5],
               label: VerticalLineLabel(

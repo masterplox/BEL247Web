@@ -215,35 +215,35 @@ class _AlertBannerWidgetState extends State<AlertBannerWidget>
     switch (widget.type) {
       case AlertBannerType.info:
         return _AlertBannerColors(
-          background: AppColors.primaryLight.withOpacity(0.1),
+          background: AppColors.primaryLight.withValues(alpha: 0.1),
           border: AppColors.primaryLight,
           icon: AppColors.primary,
           text: AppColors.textPrimary,
-          shadow: AppColors.primary.withOpacity(0.1),
+          shadow: AppColors.primary.withValues(alpha: 0.1),
         );
       case AlertBannerType.warning:
         return _AlertBannerColors(
-          background: AppColors.warning.withOpacity(0.1),
+          background: AppColors.warning.withValues(alpha: 0.1),
           border: AppColors.warning,
           icon: AppColors.warning,
           text: AppColors.textPrimary,
-          shadow: AppColors.warning.withOpacity(0.1),
+          shadow: AppColors.warning.withValues(alpha: 0.1),
         );
       case AlertBannerType.error:
         return _AlertBannerColors(
-          background: AppColors.error.withOpacity(0.1),
+          background: AppColors.error.withValues(alpha: 0.1),
           border: AppColors.error,
           icon: AppColors.error,
           text: AppColors.textPrimary,
-          shadow: AppColors.error.withOpacity(0.1),
+          shadow: AppColors.error.withValues(alpha: 0.1),
         );
       case AlertBannerType.success:
         return _AlertBannerColors(
-          background: AppColors.success.withOpacity(0.1),
+          background: AppColors.success.withValues(alpha: 0.1),
           border: AppColors.success,
           icon: AppColors.success,
           text: AppColors.textPrimary,
-          shadow: AppColors.success.withOpacity(0.1),
+          shadow: AppColors.success.withValues(alpha: 0.1),
         );
     }
   }

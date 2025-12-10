@@ -73,5 +73,7 @@ class AppColors {
   static const Color paid = Color(0xFF10B981); // Green
   static const Color due = Color(0xFFEF4444); // Red
   static const Color pending = Color(0xFFF59E0B); // Amber
-  static const Color overdue = Color(0xFFDC2626); // Dark red
+  static const Color overdue = Color(0xFFDC2626);
+
+  static const Color transparent = Colors.transparent;
 }
