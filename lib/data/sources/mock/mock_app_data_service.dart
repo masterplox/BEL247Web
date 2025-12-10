@@ -2,10 +2,11 @@ import '../../../core/utils/logger.dart';
 import '../../models/api_dtos.dart';
 import '../../models/user.dart' show AccountBalance, UsageSummary, UsagePeriod;
 import 'data_loader.dart';
+import 'mock_asset_paths.dart';
 
 class MockAppDataService {
-  static const String _path = 'assets/data/mock_app_data.json';
-  static const String _energyPricesPath = 'assets/data/mock_energy_prices.json';
+  static const String _path = MockAssetPaths.appData;
+  static const String _energyPricesPath = MockAssetPaths.energyPrices;
 
   static Future<Map<String, dynamic>?> _getAccountJson(String accountId) async {
     print('[MockAppDataService] _getAccountJson path=$_path accountId=$accountId');

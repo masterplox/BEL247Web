@@ -4,11 +4,12 @@ import '../../models/bill.dart';
 import '../../models/consumption.dart';
 import '../../repositories/bill_repository.dart';
 import 'data_loader.dart';
+import 'mock_asset_paths.dart';
 
 /// Mock implementation of BillRepository using local JSON data
 class MockBillRepository implements BillRepository {
-  static const String _billsDataPath = 'assets/data/mock_bills.json';
-  static const String _consumptionDataPath = 'assets/data/mock_consumption.json';
+  static const String _billsDataPath = MockAssetPaths.bills;
+  static const String _consumptionDataPath = MockAssetPaths.consumption;
 
   @override
   Future<ApiResponse<BillsResponse>> getBills(String userId) async {

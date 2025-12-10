@@ -1,13 +1,13 @@
-import 'dart:convert';
-import '../../core/utils/logger.dart';
 import '../../core/utils/error_handler.dart';
+import '../../core/utils/logger.dart';
 import '../sources/mock/data_loader.dart';
+import '../sources/mock/mock_asset_paths.dart';
 
 /// Mock API service that simulates REST endpoints
 class MockApiEndpoints {
-  static const String _userDataPath = 'assets/data/mock_user.json';
-  static const String _billsDataPath = 'assets/data/mock_bills.json';
-  static const String _consumptionDataPath = 'assets/data/mock_consumption.json';
+  static const String _userDataPath = MockAssetPaths.user;
+  static const String _billsDataPath = MockAssetPaths.bills;
+  static const String _consumptionDataPath = MockAssetPaths.consumption;
 
   /// Simulate GET /api/user/:id endpoint
   static Future<ApiResponse<Map<String, dynamic>>> getUserById(String userId) async {

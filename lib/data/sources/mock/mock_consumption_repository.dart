@@ -3,10 +3,11 @@ import '../../../core/utils/logger.dart';
 import '../../models/consumption.dart';
 import '../../repositories/consumption_repository.dart';
 import 'data_loader.dart';
+import 'mock_asset_paths.dart';
 
 /// Mock implementation of ConsumptionRepository using local JSON data
 class MockConsumptionRepository implements ConsumptionRepository {
-  static const String _consumptionDataPath = 'assets/data/mock_consumption.json';
+  static const String _consumptionDataPath = MockAssetPaths.consumption;
 
   @override
   Future<ApiResponse<DailyConsumption>> getDailyConsumption(String userId, DateTime date) async {

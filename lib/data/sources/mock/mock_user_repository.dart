@@ -3,10 +3,11 @@ import '../../../core/utils/logger.dart';
 import '../../models/user.dart';
 import '../../repositories/user_repository.dart';
 import 'data_loader.dart';
+import 'mock_asset_paths.dart';
 
 /// Mock implementation of UserRepository using local JSON data
 class MockUserRepository implements UserRepository {
-  static const String _userDataPath = 'assets/data/mock_user.json';
+  static const String _userDataPath = MockAssetPaths.user;
 
   @override
   Future<ApiResponse<User>> getUserById(String userId) async {
