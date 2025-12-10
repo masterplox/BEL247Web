@@ -27,23 +27,41 @@ class MockAppDataService {
   }
 
   static Future<List<EnergyPricePoint>?> getEnergyPrices() async {
+    print('[MockAppDataService] ===== getEnergyPrices CALLED =====');
+    print('[MockAppDataService] Energy prices path: "$_energyPricesPath"');
+    print('[MockAppDataService] MockAssetPaths.energyPrices: "${MockAssetPaths.energyPrices}"');
     try {
+      print('[MockAppDataService] Calling DataLoader.loadJsonFromAssets("$_energyPricesPath")...');
       final data = await DataLoader.loadJsonFromAssets(_energyPricesPath);
+      print('[MockAppDataService] ✓ DataLoader returned data');
+      print('[MockAppDataService] Data keys: ${data.keys.toList()}');
+      
       final prices = data['energyPrices'] as List<dynamic>?;
       if (prices == null) {
-        print('[MockAppDataService] energyPrices key missing in json path=$_energyPricesPath');
+        print('[MockAppDataService][WARNING] energyPrices key missing in json');
+        print('[MockAppDataService] Available keys: ${data.keys.toList()}');
+        print('[MockAppDataService] Path used: $_energyPricesPath');
         return null;
       }
+      print('[MockAppDataService] Found ${prices.length} price entries');
+      
       final result = prices
           .cast<Map<String, dynamic>?>()
           .where((p) => p != null)
           .map((p) => EnergyPricePoint.fromJson(p!))
           .toList();
-      print('[MockAppDataService] getEnergyPrices ok count=${result.length}');
+      print('[MockAppDataService] ✓ getEnergyPrices SUCCESS - count=${result.length}');
+      print('[MockAppDataService] ===== getEnergyPrices COMPLETE =====');
       return result;
     } catch (e, st) {
       Logger.error('MockAppDataService.getEnergyPrices failed', error: e, stackTrace: st);
-      print('[MockAppDataService][ERROR] getEnergyPrices error=$e');
+      print('[MockAppDataService] ===== getEnergyPrices ERROR =====');
+      print('[MockAppDataService][ERROR] Exception type: ${e.runtimeType}');
+      print('[MockAppDataService][ERROR] Error message: $e');
+      print('[MockAppDataService][ERROR] Path attempted: $_energyPricesPath');
+      print('[MockAppDataService][ERROR] Stack trace:');
+      print(st);
+      print('[MockAppDataService] ===== END ERROR =====');
       return null;
     }
   }

@@ -11,28 +11,50 @@ class DataLoader {
   /// Load JSON data from assets with caching
   static Future<Map<String, dynamic>> loadJsonFromAssets(String assetPath) async {
     try {
+      // Log the exact path being requested
+      print('[DataLoader] ===== ATTEMPTING TO LOAD ASSET =====');
+      print('[DataLoader] Requested path: "$assetPath"');
+      print('[DataLoader] Cache contains key: ${_cache.containsKey(assetPath)}');
+      
       // Check cache first
       if (_cache.containsKey(assetPath)) {
         Logger.info('Loading $assetPath from cache');
-        print('[DataLoader] loadJsonFromAssets cache-hit path=$assetPath');
+        print('[DataLoader] ✓ Cache hit for path=$assetPath');
         return _cache[assetPath] as Map<String, dynamic>;
       }
 
       // Load from assets
       Logger.info('Loading $assetPath from assets');
-      print('[DataLoader] loadJsonFromAssets cache-miss path=$assetPath');
+      print('[DataLoader] ✗ Cache miss - loading from rootBundle');
+      print('[DataLoader] Calling rootBundle.loadString("$assetPath")...');
+      
       final String jsonString = await rootBundle.loadString(assetPath);
+      
+      print('[DataLoader] ✓ rootBundle.loadString succeeded');
+      print('[DataLoader] JSON string length: ${jsonString.length} characters');
+      
       final Map<String, dynamic> jsonData = json.decode(jsonString) as Map<String, dynamic>;
+      
+      print('[DataLoader] ✓ JSON decoded successfully');
+      print('[DataLoader] JSON keys: ${jsonData.keys.toList()}');
 
       // Cache the data
       _cache[assetPath] = jsonData;
       
       Logger.info('Successfully loaded and cached $assetPath');
-      print('[DataLoader] loaded and cached path=$assetPath');
+      print('[DataLoader] ✓ Successfully loaded and cached: $assetPath');
+      print('[DataLoader] ===== ASSET LOAD SUCCESS =====');
       return jsonData;
     } catch (e, stackTrace) {
       Logger.error('Failed to load JSON from $assetPath', error: e, stackTrace: stackTrace);
-      print('[DataLoader][ERROR] failed to load path=$assetPath error=$e');
+      print('[DataLoader] ===== ASSET LOAD ERROR =====');
+      print('[DataLoader][ERROR] Failed to load asset');
+      print('[DataLoader][ERROR] Path: "$assetPath"');
+      print('[DataLoader][ERROR] Error type: ${e.runtimeType}');
+      print('[DataLoader][ERROR] Error message: $e');
+      print('[DataLoader][ERROR] Stack trace:');
+      print(stackTrace);
+      print('[DataLoader] ===== END ERROR =====');
       rethrow;
     }
   }
