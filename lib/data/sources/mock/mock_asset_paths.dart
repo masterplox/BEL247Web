@@ -6,7 +6,7 @@ class MockAssetPaths {
   MockAssetPaths._(); // Private constructor to prevent instantiation
 
   // Base path for all mock data assets
-  static const String _basePath = 'assets/assets/data';
+  static const String _basePath = 'assets/data';
 
   // Individual asset file paths
   static const String appData = '$_basePath/mock_app_data.json';
