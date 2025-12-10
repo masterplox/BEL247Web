@@ -14,11 +14,11 @@ class DashboardRepository {
     print('[Dashboard] Repository.fetchEnergyPrices useMockApi=${EnvConfig.useMockApi}');
     print('[Dashboard] Repository.fetchEnergyPrices start accountId=$accountId');
     await Future<void>.delayed(const Duration(milliseconds: 300));
-    final prices = EnvConfig.useMockApi
-        ? await MockAppDataService.getEnergyPrices()
-        : null; // Replace with live call when implemented
+    // Always use mock service for now (similar to fetch7DayConsumption)
+    // TODO: Add live API call when implemented
+    final prices = await MockAppDataService.getEnergyPrices();
     final result = prices ?? [];
-    if (prices == null) {
+    if (prices == null || result.isEmpty) {
       print('[Dashboard] Repository.fetchEnergyPrices [ERROR] No prices found for accountId=$accountId, returning empty list');
     } else {
       print('[Dashboard] Repository.fetchEnergyPrices success count=${result.length} accountId=$accountId');
@@ -73,7 +73,7 @@ class DashboardRepository {
         ? await MockAppDataService.getDashboardData(accountId)
         : null; // Replace with live call when implemented
     final result = data ??
-        DashboardData(
+        const DashboardData(
           dailyCostSummary: DailyCostSummaryData(
             title: 'Daily Cost',
             description: 'The information below is an estimate of your current billing cycle.',
