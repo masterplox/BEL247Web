@@ -11,8 +11,8 @@ COPY . .
 # Enable Flutter web (usually already enabled)
 RUN flutter config --enable-web
 
-# Build-time args (use Render/env vars if set, else defaults so deployed app hits real API)
-ARG API_BASE_URL=https://m.bel.com.bz/MobileApisTest
+# Build-time args. Default /api-proxy uses same-origin proxy (CORS workaround on Render).
+ARG API_BASE_URL=/api-proxy
 ARG USE_MOCK=false
 ARG USE_AMI_MOCK=false
 ARG ENCRYPTION_KEY=bel247_encryption_key_32_chars
@@ -50,6 +50,9 @@ FROM nginx:alpine
 
 # Copy build output to Nginx web root
 COPY --from=build /app/build/web /usr/share/nginx/html
+
+# Nginx config: serves app + proxies /api-proxy/ to real API (CORS workaround)
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80 (Render expects this)
 EXPOSE 80
