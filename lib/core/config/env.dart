@@ -1,37 +1,41 @@
+import 'env_runtime_stub.dart' if (dart.library.html) 'env_runtime_web.dart' as env_runtime;
+
 class EnvConfig {
-  // String values from --dart-define (compile-time). Defaults preserved for local/dev.
-  static String get apiBaseUrl => const String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'https://m.bel.com.bz/MobileApisTest',
-      );
+  /// Runtime override from window.__BEL247_CONFIG__.API_BASE_URL (set in index.html at deploy time). Null if not set.
+  static String? get runtimeApiBaseUrl => env_runtime.getRuntimeApiBaseUrl();
 
-  static String get mockApiBaseUrl => const String.fromEnvironment(
-        'MOCK_API_BASE_URL',
-        defaultValue: 'mock://data',
-      );
+  // String values from --dart-define (compile-time). Empty = use default (fixes deployed builds when env not passed).
+  static String get apiBaseUrl {
+    const value = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (value.isEmpty) return 'https://m.bel.com.bz/MobileApisTest';
+    return value;
+  }
 
-  static String get prodApiBaseUrl => const String.fromEnvironment(
-        'PROD_API_BASE_URL',
-        defaultValue: 'https://api.bel247.com/v1',
-      );
+  static String get mockApiBaseUrl {
+    const value = String.fromEnvironment('MOCK_API_BASE_URL', defaultValue: '');
+    if (value.isEmpty) return 'mock://data';
+    return value;
+  }
 
-  /// Global flag to determine if the app should use mock APIs
-  ///
-  /// Controlled via --dart-define=USE_MOCK=true/false
+  static String get prodApiBaseUrl {
+    const value = String.fromEnvironment('PROD_API_BASE_URL', defaultValue: '');
+    if (value.isEmpty) return 'https://api.bel247.com/v1';
+    return value;
+  }
+
+  /// Global flag to determine if the app should use mock APIs.
+  /// Empty or not set = false (use real API) so production/deployed builds work when USE_MOCK isn't passed at build time.
   static bool get useMockApi {
-    const value = String.fromEnvironment('USE_MOCK', defaultValue: 'true');
+    const value = String.fromEnvironment('USE_MOCK', defaultValue: '');
+    if (value.isEmpty) return false;
     return value.toLowerCase() == 'true';
   }
 
-  /// Feature-specific flag to control AMI (smart meter) usage mock data
-  ///
-  /// This allows you to keep the rest of the app pointing to live APIs
-  /// while the AMI feature still uses local mock JSON data.
-  ///
-  /// Controlled via --dart-define=USE_AMI_MOCK=true/false
-  /// Defaults to true so AMI stays mocked until explicitly disabled.
+  /// Feature-specific flag to control AMI (smart meter) usage mock data.
+  /// Controlled via --dart-define=USE_AMI_MOCK=true/false. Empty = false.
   static bool get useMockAmiUsage {
-    const value = String.fromEnvironment('USE_AMI_MOCK', defaultValue: 'true');
+    const value = String.fromEnvironment('USE_AMI_MOCK', defaultValue: '');
+    if (value.isEmpty) return false;
     return value.toLowerCase() == 'true';
   }
 
@@ -72,5 +76,10 @@ class EnvConfig {
   static bool get isProduction => environment == 'production';
   static bool get isStaging => environment == 'staging';
 
-  static String get currentApiUrl => useMockApi ? mockApiBaseUrl : apiBaseUrl;
+  /// Effective API base URL: runtime override (e.g. from Render env) if set, else compile-time config.
+  static String get currentApiUrl {
+    final runtime = runtimeApiBaseUrl;
+    if (runtime != null && runtime.isNotEmpty) return runtime;
+    return useMockApi ? mockApiBaseUrl : apiBaseUrl;
+  }
 }

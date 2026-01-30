@@ -48,6 +48,10 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- Runtime config: API_BASE_URL is replaced at deploy time (e.g. Render env). Flutter reads window.__BEL247_CONFIG__. -->
+  <script>
+    window.__BEL247_CONFIG__ = { "API_BASE_URL": "__API_BASE_URL__" };
+  </script>
   <!-- Security Initialization Script -->
   <script>
     // HTTPS Enforcement

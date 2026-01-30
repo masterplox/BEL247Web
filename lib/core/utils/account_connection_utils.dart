@@ -181,7 +181,7 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 TextFormField(
                   controller: _accountNumberHintController,
                   decoration: const InputDecoration(
-                    labelText: 'Account Number Hint',
+                    labelText: 'Account Number (Last 5 digits)',
                     hintText: 'Enter up to 5 characters',
                     prefixIcon: Icon(Icons.numbers),
                     border: OutlineInputBorder(),
