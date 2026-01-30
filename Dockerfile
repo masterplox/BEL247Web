@@ -28,18 +28,19 @@ ARG APP_VERSION=1.0.0
 RUN flutter pub get
 
 # Build the Flutter web release (ARGs above ensure correct API URL when env not passed at build time)
+# Quote APP_NAME so "BEL247 WebApp" is not split (Flutter would treat "WebApp" as target file)
 RUN flutter build web --release \
-  --dart-define=API_BASE_URL=$API_BASE_URL \
-  --dart-define=USE_MOCK=$USE_MOCK \
-  --dart-define=USE_AMI_MOCK=$USE_AMI_MOCK \
-  --dart-define=ENCRYPTION_KEY=$ENCRYPTION_KEY \
-  --dart-define=ENVIRONMENT=$ENVIRONMENT \
-  --dart-define=MOCK_API_BASE_URL=$MOCK_API_BASE_URL \
-  --dart-define=PROD_API_BASE_URL=$PROD_API_BASE_URL \
-  --dart-define=JWT_ACCESS_TOKEN_DURATION=$JWT_ACCESS_TOKEN_DURATION \
-  --dart-define=JWT_REFRESH_TOKEN_DURATION=$JWT_REFRESH_TOKEN_DURATION \
-  --dart-define=APP_NAME=$APP_NAME \
-  --dart-define=APP_VERSION=$APP_VERSION
+  --dart-define=API_BASE_URL="$API_BASE_URL" \
+  --dart-define=USE_MOCK="$USE_MOCK" \
+  --dart-define=USE_AMI_MOCK="$USE_AMI_MOCK" \
+  --dart-define=ENCRYPTION_KEY="$ENCRYPTION_KEY" \
+  --dart-define=ENVIRONMENT="$ENVIRONMENT" \
+  --dart-define=MOCK_API_BASE_URL="$MOCK_API_BASE_URL" \
+  --dart-define=PROD_API_BASE_URL="$PROD_API_BASE_URL" \
+  --dart-define=JWT_ACCESS_TOKEN_DURATION="$JWT_ACCESS_TOKEN_DURATION" \
+  --dart-define=JWT_REFRESH_TOKEN_DURATION="$JWT_REFRESH_TOKEN_DURATION" \
+  --dart-define=APP_NAME="$APP_NAME" \
+  --dart-define=APP_VERSION="$APP_VERSION"
 
 # Inject runtime API URL into index.html so the app uses it (Render env / build-time ARG)
 RUN sed -i "s|__API_BASE_URL__|$API_BASE_URL|g" /app/build/web/index.html
