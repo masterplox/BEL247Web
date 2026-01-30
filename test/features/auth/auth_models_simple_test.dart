@@ -5,7 +5,7 @@ void main() {
   group('Authentication Models Tests', () {
     test('AuthRequest should serialize and deserialize correctly', () {
       const request = AuthRequest(
-        email: 'test@example.com',
+        username: 'test@example.com',
         password: 'password123',
         rememberMe: true,
       );
@@ -13,7 +13,7 @@ void main() {
       final json = request.toJson();
       final fromJson = AuthRequest.fromJson(json);
 
-      expect(fromJson.email, equals(request.email));
+      expect(fromJson.username, equals(request.username));
       expect(fromJson.password, equals(request.password));
       expect(fromJson.rememberMe, equals(request.rememberMe));
     });

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/app_theme.dart';
-import '../../daily_bill/widgets/daily_consumption_breakdown_widget.dart';
-import 'ami_meter_readings_card.dart';
+// COMMENTED OUT - Old content replaced with meter readings chart
+// import '../../daily_bill/widgets/daily_consumption_breakdown_widget.dart';
+// import 'ami_meter_readings_card.dart';
+import 'meter_readings_chart.dart';
 
 class ConsumptionLayout extends ConsumerWidget {
   const ConsumptionLayout({super.key});
@@ -31,9 +33,13 @@ class DesktopConsumptionLayout extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AmiMeterReadingsCard(),
-            SizedBox(height: AppTheme.spacing24),
+            // COMMENTED OUT - Old AMI Meter Readings Card
+            // AmiMeterReadingsCard(),
+            // SizedBox(height: AppTheme.spacing24),
             // DailyConsumptionBreakdownWidget(),
+            
+            // New meter readings chart with this year vs last year comparison
+            MeterReadingsChart(),
           ],
         ),
       );
@@ -48,9 +54,13 @@ class TabletConsumptionLayout extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AmiMeterReadingsCard(),
-            SizedBox(height: AppTheme.spacing16),
-            DailyConsumptionBreakdownWidget(),
+            // COMMENTED OUT - Old content
+            // AmiMeterReadingsCard(),
+            // SizedBox(height: AppTheme.spacing16),
+            // DailyConsumptionBreakdownWidget(),
+            
+            // New meter readings chart with this year vs last year comparison
+            MeterReadingsChart(),
           ],
         ),
       );
@@ -65,9 +75,13 @@ class MobileConsumptionLayout extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AmiMeterReadingsCard(),
-            SizedBox(height: AppTheme.spacing12),
-            DailyConsumptionBreakdownWidget(),
+            // COMMENTED OUT - Old content
+            // AmiMeterReadingsCard(),
+            // SizedBox(height: AppTheme.spacing12),
+            // DailyConsumptionBreakdownWidget(),
+            
+            // New meter readings chart with this year vs last year comparison
+            MeterReadingsChart(),
           ],
         ),
       );

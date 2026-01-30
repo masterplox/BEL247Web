@@ -8,14 +8,14 @@ part of 'auth.dart';
 
 _$AuthRequestImpl _$$AuthRequestImplFromJson(Map<String, dynamic> json) =>
     _$AuthRequestImpl(
-      email: json['email'] as String,
+      username: json['username'] as String,
       password: json['password'] as String,
       rememberMe: json['rememberMe'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AuthRequestImplToJson(_$AuthRequestImpl instance) =>
     <String, dynamic>{
-      'email': instance.email,
+      'username': instance.username,
       'password': instance.password,
       'rememberMe': instance.rememberMe,
     };
@@ -100,6 +100,8 @@ _$AuthStateImpl _$$AuthStateImplFromJson(Map<String, dynamic> json) =>
       otpContact: json['otpContact'] as String?,
       otpVerified: json['otpVerified'] as bool? ?? false,
       signupCompleted: json['signupCompleted'] as bool? ?? false,
+      guestUUID: json['guestUUID'] as String?,
+      signupContactType: json['signupContactType'] as String?,
     );
 
 Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
@@ -114,6 +116,8 @@ Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
       'otpContact': instance.otpContact,
       'otpVerified': instance.otpVerified,
       'signupCompleted': instance.signupCompleted,
+      'guestUUID': instance.guestUUID,
+      'signupContactType': instance.signupContactType,
     };
 
 _$TokenRefreshRequestImpl _$$TokenRefreshRequestImplFromJson(
@@ -244,4 +248,56 @@ Map<String, dynamic> _$$PasswordResetRequestImplToJson(
   'newPassword': instance.newPassword,
   'confirmPassword': instance.confirmPassword,
   'otp': instance.otp,
+};
+
+_$SignUpStep1RequestImpl _$$SignUpStep1RequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$SignUpStep1RequestImpl(
+  mobileNumber: json['mobileNumber'] as String?,
+  email: json['email'] as String?,
+  username: json['username'] as String?,
+);
+
+Map<String, dynamic> _$$SignUpStep1RequestImplToJson(
+  _$SignUpStep1RequestImpl instance,
+) => <String, dynamic>{
+  'mobileNumber': instance.mobileNumber,
+  'email': instance.email,
+  'username': instance.username,
+};
+
+_$SignUpStep2RequestImpl _$$SignUpStep2RequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$SignUpStep2RequestImpl(
+  code: json['code'] as String,
+  phoneNumber: json['phoneNumber'] as String?,
+  email: json['email'] as String?,
+);
+
+Map<String, dynamic> _$$SignUpStep2RequestImplToJson(
+  _$SignUpStep2RequestImpl instance,
+) => <String, dynamic>{
+  'code': instance.code,
+  'phoneNumber': instance.phoneNumber,
+  'email': instance.email,
+};
+
+_$SignUpStep3RequestImpl _$$SignUpStep3RequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$SignUpStep3RequestImpl(
+  username: json['username'] as String,
+  password: json['password'] as String,
+  email: json['email'] as String?,
+  mobileNumber: json['mobileNumber'] as String?,
+  guestUUID: json['guestUUID'] as String? ?? '',
+);
+
+Map<String, dynamic> _$$SignUpStep3RequestImplToJson(
+  _$SignUpStep3RequestImpl instance,
+) => <String, dynamic>{
+  'username': instance.username,
+  'password': instance.password,
+  'email': instance.email,
+  'mobileNumber': instance.mobileNumber,
+  'guestUUID': instance.guestUUID,
 };

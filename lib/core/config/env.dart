@@ -2,7 +2,7 @@ class EnvConfig {
   // String values from --dart-define (compile-time). Defaults preserved for local/dev.
   static String get apiBaseUrl => const String.fromEnvironment(
         'API_BASE_URL',
-        defaultValue: 'https://api.bel247.com/v1',
+        defaultValue: 'https://m.bel.com.bz/MobileApisTest',
       );
 
   static String get mockApiBaseUrl => const String.fromEnvironment(
@@ -15,8 +15,23 @@ class EnvConfig {
         defaultValue: 'https://api.bel247.com/v1',
       );
 
+  /// Global flag to determine if the app should use mock APIs
+  ///
+  /// Controlled via --dart-define=USE_MOCK=true/false
   static bool get useMockApi {
     const value = String.fromEnvironment('USE_MOCK', defaultValue: 'true');
+    return value.toLowerCase() == 'true';
+  }
+
+  /// Feature-specific flag to control AMI (smart meter) usage mock data
+  ///
+  /// This allows you to keep the rest of the app pointing to live APIs
+  /// while the AMI feature still uses local mock JSON data.
+  ///
+  /// Controlled via --dart-define=USE_AMI_MOCK=true/false
+  /// Defaults to true so AMI stays mocked until explicitly disabled.
+  static bool get useMockAmiUsage {
+    const value = String.fromEnvironment('USE_AMI_MOCK', defaultValue: 'true');
     return value.toLowerCase() == 'true';
   }
 

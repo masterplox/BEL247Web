@@ -660,17 +660,21 @@ class AccountSwitcherState {
   const AccountSwitcherState({
     required this.accounts,
     required this.activeAccountId,
+    this.isInitialized = false,
   });
 
   final List<Account> accounts;
   final String activeAccountId;
+  final bool isInitialized;
 
   AccountSwitcherState copyWith({
     List<Account>? accounts,
     String? activeAccountId,
+    bool? isInitialized,
   }) => AccountSwitcherState(
         accounts: accounts ?? this.accounts,
         activeAccountId: activeAccountId ?? this.activeAccountId,
+        isInitialized: isInitialized ?? this.isInitialized,
       );
 
   Account? get activeAccount {
@@ -685,18 +689,52 @@ class AccountSwitcherState {
 /// Account Switcher Notifier
 class AccountSwitcherNotifier extends StateNotifier<AccountSwitcherState> {
   AccountSwitcherNotifier() : super(
-    AccountSwitcherState(
-      accounts: _mockAccounts,
-      activeAccountId: _mockAccounts.first.id,
+    // Start with empty accounts - will be populated after login
+    const AccountSwitcherState(
+      accounts: [],
+      activeAccountId: '',
+      isInitialized: false,
     ),
   );
 
   /// Initialize with real accounts after login
   void initializeAccounts(List<Account> accounts, {String? activeAccountId}) {
-    if (accounts.isEmpty) return;
+    print('[AccountSwitcher] ===== initializeAccounts CALLED with ${accounts.length} accounts =====');
+    Logger.info(
+      '[AccountSwitcher] initializeAccounts called with ${accounts.length} accounts',
+      tag: 'AccountSwitcher',
+    );
+    
+    // Always mark as initialized, even if accounts list is empty
+    // This allows us to distinguish between "still loading" and "no accounts found"
+    if (accounts.isEmpty) {
+      print('[AccountSwitcher] ⚠️ initializeAccounts called with empty list, marking as initialized');
+      Logger.warning('[AccountSwitcher] initializeAccounts called with empty list, marking as initialized', tag: 'AccountSwitcher');
+      state = state.copyWith(isInitialized: true);
+      return;
+    }
+    
     final initialId = activeAccountId ?? accounts.first.id;
-    state = AccountSwitcherState(accounts: accounts, activeAccountId: initialId);
-    Logger.info('Initialized accounts. Active: $initialId');
+    print('[AccountSwitcher] Setting state with ${accounts.length} accounts, activeAccountId: $initialId');
+    print('[AccountSwitcher] Account IDs: ${accounts.map((a) => a.id).join(", ")}');
+    Logger.info(
+      '[AccountSwitcher] Setting state with ${accounts.length} accounts, activeAccountId: $initialId',
+      tag: 'AccountSwitcher',
+    );
+    Logger.info(
+      '[AccountSwitcher] Account IDs: ${accounts.map((a) => a.id).join(", ")}',
+      tag: 'AccountSwitcher',
+    );
+    state = AccountSwitcherState(
+      accounts: accounts,
+      activeAccountId: initialId,
+      isInitialized: true,
+    );
+    print('[AccountSwitcher] ✅ State updated. Active account: $initialId, Total accounts: ${state.accounts.length}');
+    Logger.info(
+      '[AccountSwitcher] State updated. Active account: $initialId, Total accounts: ${state.accounts.length}',
+      tag: 'AccountSwitcher',
+    );
   }
 
   /// Switch to a different account
@@ -711,18 +749,36 @@ class AccountSwitcherNotifier extends StateNotifier<AccountSwitcherState> {
     }
   }
 
-  /// Refresh accounts list
+  /// Refresh accounts list from API
   Future<void> refreshAccounts() async {
-    // TODO: Fetch accounts from API
-    // For now, using mock data
-    state = state.copyWith(accounts: _mockAccounts);
+    try {
+      // Note: This requires access to AccountsRepository
+      // For now, this is a placeholder - actual implementation would need ref
+      Logger.info('Account refresh requested (requires repository access)', tag: 'AccountSwitcher');
+      // TODO: Implement repository access pattern or pass repository as dependency
+    } catch (e) {
+      Logger.error('Failed to refresh accounts', error: e, tag: 'AccountSwitcher');
+    }
   }
 
-  // Mock accounts for testing
+  /// Reset account switcher state (used on logout)
+  void reset() {
+    Logger.info('Resetting account switcher state', tag: 'AccountSwitcher');
+    state = const AccountSwitcherState(
+      accounts: [],
+      activeAccountId: '',
+      isInitialized: false,
+    );
+  }
+
+  // Mock accounts - no longer used, accounts are fetched from API after login
+  // Kept for reference only
+  @Deprecated('Accounts are now fetched from API after login')
   static final List<Account> _mockAccounts = [
     Account(
       id: 'account_1',
       accountNumber: '20241234',
+      customerNumber: '00083630', // Added customerNumber
       accountType: 'residential',
       address: '42 Marine Parade, Belize City',
       balance: 245.50,
@@ -734,6 +790,7 @@ class AccountSwitcherNotifier extends StateNotifier<AccountSwitcherState> {
     Account(
       id: 'account_2',
       accountNumber: '20245678',
+      customerNumber: '00083630', // Added customerNumber
       accountType: 'commercial',
       address: '15 Queen Street, Belmopan',
       balance: 1450,
@@ -745,6 +802,7 @@ class AccountSwitcherNotifier extends StateNotifier<AccountSwitcherState> {
     Account(
       id: 'account_3',
       accountNumber: '20249012',
+      customerNumber: '00083630', // Added customerNumber
       accountType: 'residential',
       address: '8 Coconut Drive, San Pedro',
       balance: 0,

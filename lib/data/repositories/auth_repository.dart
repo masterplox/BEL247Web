@@ -32,6 +32,15 @@ abstract class AuthRepository extends BaseRepository {
   /// Register a new user
   Future<ApiResponse<AuthResponse>> signup(SignUpRequest request);
 
+  /// Sign up Step 1 - Deliver OTP
+  Future<ApiResponse<void>> signUpStep1(SignUpStep1Request request);
+
+  /// Sign up Step 2 - Activate device with OTP
+  Future<ApiResponse<String>> signUpStep2(SignUpStep2Request request); // Returns GuestUUID
+
+  /// Sign up Step 3 - Register user
+  Future<ApiResponse<AuthResponse>> signUpStep3(SignUpStep3Request request);
+
   /// Reset password using phone, new password, and OTP
   Future<ApiResponse<void>> resetPassword(PasswordResetRequest request);
 
@@ -138,13 +147,94 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<ApiResponse<void>> signUpStep1(SignUpStep1Request request) async {
+    try {
+      Logger.info('Mock Sign up Step 1 - MobileNumber: ${request.mobileNumber ?? 'null'}, Email: ${request.email ?? 'null'}');
+      await Future.delayed(const Duration(milliseconds: 500));
+      Logger.info('Mock OTP sent successfully');
+      return ApiResponse.success(null);
+    } catch (e, stackTrace) {
+      Logger.error('Mock Sign up Step 1 error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Send OTP failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<String>> signUpStep2(SignUpStep2Request request) async {
+    try {
+      Logger.info('Mock Sign up Step 2 - Code: ${request.code}');
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (request.code == '12345') {
+        Logger.info('Mock OTP verified successfully');
+        return ApiResponse.success('mock_guest_uuid_${DateTime.now().millisecondsSinceEpoch}');
+      } else {
+        Logger.warning('Mock OTP verification failed');
+        return ApiResponse.error('Invalid OTP');
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Mock Sign up Step 2 error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Verify OTP failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<AuthResponse>> signUpStep3(SignUpStep3Request request) async {
+    try {
+      Logger.info('Mock Sign up Step 3 - Username: ${request.username}');
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final now = DateTime.now();
+      final accessTokenExpiry = now.add(const Duration(minutes: 15));
+      final refreshTokenExpiry = now.add(const Duration(days: 7));
+
+      final userSession = UserSession(
+        userId: 'user_${now.millisecondsSinceEpoch}',
+        email: request.email ?? request.username,
+        firstName: 'New',
+        lastName: 'User',
+        loginTime: now,
+        lastActivity: now,
+        isActive: true,
+        preferences: {},
+      );
+
+      final authResponse = AuthResponse(
+        accessToken: 'mock_access_token_${now.millisecondsSinceEpoch}',
+        refreshToken: 'mock_refresh_token_${now.millisecondsSinceEpoch}',
+        userId: userSession.userId,
+        expiresAt: accessTokenExpiry,
+        userSession: userSession,
+      );
+
+      await TokenStorageService.storeTokenPair(TokenPair(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        accessTokenExpiresAt: accessTokenExpiry,
+        refreshTokenExpiresAt: refreshTokenExpiry,
+      ));
+      await TokenStorageService.storeUserSession(userSession);
+      await TokenStorageService.updateLastRefresh();
+
+      Logger.info('Mock Sign up Step 3 successful');
+      return ApiResponse.success(authResponse);
+    } catch (e, stackTrace) {
+      Logger.error('Mock Sign up Step 3 error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Registration failed: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<ApiResponse<AuthResponse>> login(AuthRequest request) async {
     try {
-      Logger.info('Attempting login for user: ${request.email}');
+      Logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', tag: 'MockAuthRepository');
+      Logger.info('🔐 MOCK LOGIN ATTEMPT', tag: 'MockAuthRepository');
+      Logger.info('Username: ${request.username}', tag: 'MockAuthRepository');
+      Logger.info('Password: ${request.password.isEmpty ? '(empty)' : '***MASKED***'}', tag: 'MockAuthRepository');
       
       // Validate request
       final validation = _validateAuthRequest(request);
       if (!validation.isValid) {
+        Logger.warning('❌ Validation failed: ${validation.errors.join(', ')}', tag: 'MockAuthRepository');
         return ApiResponse.error(
           'Validation failed: ${validation.errors.join(', ')}',
         );
@@ -153,15 +243,19 @@ class MockAuthRepository implements AuthRepository {
       // Simulate API call delay
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Mock authentication logic
-      if (request.email == 'user@bel247.com' && request.password == 'password123') {
+      // Mock authentication logic - ONLY accepts hardcoded credentials
+      Logger.info('Checking credentials against mock data...', tag: 'MockAuthRepository');
+      Logger.info('Expected: user@bel247.com / password123', tag: 'MockAuthRepository');
+      
+      if (request.username == 'user@bel247.com' && request.password == 'password123') {
+        Logger.info('✅ Credentials match! Login successful.', tag: 'MockAuthRepository');
         final now = DateTime.now();
         final accessTokenExpiry = now.add(const Duration(minutes: 15));
         final refreshTokenExpiry = now.add(const Duration(days: 7));
 
         final userSession = UserSession(
           userId: 'user_001',
-          email: request.email,
+          email: request.username,
           firstName: 'John',
           lastName: 'Doe',
           loginTime: now,
@@ -192,10 +286,14 @@ class MockAuthRepository implements AuthRepository {
         await TokenStorageService.storeUserSession(userSession);
         await TokenStorageService.updateLastRefresh();
 
-        Logger.info('Login successful for user: ${request.email}');
+        Logger.info('✅ Login successful for user: ${request.username}', tag: 'MockAuthRepository');
+        Logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', tag: 'MockAuthRepository');
         return ApiResponse.success(authResponse);
       } else {
-        Logger.warning('Login failed for user: ${request.email}');
+        Logger.warning('❌ Login failed for user: ${request.username}', tag: 'MockAuthRepository');
+        Logger.warning('💡 Note: Mock mode only accepts: user@bel247.com / password123', tag: 'MockAuthRepository');
+        Logger.warning('💡 To use real API, set USE_MOCK=false in your environment', tag: 'MockAuthRepository');
+        Logger.warning('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', tag: 'MockAuthRepository');
         return ApiResponse.error('Invalid email or password');
       }
     } catch (e, stackTrace) {
@@ -392,12 +490,12 @@ class MockAuthRepository implements AuthRepository {
     final errors = <String>[];
     final fieldErrors = <String, String>{};
 
-    if (request.email.isEmpty) {
-      errors.add('Email is required');
-      fieldErrors['email'] = 'Email is required';
-    } else if (!_isValidEmail(request.email)) {
-      errors.add('Invalid email format');
-      fieldErrors['email'] = 'Invalid email format';
+    if (request.username.isEmpty) {
+      errors.add('Username is required');
+      fieldErrors['username'] = 'Username is required';
+    } else if (request.username.length < 3) {
+      errors.add('Username must be at least 3 characters');
+      fieldErrors['username'] = 'Username must be at least 3 characters';
     }
 
     if (request.password.isEmpty) {

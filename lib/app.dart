@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
+import 'core/widgets/data_preloader.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'theme/app_theme.dart';
 
@@ -39,10 +40,12 @@ class BEL247App extends ConsumerWidget {
       );
     }
     
-    return MaterialApp.router(
-      title: 'BEL247 WebApp',
-      theme: AppTheme.lightTheme,
-      routerConfig: AppRouter.router,
+    return DataPreloader(
+      child: MaterialApp.router(
+        title: 'BEL247 WebApp',
+        theme: AppTheme.lightTheme,
+        routerConfig: AppRouter.router,
+      ),
     );
   }
 }

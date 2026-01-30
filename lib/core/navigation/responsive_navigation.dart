@@ -453,14 +453,19 @@ class _BottomNavigationBar extends StatelessWidget {
                                 ),
                             ],
                           ),
-                          const SizedBox(height: AppTheme.spacing4),
-                          Text(
-                            item.label,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                ),
-                          ),
+                          // const SizedBox(height: AppTheme.spacing4),
+                          // Only show label when this item is selected to avoid overflow on mobile
+                          // if (isSelected)
+                          //   Text(
+                          //     item.label,
+                          //     style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          //           color: AppColors.primary,
+                          //           fontWeight: FontWeight.w600,
+                          //         ),
+                          //     maxLines: 1,
+                          //     overflow: TextOverflow.ellipsis,
+                          //     textAlign: TextAlign.center,
+                          //   ),
                         ],
                       ),
                     ),

@@ -10,6 +10,7 @@ _$AccountImpl _$$AccountImplFromJson(Map<String, dynamic> json) =>
     _$AccountImpl(
       id: json['id'] as String,
       accountNumber: json['accountNumber'] as String,
+      customerNumber: json['customerNumber'] as String,
       accountType: json['accountType'] as String,
       address: json['address'] as String,
       balance: (json['balance'] as num).toDouble(),
@@ -23,12 +24,14 @@ _$AccountImpl _$$AccountImplFromJson(Map<String, dynamic> json) =>
       isActive: json['isActive'] as bool? ?? true,
       meterNumber: json['meterNumber'] as String?,
       serviceArea: json['serviceArea'] as String?,
+      nickname: json['nickname'] as String?,
     );
 
 Map<String, dynamic> _$$AccountImplToJson(_$AccountImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'accountNumber': instance.accountNumber,
+      'customerNumber': instance.customerNumber,
       'accountType': instance.accountType,
       'address': instance.address,
       'balance': instance.balance,
@@ -38,6 +41,7 @@ Map<String, dynamic> _$$AccountImplToJson(_$AccountImpl instance) =>
       'isActive': instance.isActive,
       'meterNumber': instance.meterNumber,
       'serviceArea': instance.serviceArea,
+      'nickname': instance.nickname,
     };
 
 const _$AccountStatusEnumMap = {

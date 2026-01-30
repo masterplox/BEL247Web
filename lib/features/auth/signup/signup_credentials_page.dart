@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,15 +16,51 @@ class SignupCredentialsPage extends ConsumerStatefulWidget {
 
 class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize fields based on auth state after first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeFields();
+    });
+  }
+
+  void _initializeFields() {
+    if (_initialized) return;
+    
+    final authState = ref.read(authNotifierProvider);
+    final contact = authState.otpContact;
+    final contactType = authState.signupContactType;
+    
+    if (contact != null && contactType != null) {
+      if (contactType == 'email') {
+        // Pre-fill email if user used email in step 1
+        _emailController.text = contact;
+      } else if (contactType == 'phone') {
+        // Pre-fill phone if user used phone in step 1
+        // Remove +501 prefix if present, as we'll show it as prefixText
+        final phoneDigits = contact.replaceAll('+501', '').trim();
+        _phoneController.text = phoneDigits;
+      }
+    }
+    
+    _initialized = true;
+  }
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -90,7 +127,7 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Set up your email and password to complete your account.',
+            'Set up your username, contact info, and password to complete your account.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -112,6 +149,24 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
+                  controller: _usernameController,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    hintText: 'Enter your username',
+                    prefixIcon: const Icon(Icons.person_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Username is required';
+                    if (value.length < 3) return 'Username must be at least 3 characters';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
@@ -126,6 +181,31 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
                     if (value == null || value.isEmpty) return 'Email is required';
                     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                       return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                    LengthLimitingTextInputFormatter(7), // Only 7 digits
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Phone Number',
+                    hintText: '1234567',
+                    prefixText: '+501 ',
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Phone number is required';
+                    if (!RegExp(r'^[0-9]{7}$').hasMatch(value)) {
+                      return 'Please enter a valid 7-digit Belize phone number';
                     }
                     return null;
                   },
@@ -207,9 +287,12 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
 
   void _handleSignUp() {
     if (_formKey.currentState!.validate()) {
-      ref.read(authNotifierProvider.notifier).signup(
-            _emailController.text,
+      // Use signUpStep3 with username, password, email, and phone
+      ref.read(authNotifierProvider.notifier).signUpStep3(
+            _usernameController.text.trim(),
             _passwordController.text,
+            email: _emailController.text.trim(),
+            phoneNumber: '+501${_phoneController.text.trim()}',
           );
     }
   }
@@ -253,7 +336,7 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
                 // Reset all signup state FIRST to prevent any navigation triggers
                 ref.read(authNotifierProvider.notifier).resetSignupState();
                 // Close the dialog
-                Navigator.of(dialogContext).pop();
+                Navigator.of(dialogContext, rootNavigator: true).pop();
                 // Wait for dialog to close and state to update
                 await Future.delayed(const Duration(milliseconds: 50));
                 // Navigate to login page

@@ -9,6 +9,7 @@ class Account with _$Account {
   const factory Account({
     required String id,
     required String accountNumber,
+    required String customerNumber, // Added customer number field
     required String accountType, // 'residential' or 'commercial'
     required String address,
     required double balance,
@@ -18,21 +19,17 @@ class Account with _$Account {
     @Default(true) bool isActive,
     String? meterNumber,
     String? serviceArea,
+    String? nickname, // Account nickname
   }) = _Account;
 
   factory Account.fromJson(Map<String, dynamic> json) => _$AccountFromJson(json);
 
   const Account._();
 
-  /// Get formatted account ID (e.g., BEL-2024-1234)
+  /// Get formatted account ID (e.g., "00083630: 00066014")
+  /// Format: customerNumber: accountNumber
   String get formattedAccountNumber {
-    // Format: BEL-YYYY-XXXX
-    if (accountNumber.length >= 4) {
-      final year = accountNumber.length >= 8 ? accountNumber.substring(4, 8) : DateTime.now().year.toString();
-      final number = accountNumber.length >= 8 ? accountNumber.substring(8) : accountNumber;
-      return 'BEL-$year-$number';
-    }
-    return accountNumber;
+    return '$customerNumber: $accountNumber';
   }
 
   /// Get display address (short format)

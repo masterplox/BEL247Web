@@ -602,7 +602,7 @@ class _HourlyChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 30,
-              interval: 1, // Show all hours
+              interval: 4, // Show every 4th hour for cleaner axis (0, 4, 8, 12, 16, 20)
               getTitlesWidget: (value, meta) {
                 final hour = value.toInt();
                 if (hour >= 0 && hour < 24) {
@@ -826,7 +826,7 @@ class _DailyChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 30,
-              interval: isWeekView ? 1 : (days.length > 15 ? 2 : 1), // Show every day for week, every 2 days for month if many days
+              interval: isWeekView ? 2 : (days.length > 20 ? 5 : days.length > 10 ? 3 : 2), // Skip labels for cleaner axis (like dashboard)
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index >= 0 && index < days.length) {
@@ -974,7 +974,7 @@ class _YearlyChart extends StatelessWidget {
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
-                    interval: 1,
+                    interval: 2, // Show every other month for cleaner axis (like dashboard)
                     getTitlesWidget: (value, meta) {
                       final monthIndex = value.toInt();
                       if (monthIndex >= 0 && monthIndex < 12) {

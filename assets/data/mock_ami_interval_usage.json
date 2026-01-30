@@ -1,0 +1,774 @@
+{
+  "status": 200,
+  "message": "Success",
+  "data": [
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 01:04:00.000",
+      "firstIntervalDateTime": "2025-10-31 20:15:00.000",
+      "intervalDateTime": "2025-11-01 00:00:00.000",
+      "intervalNumber": 16,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalNumber": 1,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 00:30:00.000",
+      "intervalNumber": 2,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 00:45:00.000",
+      "intervalNumber": 3,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 01:00:00.000",
+      "intervalNumber": 4,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 01:15:00.000",
+      "intervalNumber": 5,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 01:30:00.000",
+      "intervalNumber": 6,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 01:45:00.000",
+      "intervalNumber": 7,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 02:00:00.000",
+      "intervalNumber": 8,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 02:15:00.000",
+      "intervalNumber": 9,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 02:30:00.000",
+      "intervalNumber": 10,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 02:45:00.000",
+      "intervalNumber": 11,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 03:00:00.000",
+      "intervalNumber": 12,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 03:15:00.000",
+      "intervalNumber": 13,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 03:30:00.000",
+      "intervalNumber": 14,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 03:45:00.000",
+      "intervalNumber": 15,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 05:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 00:15:00.000",
+      "intervalDateTime": "2025-11-01 04:00:00.000",
+      "intervalNumber": 16,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalNumber": 1,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 04:30:00.000",
+      "intervalNumber": 2,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 04:45:00.000",
+      "intervalNumber": 3,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 05:00:00.000",
+      "intervalNumber": 4,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 05:15:00.000",
+      "intervalNumber": 5,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 05:30:00.000",
+      "intervalNumber": 6,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 05:45:00.000",
+      "intervalNumber": 7,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 06:00:00.000",
+      "intervalNumber": 8,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 06:15:00.000",
+      "intervalNumber": 9,
+      "kWh": 0.0216000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 06:30:00.000",
+      "intervalNumber": 10,
+      "kWh": 0.1884000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 06:45:00.000",
+      "intervalNumber": 11,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 07:00:00.000",
+      "intervalNumber": 12,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 07:15:00.000",
+      "intervalNumber": 13,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 07:30:00.000",
+      "intervalNumber": 14,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 07:45:00.000",
+      "intervalNumber": 15,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 09:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 04:15:00.000",
+      "intervalDateTime": "2025-11-01 08:00:00.000",
+      "intervalNumber": 16,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalNumber": 1,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 08:30:00.000",
+      "intervalNumber": 2,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 08:45:00.000",
+      "intervalNumber": 3,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 09:00:00.000",
+      "intervalNumber": 4,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 09:15:00.000",
+      "intervalNumber": 5,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 09:30:00.000",
+      "intervalNumber": 6,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 09:45:00.000",
+      "intervalNumber": 7,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 10:00:00.000",
+      "intervalNumber": 8,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 10:15:00.000",
+      "intervalNumber": 9,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 10:30:00.000",
+      "intervalNumber": 10,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 10:45:00.000",
+      "intervalNumber": 11,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 11:00:00.000",
+      "intervalNumber": 12,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 11:15:00.000",
+      "intervalNumber": 13,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 11:30:00.000",
+      "intervalNumber": 14,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 11:45:00.000",
+      "intervalNumber": 15,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 13:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 08:15:00.000",
+      "intervalDateTime": "2025-11-01 12:00:00.000",
+      "intervalNumber": 16,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalNumber": 1,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 12:30:00.000",
+      "intervalNumber": 2,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 12:45:00.000",
+      "intervalNumber": 3,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 13:00:00.000",
+      "intervalNumber": 4,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 13:15:00.000",
+      "intervalNumber": 5,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 13:30:00.000",
+      "intervalNumber": 6,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 13:45:00.000",
+      "intervalNumber": 7,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 14:00:00.000",
+      "intervalNumber": 8,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 14:15:00.000",
+      "intervalNumber": 9,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 14:30:00.000",
+      "intervalNumber": 10,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 14:45:00.000",
+      "intervalNumber": 11,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 15:00:00.000",
+      "intervalNumber": 12,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 15:15:00.000",
+      "intervalNumber": 13,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 15:30:00.000",
+      "intervalNumber": 14,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 15:45:00.000",
+      "intervalNumber": 15,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 17:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 12:15:00.000",
+      "intervalDateTime": "2025-11-01 16:00:00.000",
+      "intervalNumber": 16,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalNumber": 1,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 16:30:00.000",
+      "intervalNumber": 2,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 16:45:00.000",
+      "intervalNumber": 3,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 17:00:00.000",
+      "intervalNumber": 4,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 17:15:00.000",
+      "intervalNumber": 5,
+      "kWh": 0.2148000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 17:30:00.000",
+      "intervalNumber": 6,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 17:45:00.000",
+      "intervalNumber": 7,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 18:00:00.000",
+      "intervalNumber": 8,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 18:15:00.000",
+      "intervalNumber": 9,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 18:30:00.000",
+      "intervalNumber": 10,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 18:45:00.000",
+      "intervalNumber": 11,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 19:00:00.000",
+      "intervalNumber": 12,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 19:15:00.000",
+      "intervalNumber": 13,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 19:30:00.000",
+      "intervalNumber": 14,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 19:45:00.000",
+      "intervalNumber": 15,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-01 21:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 16:15:00.000",
+      "intervalDateTime": "2025-11-01 20:00:00.000",
+      "intervalNumber": 16,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalNumber": 1,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 20:30:00.000",
+      "intervalNumber": 2,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 20:45:00.000",
+      "intervalNumber": 3,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 21:00:00.000",
+      "intervalNumber": 4,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 21:15:00.000",
+      "intervalNumber": 5,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 21:30:00.000",
+      "intervalNumber": 6,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 21:45:00.000",
+      "intervalNumber": 7,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 22:00:00.000",
+      "intervalNumber": 8,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 22:15:00.000",
+      "intervalNumber": 9,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 22:30:00.000",
+      "intervalNumber": 10,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 22:45:00.000",
+      "intervalNumber": 11,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 23:00:00.000",
+      "intervalNumber": 12,
+      "kWh": 0.0042000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 23:15:00.000",
+      "intervalNumber": 13,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 23:30:00.000",
+      "intervalNumber": 14,
+      "kWh": 0.0048000000
+    },
+    {
+      "meterId": "225003508",
+      "readDate": "2025-11-02 01:04:00.000",
+      "firstIntervalDateTime": "2025-11-01 20:15:00.000",
+      "intervalDateTime": "2025-11-01 23:45:00.000",
+      "intervalNumber": 15,
+      "kWh": 0.0042000000
+    }
+  ]
+}

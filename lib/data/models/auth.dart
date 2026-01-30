@@ -7,7 +7,7 @@ part 'auth.g.dart';
 @freezed
 class AuthRequest with _$AuthRequest {
   const factory AuthRequest({
-    required String email,
+    required String username,
     required String password,
     @Default(false) bool rememberMe,
   }) = _AuthRequest;
@@ -77,6 +77,8 @@ class AuthState with _$AuthState {
     String? otpContact,
     @Default(false) bool otpVerified,
     @Default(false) bool signupCompleted,
+    String? guestUUID, // GuestUUID from Step 2
+    String? signupContactType, // 'phone' or 'email'
   }) = _AuthState;
 
   factory AuthState.fromJson(Map<String, dynamic> json) =>
@@ -194,4 +196,45 @@ class PasswordResetRequest with _$PasswordResetRequest {
 
   factory PasswordResetRequest.fromJson(Map<String, dynamic> json) =>
       _$PasswordResetRequestFromJson(json);
+}
+
+/// Sign up Step 1 request model - Deliver OTP
+@freezed
+class SignUpStep1Request with _$SignUpStep1Request {
+  const factory SignUpStep1Request({
+    String? mobileNumber,
+    String? email,
+    String? username,
+  }) = _SignUpStep1Request;
+
+  factory SignUpStep1Request.fromJson(Map<String, dynamic> json) =>
+      _$SignUpStep1RequestFromJson(json);
+}
+
+/// Sign up Step 2 request model - Activate device with OTP
+@freezed
+class SignUpStep2Request with _$SignUpStep2Request {
+  const factory SignUpStep2Request({
+    required String code,
+    String? phoneNumber,
+    String? email,
+  }) = _SignUpStep2Request;
+
+  factory SignUpStep2Request.fromJson(Map<String, dynamic> json) =>
+      _$SignUpStep2RequestFromJson(json);
+}
+
+/// Sign up Step 3 request model - Register user
+@freezed
+class SignUpStep3Request with _$SignUpStep3Request {
+  const factory SignUpStep3Request({
+    required String username,
+    required String password,
+    String? email,
+    String? mobileNumber,
+    @Default('') String guestUUID, // Can be empty/blank
+  }) = _SignUpStep3Request;
+
+  factory SignUpStep3Request.fromJson(Map<String, dynamic> json) =>
+      _$SignUpStep3RequestFromJson(json);
 }

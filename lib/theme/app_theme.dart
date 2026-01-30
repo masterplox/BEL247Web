@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'colors.dart';
 
@@ -28,12 +29,12 @@ class AppTheme {
       ),
       
       // App Bar Theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
+        titleTextStyle: GoogleFonts.geist(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
@@ -60,7 +61,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.geist(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -72,7 +73,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.geist(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -88,7 +89,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.geist(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -116,83 +117,83 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.error),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
-        hintStyle: const TextStyle(color: AppColors.textTertiary),
+        labelStyle: GoogleFonts.geist(color: AppColors.textSecondary),
+        hintStyle: GoogleFonts.geist(color: AppColors.textTertiary),
       ),
       
-      // Text Theme
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
+      // Text Theme (using GoogleFonts.geistTextTheme as base, then override specific styles)
+      textTheme: GoogleFonts.geistTextTheme().copyWith(
+        displayLarge: GoogleFonts.geist(
           fontSize: 32,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
-        displayMedium: TextStyle(
+        displayMedium: GoogleFonts.geist(
           fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
-        displaySmall: TextStyle(
+        displaySmall: GoogleFonts.geist(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
-        headlineLarge: TextStyle(
+        headlineLarge: GoogleFonts.geist(
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        headlineMedium: TextStyle(
+        headlineMedium: GoogleFonts.geist(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        headlineSmall: TextStyle(
+        headlineSmall: GoogleFonts.geist(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        titleLarge: TextStyle(
+        titleLarge: GoogleFonts.geist(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        titleMedium: TextStyle(
+        titleMedium: GoogleFonts.geist(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        titleSmall: TextStyle(
+        titleSmall: GoogleFonts.geist(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        bodyLarge: TextStyle(
+        bodyLarge: GoogleFonts.geist(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: TextStyle(
+        bodyMedium: GoogleFonts.geist(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
-        bodySmall: TextStyle(
+        bodySmall: GoogleFonts.geist(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: AppColors.textSecondary,
         ),
-        labelLarge: TextStyle(
+        labelLarge: GoogleFonts.geist(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
-        labelMedium: TextStyle(
+        labelMedium: GoogleFonts.geist(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,
         ),
-        labelSmall: TextStyle(
+        labelSmall: GoogleFonts.geist(
           fontSize: 10,
           fontWeight: FontWeight.w500,
           color: AppColors.textTertiary,
@@ -228,14 +229,14 @@ class AppTheme {
       ),
       
       // List Tile Theme
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        titleTextStyle: TextStyle(
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        titleTextStyle: GoogleFonts.geist(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
-        subtitleTextStyle: TextStyle(
+        subtitleTextStyle: GoogleFonts.geist(
           fontSize: 14,
           color: AppColors.textSecondary,
         ),
@@ -267,12 +268,12 @@ class AppTheme {
       ),
       
       // App Bar Theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.grey800,
         foregroundColor: AppColors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
+        titleTextStyle: GoogleFonts.geist(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
@@ -299,7 +300,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.geist(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -311,7 +312,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primaryLight,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.geist(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -327,7 +328,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.geist(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -355,83 +356,83 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.error),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        labelStyle: const TextStyle(color: AppColors.grey400),
-        hintStyle: const TextStyle(color: AppColors.grey500),
+        labelStyle: GoogleFonts.geist(color: AppColors.grey400),
+        hintStyle: GoogleFonts.geist(color: AppColors.grey500),
       ),
       
-      // Text Theme
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
+      // Text Theme (using GoogleFonts.geistTextTheme as base, then override specific styles)
+      textTheme: GoogleFonts.geistTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge: GoogleFonts.geist(
           fontSize: 32,
           fontWeight: FontWeight.bold,
           color: AppColors.white,
         ),
-        displayMedium: TextStyle(
+        displayMedium: GoogleFonts.geist(
           fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColors.white,
         ),
-        displaySmall: TextStyle(
+        displaySmall: GoogleFonts.geist(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: AppColors.white,
         ),
-        headlineLarge: TextStyle(
+        headlineLarge: GoogleFonts.geist(
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
         ),
-        headlineMedium: TextStyle(
+        headlineMedium: GoogleFonts.geist(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
         ),
-        headlineSmall: TextStyle(
+        headlineSmall: GoogleFonts.geist(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
         ),
-        titleLarge: TextStyle(
+        titleLarge: GoogleFonts.geist(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
         ),
-        titleMedium: TextStyle(
+        titleMedium: GoogleFonts.geist(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
         ),
-        titleSmall: TextStyle(
+        titleSmall: GoogleFonts.geist(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: AppColors.white,
         ),
-        bodyLarge: TextStyle(
+        bodyLarge: GoogleFonts.geist(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: AppColors.white,
         ),
-        bodyMedium: TextStyle(
+        bodyMedium: GoogleFonts.geist(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: AppColors.white,
         ),
-        bodySmall: TextStyle(
+        bodySmall: GoogleFonts.geist(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: AppColors.grey400,
         ),
-        labelLarge: TextStyle(
+        labelLarge: GoogleFonts.geist(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.white,
         ),
-        labelMedium: TextStyle(
+        labelMedium: GoogleFonts.geist(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: AppColors.grey400,
         ),
-        labelSmall: TextStyle(
+        labelSmall: GoogleFonts.geist(
           fontSize: 10,
           fontWeight: FontWeight.w500,
           color: AppColors.grey500,
@@ -467,14 +468,14 @@ class AppTheme {
       ),
       
       // List Tile Theme
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        titleTextStyle: TextStyle(
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        titleTextStyle: GoogleFonts.geist(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: AppColors.white,
         ),
-        subtitleTextStyle: TextStyle(
+        subtitleTextStyle: GoogleFonts.geist(
           fontSize: 14,
           color: AppColors.grey400,
         ),

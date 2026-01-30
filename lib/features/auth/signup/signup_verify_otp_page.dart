@@ -139,7 +139,15 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
                   defaultPinTheme: defaultPinTheme,
                   focusedPinTheme: focusedPinTheme,
                   submittedPinTheme: submittedPinTheme,
-                  validator: (s) => s == '12345' ? null : 'Pin is incorrect',
+                  validator: (s) {
+                    if (s == null || s.isEmpty) {
+                      return 'Please enter the verification code';
+                    }
+                    if (s.length != 5) {
+                      return 'Code must be 5 digits';
+                    }
+                    return null;
+                  },
                   pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
                   showCursor: true,
                   onCompleted: (_) => _handleVerify(),
@@ -203,7 +211,8 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
         );
         return;
       }
-      ref.read(authNotifierProvider.notifier).verifyOtp(otp);
+      // Use signUpStep2 instead of verifyOtp
+      ref.read(authNotifierProvider.notifier).signUpStep2(otp);
     } else {
       // Validation failed - the error should already be shown by the validator
       ScaffoldMessenger.of(context).showSnackBar(

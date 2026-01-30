@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "message": "Success",
+  "data": [
+    {
+      "year": 2025,
+      "month": 9,
+      "monthlyUsageKwh": 71.6658172607422
+    },
+    {
+      "year": 2025,
+      "month": 10,
+      "monthlyUsageKwh": 39.6947937011719
+    },
+    {
+      "year": 2025,
+      "month": 11,
+      "monthlyUsageKwh": 31.3152008056641
+    },
+    {
+      "year": 2025,
+      "month": 12,
+      "monthlyUsageKwh": 31.2503967285156
+    }
+  ]
+}

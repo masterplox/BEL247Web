@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,18 +17,63 @@ class SignupContactPage extends ConsumerStatefulWidget {
 class _SignupContactPageState extends ConsumerState<SignupContactPage> {
   final _formKey = GlobalKey<FormState>();
   final _contactController = TextEditingController();
+  bool _isPhoneMode = false;
+  static const String _phonePrefix = '+501';
+
+  @override
+  void initState() {
+    super.initState();
+    _contactController.addListener(_onContactChanged);
+  }
 
   @override
   void dispose() {
+    _contactController.removeListener(_onContactChanged);
     _contactController.dispose();
     super.dispose();
+  }
+
+  void _onContactChanged() {
+    final text = _contactController.text;
+    
+    // Check if user is typing digits (phone number) - only digits, no letters
+    if (text.isNotEmpty && RegExp(r'^[0-9]+$').hasMatch(text)) {
+      if (!_isPhoneMode) {
+        setState(() {
+          _isPhoneMode = true;
+        });
+      }
+      // Limit to 7 digits
+      if (text.length > 7) {
+        _contactController.value = TextEditingValue(
+          text: text.substring(0, 7),
+          selection: TextSelection.collapsed(offset: 7),
+        );
+      }
+    } else if (text.isEmpty) {
+      // If user deletes all text, revert to email mode
+      if (_isPhoneMode) {
+        setState(() {
+          _isPhoneMode = false;
+        });
+      }
+    } else if (_isPhoneMode && !RegExp(r'^[0-9]+$').hasMatch(text)) {
+      // If in phone mode but user types non-numeric, switch to email
+      setState(() {
+        _isPhoneMode = false;
+        // Clear non-numeric characters
+        _contactController.value = TextEditingValue(
+          text: text.replaceAll(RegExp(r'[^0-9]'), ''),
+          selection: TextSelection.collapsed(offset: text.replaceAll(RegExp(r'[^0-9]'), '').length),
+        );
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen(authNotifierProvider, (previous, next) {
       // Only navigate to verify if OTP was sent AND signup is not completed
-      // This prevents navigation after signup is complete
       if (next.otpSent && !next.signupCompleted && !(previous?.otpSent ?? false)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -85,7 +131,9 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Enter your email or phone number to get started.',
+            _isPhoneMode
+                ? 'Enter your Belize phone number (7 digits)'
+                : 'Enter your email or phone number to get started.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -108,11 +156,18 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
               children: [
                 TextFormField(
                   controller: _contactController,
-                  keyboardType: TextInputType.emailAddress,
+                  keyboardType: _isPhoneMode ? TextInputType.phone : TextInputType.emailAddress,
+                  inputFormatters: _isPhoneMode
+                      ? [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                          LengthLimitingTextInputFormatter(7), // Only 7 digits after +501
+                        ]
+                      : null,
                   decoration: InputDecoration(
-                    labelText: 'Email or Phone Number',
-                    hintText: 'Enter your contact info',
-                    prefixIcon: const Icon(Icons.contact_mail_outlined),
+                    labelText: _isPhoneMode ? 'Phone Number' : 'Email or Phone Number',
+                    hintText: _isPhoneMode ? '1234567' : 'Enter your contact info',
+                    prefixText: _isPhoneMode ? _phonePrefix : null,
+                    prefixIcon: Icon(_isPhoneMode ? Icons.phone : Icons.contact_mail_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -129,11 +184,20 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
                     if (value == null || value.isEmpty) {
                       return 'Contact information is required';
                     }
-                    // Basic validation for email or phone
-                    final isEmail = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value);
-                    final isPhone = RegExp(r'^\+?[0-9]{10,}$').hasMatch(value);
-                    if (!isEmail && !isPhone) {
-                      return 'Please enter a valid email or phone number';
+                    if (_isPhoneMode) {
+                      // Validate phone: should be exactly 7 digits
+                      if (value.length != 7) {
+                        return 'Please enter a valid 7-digit Belize phone number';
+                      }
+                      if (!RegExp(r'^[0-9]{7}$').hasMatch(value)) {
+                        return 'Phone number must contain only digits';
+                      }
+                    } else {
+                      // Validate email
+                      final isEmail = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value);
+                      if (!isEmail) {
+                        return 'Please enter a valid email address';
+                      }
                     }
                     return null;
                   },
@@ -176,7 +240,21 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
   void _handleSendCode() {
     if (_formKey.currentState!.validate()) {
       final contact = _contactController.text.trim();
-      ref.read(authNotifierProvider.notifier).sendOtp(contact);
+      
+      if (_isPhoneMode) {
+        // Send phone number with +501 prefix
+        final phoneNumber = _phonePrefix + contact;
+        ref.read(authNotifierProvider.notifier).signUpStep1(
+          mobileNumber: phoneNumber,
+          email: null,
+        );
+      } else {
+        // Send email
+        ref.read(authNotifierProvider.notifier).signUpStep1(
+          mobileNumber: null,
+          email: contact,
+        );
+      }
     }
   }
 }

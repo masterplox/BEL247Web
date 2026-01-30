@@ -16,7 +16,6 @@ build/
 
 # Environment variables
 .env
-.env.example
 
 # Editor directories and files
 .idea
@@ -26,10 +25,9 @@ build/
 *.njsproj
 *.sln
 *.sw?
-
 # OS specific
 .DS_Store
 
-
+git-filter-repo.txt
 
 

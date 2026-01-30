@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
-import 'app_button.dart';
 
 /// A reusable empty state widget that displays a message when there's no data to show.
 class AppEmptyState extends StatelessWidget {
@@ -26,6 +25,7 @@ class AppEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
       child: Card(
+        elevation: 0,
         margin: const EdgeInsets.all(AppTheme.spacing16),
         child: Padding(
           padding: padding ?? const EdgeInsets.all(AppTheme.spacing24),
@@ -56,10 +56,15 @@ class AppEmptyState extends StatelessWidget {
               ),
               if (onAction != null && actionLabel != null) ...[
                 const SizedBox(height: AppTheme.spacing16),
-                AppButton(
+                ElevatedButton.icon(
                   onPressed: onAction,
-                  text: actionLabel!,
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(Icons.add),
+                  label: Text(actionLabel!),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12, horizontal: AppTheme.spacing24),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                  ),
                 ),
               ],
             ],

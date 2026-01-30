@@ -1,9 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/feature_providers.dart' show accountSwitcherProvider;
+import '../../../data/models/account.dart';
+import '../../../data/models/api_response_dtos.dart';
 import '../../../data/models/bill.dart';
 import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
+import '../../../data/repositories/accounts_repository.dart';
 import 'bills_repository.dart';
 
 // Repository provider
@@ -20,14 +23,35 @@ final billsProvider = FutureProvider<List<Bill>>((ref) async {
   return bills;
 });
 
-final accountBalanceProvider = FutureProvider<AccountBalance>((ref) async {
-  // Depend on active account so this refetches when user switches accounts
-  final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
-  print('[Bills] accountBalanceProvider fetching for accountId=$activeAccountId');
-  final repository = ref.watch(billsRepositoryProvider);
-  final balance = await repository.fetchAccountBalance(activeAccountId);
-  print('[Bills] accountBalanceProvider loaded balance=\$${balance.currentBalance.toStringAsFixed(2)} accountId=$activeAccountId');
-  return balance;
+// Account balance provider - uses data from active account
+final accountBalanceProvider = Provider.autoDispose<AccountBalance>((ref) {
+  // Get balance from the active account model instead of separate API call
+  final accountState = ref.watch(accountSwitcherProvider);
+  final activeAccount = accountState.activeAccount;
+  
+  if (activeAccount == null) {
+    return AccountBalance(
+      currentBalance: 0,
+      lastPaymentDate: DateTime.now(),
+      lastPaymentAmount: 0,
+      nextDueDate: DateTime.now(),
+      paymentMethod: 'Unknown',
+    );
+  }
+
+  // Calculate past due - balance if account is overdue or due
+  final pastDue = (activeAccount.status == AccountStatus.overdue || 
+                   activeAccount.status == AccountStatus.due) 
+      ? activeAccount.balance 
+      : 0.0;
+
+  return AccountBalance(
+    currentBalance: activeAccount.balance,
+    lastPaymentDate: activeAccount.lastPaymentDate ?? DateTime.now(),
+    lastPaymentAmount: pastDue, // Past due amount (balance if overdue/due)
+    nextDueDate: activeAccount.nextDueDate ?? DateTime.now(),
+    paymentMethod: 'Unknown', // Not available in Account model
+  );
 });
 
 final usageSummaryProvider = FutureProvider<UsageSummary>((ref) async {
@@ -132,11 +156,9 @@ class BillsRefreshNotifier extends AsyncNotifier<void> {
     state = const AsyncLoading();
     try {
       ref.invalidate(billsProvider);
-      ref.invalidate(accountBalanceProvider);
+      ref.invalidate(accountBalanceProvider); // This is now a Provider, not FutureProvider
       ref.invalidate(usageSummaryProvider);
-      ref.invalidate(billsProvider);
       await Future.wait([
-        ref.read(accountBalanceProvider.future),
         ref.read(usageSummaryProvider.future),
         ref.read(billsProvider.future),
       ]);
@@ -253,4 +275,48 @@ final yearlyConsumptionProvider = FutureProvider<Map<int, List<MonthlyConsumptio
     currentYear: currentYearData,
     lastYear: lastYearData,
   };
+});
+
+// Transaction history provider - fetches from API endpoint
+final transactionHistoryProvider = FutureProvider<List<PaymentHistory>>((ref) async {
+  final accountState = ref.watch(accountSwitcherProvider);
+  final activeAccount = accountState.activeAccount;
+  
+  if (activeAccount == null) {
+    print('[Bills] transactionHistoryProvider - no active account, returning empty list');
+    return [];
+  }
+
+  print('[Bills] transactionHistoryProvider fetching for customerNumber=${activeAccount.customerNumber} accountNumber=${activeAccount.accountNumber}');
+  final repository = ref.watch(billsRepositoryProvider);
+  final transactions = await repository.fetchTransactionHistory(
+    customerNumber: activeAccount.customerNumber,
+    accountNumber: activeAccount.accountNumber,
+  );
+  print('[Bills] transactionHistoryProvider loaded ${transactions.length} transactions');
+  return transactions;
+});
+
+// Full account details provider - fetches complete account DTO with all fields
+final accountDetailsProvider = FutureProvider<EditableCustomerAccountDto?>((ref) async {
+  final accountState = ref.watch(accountSwitcherProvider);
+  final activeAccountId = accountState.activeAccountId;
+  
+  if (activeAccountId.isEmpty) {
+    return null;
+  }
+
+  final repository = ref.watch(accountsRepositoryProvider);
+  final accountDetails = await repository.fetchAccountDetails(activeAccountId);
+  return accountDetails;
+});
+
+/// Bill detail provider - caches bill details by bill number
+/// Uses FutureProvider.family to cache by bill number
+final billDetailProvider = FutureProvider.family<BillDetailDataDto?, String>((ref, billNumber) async {
+  print('[Bills] billDetailProvider fetching for billNumber=$billNumber');
+  final repository = ref.watch(billsRepositoryProvider);
+  final billDetail = await repository.fetchBillDetail(billNumber);
+  print('[Bills] billDetailProvider loaded billNumber=$billNumber');
+  return billDetail;
 });

@@ -1,0 +1,7 @@
+{
+  "status": 200,
+  "message": "Success",
+  "data": {
+    "dailyTotalKwh": 0.8538000000
+  }
+}

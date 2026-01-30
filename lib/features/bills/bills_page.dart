@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/account_aware_scaffold.dart';
 import '../../core/widgets/app_card.dart';
-import '../../core/widgets/app_error_state.dart';
-import '../../core/widgets/app_loading_state.dart';
 import '../../core/widgets/app_page_header.dart';
+import '../../core/widgets/app_page_scaffold.dart';
 import '../../core/widgets/app_responsive_layout.dart';
 import '../../data/models/user.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
-import 'state/bills_providers.dart';
+import 'state/bills_providers.dart' as bills_state;
 import 'widgets/account_ledger_widget.dart';
 import 'widgets/account_summary_widget.dart';
 // Commented out - replaced with Account Ledger
@@ -21,23 +21,16 @@ class BillsPage extends ConsumerWidget {
   const BillsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-        //backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Bills & Receipts'),
-          centerTitle: true,
-          elevation: 0,
-          actions: const [
-            // IconButton(
-            //   icon: const Icon(Icons.refresh),
-            //   onPressed: () {
-            //     ref.read(billsRefreshProvider.notifier).refreshAll(ref);
-            //   },
-            // ),
-          ],
-        ),
-        body: const BillsLayout(),
-      );
+  Widget build(BuildContext context, WidgetRef ref) => AccountAwareScaffold(
+      emptyMessage:
+          'You don\'t have any accounts connected yet. Connect an account to view your transaction history and bills.',
+      emptyIcon: Icons.receipt_long_outlined,
+      builder: (context, ref, accountState) => const AppPageScaffold(
+        title: 'Transaction History',
+        subtitle: 'View your bills and payment history',
+        body: BillsLayout(),
+      ),
+    );
 }
 
 class BillsLayout extends ConsumerWidget {
@@ -56,32 +49,33 @@ class DesktopBillsLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        padding: EdgeInsets.all(AppTheme.spacing24),
+        // padding: EdgeInsets.all(AppTheme.spacing24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BillsHeader(),
-            SizedBox(height: AppTheme.spacing24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      AccountSummaryCard(),
-                      SizedBox(height: AppTheme.spacing16),
-                      PaymentCard(),
-                    ],
-                  ),
-                ),
-                SizedBox(width: AppTheme.spacing16),
-                Expanded(
-                  flex: 2,
-                  child: AccountLedgerCard(),
-                ),
-              ],
-            ),
+            // BillsHeader(),
+            // SizedBox(height: AppTheme.spacing24),
+            // Row(
+            //   crossAxisAlignment: CrossAxisAlignment.start,
+            //   children: [
+            //     Expanded(
+            //       flex: 1,
+            //       child: Column(
+            //         children: [
+            //           AccountSummaryCard(),
+            //           SizedBox(height: AppTheme.spacing16),
+            //           PaymentCard(),
+            //         ],
+            //       ),
+            //     ),
+            //     SizedBox(width: AppTheme.spacing16),
+            //     Expanded(
+            //       flex: 2,
+            //       child: AccountLedgerCard(),
+            //     ),
+            //   ],
+            // ),
+            AccountLedgerCard(),
           ],
         ),
       );
@@ -92,25 +86,25 @@ class TabletBillsLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        padding: EdgeInsets.all(AppTheme.spacing20),
+        // padding: EdgeInsets.all(AppTheme.spacing20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BillsHeader(),
-            SizedBox(height: AppTheme.spacing20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: AccountSummaryCard(),
-                ),
-                SizedBox(width: AppTheme.spacing16),
-                Expanded(
-                  child: PaymentCard(),
-                ),
-              ],
-            ),
-            SizedBox(height: AppTheme.spacing20),
+            // BillsHeader(),
+            // SizedBox(height: AppTheme.spacing20),
+            // Row(
+            //   crossAxisAlignment: CrossAxisAlignment.start,
+            //   children: [
+            //     Expanded(
+            //       child: AccountSummaryCard(),
+            //     ),
+            //     SizedBox(width: AppTheme.spacing16),
+            //     Expanded(
+            //       child: PaymentCard(),
+            //     ),
+            //   ],
+            // ),
+            // SizedBox(height: AppTheme.spacing20),
             AccountLedgerCard(),
           ],
         ),
@@ -122,18 +116,18 @@ class MobileBillsLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        padding: EdgeInsets.all(AppTheme.spacing16),
+        // padding: EdgeInsets.all(AppTheme.spacing16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BillsHeader(),
+            //BillsHeader(),
             SizedBox(height: AppTheme.spacing16),
             Column(
               children: [
-                AccountSummaryCard(),
-                SizedBox(height: AppTheme.spacing16),
-                PaymentCard(),
-                SizedBox(height: AppTheme.spacing16),
+                // AccountSummaryCard(),
+                // SizedBox(height: AppTheme.spacing16),
+                // PaymentCard(),
+                // SizedBox(height: AppTheme.spacing16),
                 AccountLedgerCard(),
               ],
             ),
@@ -147,8 +141,8 @@ class BillsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const AppPageHeader(
-        title: 'Bills & Receipts',
-        subtitle: 'Manage your billing history, payments, and account summary',
+        title: 'Transaction History',
+        subtitle: 'View your transaction history',
       );
 }
 
@@ -157,17 +151,12 @@ class AccountSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accountBalanceAsync = ref.watch(accountBalanceProvider);
-    final usageSummaryAsync = ref.watch(usageSummaryProvider);
-    final yearlyConsumptionAsync = ref.watch(yearlyConsumptionProvider);
+    // AccountBalance is now a Provider, not FutureProvider - get it directly
+    final accountBalance = ref.watch(bills_state.accountBalanceProvider);
+    final usageSummaryAsync = ref.watch(bills_state.usageSummaryProvider);
+    final yearlyConsumptionAsync = ref.watch(bills_state.yearlyConsumptionProvider);
     
-    return accountBalanceAsync.when(
-      loading: () => const AppLoadingState(),
-      error: (e, st) => AppErrorState(
-        message: 'Error loading account summary: $e',
-        onRetry: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
-      ),
-      data: (accountBalance) => usageSummaryAsync.when(
+    return usageSummaryAsync.when(
         loading: () => AccountSummaryWidget(
           accountBalance: accountBalance,
           usageSummary: const UsageSummary(
@@ -176,7 +165,7 @@ class AccountSummaryCard extends ConsumerWidget {
             yearToDate: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
           ),
           isLoading: true,
-          onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+          onRefresh: () => ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref),
         ),
         error: (e, st) => AccountSummaryWidget(
           accountBalance: accountBalance,
@@ -185,29 +174,29 @@ class AccountSummaryCard extends ConsumerWidget {
             lastMonth: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
             yearToDate: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
           ),
-          onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+          onRefresh: () => ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref),
         ),
         data: (usageSummary) => yearlyConsumptionAsync.when(
           loading: () => AccountSummaryWidget(
             accountBalance: accountBalance,
             usageSummary: usageSummary,
             isLoading: true,
-            onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+            onRefresh: () => ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref),
           ),
           error: (e, st) => AccountSummaryWidget(
             accountBalance: accountBalance,
             usageSummary: usageSummary,
-            onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+            onRefresh: () => ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref),
           ),
           data: (yearlyConsumption) => AccountSummaryWidget(
             accountBalance: accountBalance,
             usageSummary: usageSummary,
             yearlyConsumption: yearlyConsumption,
-            onRefresh: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
+            onRefresh: () => ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref),
           ),
         ),
-      ),
-    );
+      
+    );  
   }
 }
 
@@ -216,19 +205,14 @@ class PaymentCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accountBalanceAsync = ref.watch(accountBalanceProvider);
+    // AccountBalance is now a Provider, not FutureProvider - get it directly
+    final accountBalance = ref.watch(bills_state.accountBalanceProvider);
     
-    return accountBalanceAsync.when(
-      loading: () => const AppLoadingState(),
-      error: (e, st) => AppErrorState(
-        message: 'Error loading account balance: $e',
-        onRetry: () => ref.read(billsRefreshProvider.notifier).refreshAll(ref),
-      ),
-      data: (accountBalance) => PaymentWidget(
-        accountBalance: accountBalance,
-        onPaymentSuccess: (amount, method) {
+    return PaymentWidget(
+      accountBalance: accountBalance,
+      onPaymentSuccess: (amount, method) {
           // Refresh data after successful payment
-          ref.read(billsRefreshProvider.notifier).refreshAll(ref);
+          ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Payment of \$${amount.toStringAsFixed(2)} successful!'),
@@ -244,7 +228,7 @@ class PaymentCard extends ConsumerWidget {
             ),
           );
         },
-      ),
+      
     );
   }
 }
@@ -255,7 +239,8 @@ class AccountLedgerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final billsAsync = ref.watch(billsProvider);
+    final billsAsync = ref.watch(bills_state.billsProvider);
+    final transactionHistoryAsync = ref.watch(bills_state.transactionHistoryProvider);
     
     return AppCard(
       child: SizedBox(
@@ -268,35 +253,44 @@ class AccountLedgerCard extends ConsumerWidget {
           error: (e, st) => const AccountLedgerWidget(
             bills: [],
           ),
-          data: (bills) => AccountLedgerWidget(
-            bills: bills,
-            onDownloadBill: (bill) {
-              // TODO: Implement bill download
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Downloading bill #${bill.billNumber}...'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-            onDownloadReceipt: (payment) {
-              // TODO: Implement receipt download
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Downloading receipt...'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-            onViewFullDetails: (payment) {
-              // TODO: Navigate to full payment details
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Viewing full payment details...'),
-                  backgroundColor: AppColors.info,
-                ),
-              );
-            },
+          data: (bills) => transactionHistoryAsync.when(
+            loading: () => AccountLedgerWidget(
+              bills: bills,
+              isLoading: true,
+              onViewFullDetails: (payment) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Viewing full payment details...'),
+                    backgroundColor: AppColors.info,
+                  ),
+                );
+              },
+            ),
+            error: (e, st) => AccountLedgerWidget(
+              bills: bills,
+              // Fallback to bills-only if transaction history fails
+              transactionHistory: const [],
+              onViewFullDetails: (payment) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Viewing full payment details...'),
+                    backgroundColor: AppColors.info,
+                  ),
+                );
+              },
+            ),
+            data: (transactionHistory) => AccountLedgerWidget(
+              bills: bills,
+              transactionHistory: transactionHistory, // Use live transaction history from API
+              onViewFullDetails: (payment) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Viewing full payment details...'),
+                    backgroundColor: AppColors.info,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),

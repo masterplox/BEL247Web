@@ -20,14 +20,21 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
   @override
+  initState() {
+    super.initState();
+    _usernameController.text = '';
+    _passwordController.text = '';
+  }
+
+  @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -40,8 +47,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     Logger.info('Auth state - isInitialized: ${authState.isInitialized}, isAuthenticated: ${authState.isAuthenticated}, isLoading: ${authState.isLoading}');
 
-    _emailController.text = 'user@bel247.com';
-    _passwordController.text = 'password123';
     // Debug: Show auth state in UI
     if (!authState.isInitialized) {
       return Scaffold(
@@ -65,10 +70,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     // Listen for authentication state changes
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      if (next.isAuthenticated) {
+      if (next.isAuthenticated && !(previous?.isAuthenticated ?? false)) {
         Logger.info('User authenticated, navigating to dashboard');
-        // Navigate to dashboard using GoRouter
-        context.go('/dashboard');
+        // Defer navigation to prevent rebuild loops
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.go('/dashboard');
+          }
+        });
       }
     });
 
@@ -157,14 +166,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
             const SizedBox(height: 24),
             
-            // Email Field
+            // Username Field
             TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
+              controller: _usernameController,
+              keyboardType: TextInputType.text,
               decoration: InputDecoration(
-                labelText: 'Email',
-                hintText: 'Enter your email',
-                prefixIcon: const Icon(Icons.email_outlined),
+                labelText: 'Username',
+                hintText: 'Enter your username',
+                prefixIcon: const Icon(Icons.person_outline),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -179,10 +188,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Email is required';
+                  return 'Username is required';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                  return 'Please enter a valid email';
+                if (value.length < 3) {
+                  return 'Username must be at least 3 characters';
                 }
                 return null;
               },
@@ -270,15 +279,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Widget _buildAdditionalOptions() => Column(
       children: [
-        AppButton(
-          onPressed: () {
-            Logger.info('Forgot password clicked');
-            context.go('/forgot-password');
-          },
-          text: 'Forgot Password?',
-          buttonType: AppButtonType.text,
-        ),
-        const SizedBox(height: 16),
+        // AppButton(
+        //   onPressed: () {
+        //     Logger.info('Forgot password clicked');
+        //     context.go('/forgot-password');
+        //   },
+        //   text: 'Forgot Password?',
+        //   buttonType: AppButtonType.text,
+        // ),
+        // const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -298,12 +307,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      final email = _emailController.text.trim();
+      final username = _usernameController.text.trim();
       final password = _passwordController.text;
       
-      Logger.info('Attempting login for: $email');
+      Logger.info('Attempting login for: $username');
       ref.read(authNotifierProvider.notifier).login(
-        email,
+        username,
         password,
         rememberMe: _rememberMe,
       );

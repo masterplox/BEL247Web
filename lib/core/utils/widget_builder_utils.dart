@@ -21,14 +21,14 @@ class WidgetBuilderUtils {
           shape: BoxShape.circle,
         ),
         child: Icon(
-          Icons.check,
+          Icons.payment,
           size: 16,
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       );
     } else {
       return Icon(
-        Icons.description,
+        Icons.receipt_long,
         color: Theme.of(context).colorScheme.secondary,
         size: 24,
       );

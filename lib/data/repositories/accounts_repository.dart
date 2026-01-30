@@ -1,51 +1,348 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-import '../../data/models/account.dart';
+import '../../core/constants/api_endpoints.dart';
+import '../../core/utils/logger.dart';
+import '../models/account.dart';
+import '../models/api_response_dtos.dart';
+import '../services/api_client.dart';
 
 class AccountsRepository {
-  const AccountsRepository();
+  AccountsRepository([ApiClient? apiClient]) : _apiClient = apiClient ?? ApiClient.instance;
 
-  /// Fetch accounts for the given user. Replace mock with real API call.
+  final ApiClient _apiClient;
+
+  /// Fetch connected accounts from the API
+  /// GET /CustomerAccounts/V4/PreferredCustomerAccounts
+  /// Automatically authenticated (uses Bearer token)
+  Future<List<Account>> fetchConnectedAccounts() async {
+    try {
+      print('[AccountsRepository] ===== Fetching connected accounts... =====');
+      Logger.info('Fetching connected accounts...', tag: 'AccountsRepository');
+      
+      // Just pass the endpoint path - base URL and auth are handled automatically
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.connectedAccounts,
+        authenticated: true, // This request requires authentication
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseDto = ConnectedAccountsResponseDto.fromJson(response.data!);
+        
+        print('[AccountsRepository] ✅ Successfully fetched ${responseDto.editableCustomerAccounts.length} connected accounts from API');
+        Logger.info(
+          'Successfully fetched ${responseDto.editableCustomerAccounts.length} connected accounts',
+          tag: 'AccountsRepository',
+        );
+
+        // Map DTOs to Account models
+        final accounts = responseDto.editableCustomerAccounts
+            .map(_mapDtoToAccount)
+            .where((account) => account.isActive) // Only include active accounts
+            .toList();
+
+        print('[AccountsRepository] ✅ Mapped ${accounts.length} active accounts (filtered from ${responseDto.editableCustomerAccounts.length} total)');
+        Logger.info('Mapped ${accounts.length} active accounts', tag: 'AccountsRepository');
+        return accounts;
+      } else {
+        Logger.warning(
+          'Failed to fetch connected accounts. accounts_repository Status: ${response.statusCode}',
+          tag: 'AccountsRepository',
+        );
+        return [];
+      }
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error fetching connected accounts',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      rethrow;
+    }
+  }
+
+  /// Map EditableCustomerAccountDto to Account model
+  Account _mapDtoToAccount(EditableCustomerAccountDto dto) {
+    // Generate unique ID from customer and account number (use empty strings if null)
+    final customerNumber = dto.customerNumber ?? '';
+    final accountNumber = dto.accountNumber ?? '';
+    final id = '${customerNumber}_$accountNumber';
+
+    // Parse balance - handle formats like "0.00", "$ (40.00) CR", "44,796.93"
+    final balance = _parseBalance(dto.balance ?? '0.00');
+
+    // Map billCode to accountType (default to residential if null)
+    final accountType = _mapBillCodeToAccountType(dto.billCode ?? 'residential');
+
+    // Build address from components (handle nulls)
+    final address = _buildAddress(
+      dto.apartmentNumber ?? '',
+      dto.street ?? '',
+      dto.city ?? '',
+      dto.district ?? '',
+    );
+
+    // Map paid status to AccountStatus
+    final status = _mapPaidStatusToAccountStatus(dto.paid, dto.dueIn ?? '0');
+
+    // Parse dates (handle nulls)
+    final lastPaymentDate = _parseDate(dto.lastPaymentDate ?? '');
+    final nextDueDate = _parseDate(dto.dueDate ?? '');
+
+    return Account(
+      id: id,
+      accountNumber: accountNumber,
+      customerNumber: customerNumber,
+      accountType: accountType,
+      address: address,
+      balance: balance,
+      status: status,
+      lastPaymentDate: lastPaymentDate,
+      nextDueDate: nextDueDate,
+      isActive: dto.active,
+      meterNumber: dto.meter ?? '',
+      serviceArea: (dto.district?.isNotEmpty ?? false) ? dto.district : null,
+      nickname: dto.nickName, // Map nickname from DTO
+    );
+  }
+
+  /// Parse balance string to double
+  /// Handles formats: "0.00", "$ (40.00) CR", "44,796.93", "-100.50"
+  /// Credits (CR) are converted to negative values for accounting accuracy
+  /// Returns 0.0 if balanceStr is null or empty
+  double _parseBalance(String? balanceStr) {
+    if (balanceStr == null || balanceStr.isEmpty) {
+      return 0;
+    }
+    try {
+      // Check if it's a credit (has "CR" or parentheses with positive number)
+      final isCredit = balanceStr.toUpperCase().contains('CR') || 
+                       (balanceStr.contains('(') && balanceStr.contains(')'));
+      
+      // Remove currency symbols, parentheses, "CR", commas, and whitespace
+      final cleaned = balanceStr
+          .replaceAll(r'$', '')
+          .replaceAll('(', '')
+          .replaceAll(')', '')
+          .replaceAll('CR', '')
+          .replaceAll(',', '')
+          .trim();
+
+      // Parse to double
+      var balance = double.tryParse(cleaned) ?? 0.0;
+      
+      // If it's a credit, make it negative (credits reduce debt)
+      if (isCredit && balance > 0) {
+        balance = -balance;
+      }
+      
+      return balance;
+    } catch (e) {
+      Logger.warning('Failed to parse balance: $balanceStr', tag: 'AccountsRepository');
+      return 0;
+    }
+  }
+
+  /// Map billCode to accountType
+  /// Returns 'residential' if billCode is null or empty
+  String _mapBillCodeToAccountType(String? billCode) {
+    if (billCode == null || billCode.isEmpty) {
+      return 'residential';
+    }
+    switch (billCode.toLowerCase()) {
+      case 'commercial':
+      case 'business':
+        return 'commercial';
+      case 'industrial':
+        return 'commercial'; // Treat industrial as commercial
+      case 'residential':
+      default:
+        return 'residential';
+    }
+  }
+
+  /// Build address string from components
+  String _buildAddress(String apartmentNumber, String street, String city, String district) {
+    final parts = <String>[];
+    
+    if (apartmentNumber.isNotEmpty && apartmentNumber.trim() != '') {
+      parts.add(apartmentNumber.trim());
+    }
+    if (street.isNotEmpty && street.trim() != '') {
+      parts.add(street.trim());
+    }
+    if (city.isNotEmpty && city.trim() != '' && city.trim() != ' ') {
+      parts.add(city.trim());
+    }
+    if (district.isNotEmpty && district.trim() != '' && district.trim() != ' ') {
+      parts.add(district.trim());
+    }
+    
+    return parts.isNotEmpty ? parts.join(', ') : 'Address not available';
+  }
+
+  /// Map paid status and dueIn to AccountStatus
+  /// Returns AccountStatus.due if dueInStr is null or empty
+  AccountStatus _mapPaidStatusToAccountStatus(bool paid, String? dueInStr) {
+    if (dueInStr == null || dueInStr.isEmpty) {
+      return paid ? AccountStatus.paid : AccountStatus.due;
+    }
+    if (paid) {
+      return AccountStatus.paid;
+    }
+    
+    // Parse dueIn to determine if overdue
+    final dueIn = int.tryParse(dueInStr.replaceAll(RegExp(r'[^\d-]'), '')) ?? 0;
+    if (dueIn < 0) {
+      return AccountStatus.overdue;
+    }
+    
+    return AccountStatus.due;
+  }
+
+  /// Parse date string to DateTime
+  /// Handles formats like "Thursday 18 Dec 2025", "Sunday 28 Dec 2025"
+  /// Returns null if dateStr is null or empty
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+    
+    try {
+      // Try common date formats
+      final formats = [
+        'EEEE d MMM yyyy', // "Thursday 18 Dec 2025"
+        'd MMM yyyy',      // "18 Dec 2025"
+        'yyyy-MM-dd',      // "2025-12-18"
+        'MM/dd/yyyy',      // "12/18/2025"
+      ];
+
+      for (final format in formats) {
+        try {
+          final formatter = DateFormat(format);
+          return formatter.parse(dateStr);
+        } catch (_) {
+          continue;
+        }
+      }
+      
+      // Fallback: try parsing as ISO string
+      return DateTime.tryParse(dateStr);
+    } catch (e) {
+      Logger.warning('Failed to parse date: $dateStr', tag: 'AccountsRepository');
+      return null;
+    }
+  }
+
+  /// Fetch full account details DTO for a specific account
+  /// Returns the EditableCustomerAccountDto for the account matching the given account ID
+  Future<EditableCustomerAccountDto?> fetchAccountDetails(String accountId) async {
+    try {
+      // Fetch all accounts and find the matching one
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.connectedAccounts,
+        authenticated: true,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseDto = ConnectedAccountsResponseDto.fromJson(response.data!);
+        
+        // Find the account matching the ID (format: customerNumber_accountNumber)
+        final parts = accountId.split('_');
+        if (parts.length != 2) return null;
+        
+        final customerNumber = parts[0];
+        final accountNumber = parts[1];
+        
+        final matchingDto = responseDto.editableCustomerAccounts.firstWhere(
+          (dto) => 
+            (dto.customerNumber ?? '') == customerNumber &&
+            (dto.accountNumber ?? '') == accountNumber,
+          orElse: () => throw StateError('Account not found'),
+        );
+        
+        return matchingDto;
+      }
+      return null;
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error fetching account details for accountId: $accountId',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      return null;
+    }
+  }
+
+  /// Connect a customer account
+  /// POST /CustomerAccounts/V2/Connect
+  /// Body: { CustomerNumber, AccountNumberHint, NickName }
+  /// Automatically authenticated (uses Bearer token)
+  Future<ConnectCustomerAccountResponseDto> connectAccount({
+    required String customerNumber,
+    required String accountNumberHint,
+    required String nickName,
+  }) async {
+    try {
+      print('[AccountsRepository] ===== Connecting account... =====');
+      Logger.info(
+        'Connecting account: CustomerNumber=$customerNumber, AccountNumberHint=$accountNumberHint, NickName=$nickName',
+        tag: 'AccountsRepository',
+      );
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.connectCustomerAccount,
+        data: {
+          'CustomerNumber': customerNumber,
+          'AccountNumberHint': accountNumberHint,
+          'NickName': nickName,
+        },
+        authenticated: true,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseDto = ConnectCustomerAccountResponseDto.fromJson(response.data!);
+        
+        print('[AccountsRepository] ✅ Successfully connected account');
+        Logger.info(
+          'Successfully connected account: ${responseDto.message ?? "No message"}',
+          tag: 'AccountsRepository',
+        );
+        
+        return responseDto;
+      } else {
+        Logger.warning(
+          'Failed to connect account. Status: ${response.statusCode}',
+          tag: 'AccountsRepository',
+        );
+        throw Exception('Failed to connect account. Status: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error connecting account',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      rethrow;
+    }
+  }
+
+  /// Legacy method for backward compatibility
+  /// @deprecated Use fetchConnectedAccounts instead
   Future<List<Account>> fetchUserAccounts(String userId) async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    return [
-      Account(
-        id: 'account_1',
-        accountNumber: '20241234',
-        accountType: 'residential',
-        address: '42 Marine Parade, Belize City',
-        balance: 245.50,
-        status: AccountStatus.due,
-        lastPaymentDate: DateTime(2025, 9, 15),
-        nextDueDate: DateTime(2025, 10, 15),
-        meterNumber: 'MTR-001234',
-      ),
-      Account(
-        id: 'account_2',
-        accountNumber: '20245678',
-        accountType: 'commercial',
-        address: '15 Queen Street, Belmopan',
-        balance: 1450,
-        status: AccountStatus.due,
-        lastPaymentDate: DateTime(2025, 9, 10),
-        nextDueDate: DateTime(2025, 10, 10),
-        meterNumber: 'MTR-005678',
-      ),
-      Account(
-        id: 'account_3',
-        accountNumber: '20249012',
-        accountType: 'residential',
-        address: '8 Coconut Drive, San Pedro',
-        balance: 0,
-        status: AccountStatus.paid,
-        lastPaymentDate: DateTime(2025, 9, 28),
-        nextDueDate: DateTime(2025, 10, 28),
-        meterNumber: 'MTR-009012',
-      ),
-    ];
+    Logger.info(
+      'fetchUserAccounts is deprecated. Using fetchConnectedAccounts instead.',
+      tag: 'AccountsRepository',
+    );
+    return fetchConnectedAccounts();
   }
 }
-// Provider can be added in a providers file if preferred; using inline for simplicity
-final accountsRepositoryProvider = Provider<AccountsRepository>((ref) => const AccountsRepository());
+
+// Provider for AccountsRepository
+final accountsRepositoryProvider = Provider<AccountsRepository>((ref) {
+  // Use the default ApiClient instance (singleton)
+  return AccountsRepository();
+});
 
 

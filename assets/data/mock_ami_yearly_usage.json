@@ -1,0 +1,7 @@
+{
+  "status": 200,
+  "message": "Success",
+  "data": {
+    "yearlyUsageKwh": 173.926208496094
+  }
+}

@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/env.dart';
 import '../../../core/providers/feature_providers.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/models/auth.dart';
 import '../../../data/repositories/accounts_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/live_auth_repository.dart';
+import '../../../data/services/api_client.dart';
 import '../../../data/services/token_storage_service.dart';
 
 /// Authentication state notifier for managing authentication state
@@ -43,6 +46,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
           userSession: sessionResponse.data,
           lastRefresh: DateTime.now(),
         );
+
+        // Fetch and initialize connected accounts after session validation
+        // For session validation, we read token from storage (it should already be there)
+        print('[AuthProvider] Valid session found, fetching connected accounts...');
+        Logger.info('[_initializeAuth] Valid session found, fetching connected accounts...', tag: 'AuthProvider');
+        await _fetchAndInitializeAccounts(); // No token parameter - read from storage
+        print('[AuthProvider] Account fetch completed after session validation');
+        Logger.info('[_initializeAuth] Account fetch completed', tag: 'AuthProvider');
       } else {
         Logger.info('Invalid session found, clearing credentials');
         await TokenStorageService.clearAll();
@@ -63,21 +74,83 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Helper method to fetch and initialize connected accounts
+  ///
+  /// Note: the login/validateSession flows ensure tokens are stored,
+  /// so here we just do a lightweight availability check and then fetch.
+  Future<void> _fetchAndInitializeAccounts() async {
+    print('[AuthProvider] ===== _fetchAndInitializeAccounts STARTING =====');
+    Logger.info('[_fetchAndInitializeAccounts] Starting to fetch connected accounts...', tag: 'AuthProvider');
+    try {
+      // Lightweight check – don't fail auth flow if this is briefly null,
+      // the ApiClient / interceptor will handle refresh if needed.
+      final tokenAvailable = await TokenStorageService.getAccessToken();
+      if (tokenAvailable == null || tokenAvailable.isEmpty) {
+        print('[AuthProvider] ⚠️ Access token not available yet when fetching accounts (will rely on interceptor/refresh).');
+        Logger.warning(
+          '[_fetchAndInitializeAccounts] Access token not available at fetch time; proceeding anyway',
+          tag: 'AuthProvider',
+        );
+      } else {
+        print('[AuthProvider] ✅ Access token present when fetching accounts');
+      }
+
+      final accountsRepo = _ref.read(accountsRepositoryProvider);
+      print('[AuthProvider] Repository obtained, calling fetchConnectedAccounts...');
+      Logger.info('[_fetchAndInitializeAccounts] Repository obtained, calling fetchConnectedAccounts...', tag: 'AuthProvider');
+      final accounts = await accountsRepo.fetchConnectedAccounts();
+      
+      print('[AuthProvider] Received ${accounts.length} accounts from API');
+      Logger.info(
+        '[_fetchAndInitializeAccounts] Received ${accounts.length} accounts from API',
+        tag: 'AuthProvider',
+      );
+      
+      // Always initialize accounts (even if empty) to mark as initialized
+      // This allows the UI to distinguish between "still loading" and "no accounts found"
+      _ref.read(accountSwitcherProvider.notifier).initializeAccounts(accounts);
+      
+      if (accounts.isNotEmpty) {
+        print('[AuthProvider] ===== Successfully initialized ${accounts.length} connected accounts =====');
+        Logger.info(
+          '[_fetchAndInitializeAccounts] Successfully initialized ${accounts.length} connected accounts',
+          tag: 'AuthProvider',
+        );
+      } else {
+        print('[AuthProvider] ⚠️ No connected accounts found - marked as initialized with empty list');
+        Logger.warning('[_fetchAndInitializeAccounts] No connected accounts found - marked as initialized with empty list', tag: 'AuthProvider');
+      }
+    } catch (e, stackTrace) {
+      print('[AuthProvider] ❌ ERROR: Failed to fetch connected accounts auth_provider  : $e');
+      print('[AuthProvider] Stack trace: $stackTrace');
+      Logger.error(
+        '[_fetchAndInitializeAccounts] Failed to fetch connected accounts',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AuthProvider',
+      );
+      // Don't fail auth if account fetch fails - user can still use the app
+    }
+  }
+
   /// Login user with email and password
   Future<void> login(String email, String password, {bool rememberMe = false}) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
       
       final request = AuthRequest(
-        email: email,
+        username: email, 
         password: password,
         rememberMe: rememberMe,
       );
 
       final response = await _authRepository.login(request);
-      
+
       if (response.success && response.data != null) {
         Logger.info('Login successful');
+
+        // At this point LiveAuthRepository has already stored the tokens.
+        // We trust that path; if storage has issues it will be logged there.
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
@@ -86,16 +159,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
           error: null,
         );
 
-        // Initialize accounts for this user
-        final userId = response.data!.userSession.userId;
-        try {
-          final accountsRepo = _ref.read(accountsRepositoryProvider);
-          final accounts = await accountsRepo.fetchUserAccounts(userId);
-          _ref.read(accountSwitcherProvider.notifier).initializeAccounts(accounts);
-          Logger.info('Accounts initialized after login for user: $userId');
-        } catch (e) {
-          Logger.warning('Failed to initialize accounts after login: $e');
-        }
+        // Fetch and initialize connected accounts after successful login.
+        // Any transient token issues are handled by ApiClient/interceptors.
+        print('[AuthProvider] Login successful, fetching connected accounts...');
+        Logger.info('[login] Login successful, fetching connected accounts...', tag: 'AuthProvider');
+        await _fetchAndInitializeAccounts();
+        print('[AuthProvider] Account fetch completed after login');
+        Logger.info('[login] Account fetch completed', tag: 'AuthProvider');
       } else {
         Logger.warning('Login failed: ${response.error}');
         state = state.copyWith(
@@ -229,6 +299,145 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Sign up Step 1 - Deliver OTP
+  Future<void> signUpStep1({String? mobileNumber, String? email, String? username}) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null, otpSent: false);
+      
+      final request = SignUpStep1Request(
+        mobileNumber: mobileNumber,
+        email: email,
+        username: username,
+      );
+      final response = await _authRepository.signUpStep1(request);
+      
+      if (response.success) {
+        Logger.info('Sign up Step 1 successful');
+        // Determine contact type
+        final contactType = mobileNumber != null ? 'phone' : 'email';
+        final contact = mobileNumber ?? email ?? '';
+        state = state.copyWith(
+          isLoading: false,
+          otpSent: true,
+          otpContact: contact,
+          signupContactType: contactType,
+          error: null,
+        );
+      } else {
+        Logger.warning('Sign up Step 1 failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          otpSent: false,
+          error: response.error ?? 'Failed to send OTP',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Sign up Step 1 error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        otpSent: false,
+        error: 'Failed to send OTP: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Sign up Step 2 - Activate device with OTP
+  Future<void> signUpStep2(String code) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null, otpVerified: false);
+      
+      final contact = state.otpContact;
+      final contactType = state.signupContactType;
+      
+      if (contact == null || contactType == null) {
+        throw Exception('Contact information not found for OTP verification.');
+      }
+
+      final request = SignUpStep2Request(
+        code: code,
+        phoneNumber: contactType == 'phone' ? contact : null,
+        email: contactType == 'email' ? contact : null,
+      );
+      final response = await _authRepository.signUpStep2(request);
+      
+      if (response.success && response.data != null) {
+        Logger.info('Sign up Step 2 successful - GuestUUID: ${response.data}');
+        state = state.copyWith(
+          isLoading: false,
+          otpVerified: true,
+          guestUUID: response.data,
+          error: null,
+        );
+      } else {
+        Logger.warning('Sign up Step 2 failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          otpVerified: false,
+          error: response.error ?? 'Failed to verify OTP',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Sign up Step 2 error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        otpVerified: false,
+        error: 'Failed to verify OTP: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Sign up Step 3 - Register user
+  Future<void> signUpStep3(
+    String username,
+    String password, {
+    String? email,
+    String? phoneNumber,
+  }) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      final contact = state.otpContact;
+      final contactType = state.signupContactType;
+      final guestUUID = state.guestUUID ?? ''; // Use empty string if not provided
+
+      // Use provided email/phoneNumber, or fall back to contact from step 1
+      final finalEmail = email ?? (contactType == 'email' ? contact : null);
+      final finalPhoneNumber = phoneNumber ?? (contactType == 'phone' ? contact : null);
+
+      final request = SignUpStep3Request(
+        username: username,
+        password: password,
+        email: finalEmail,
+        mobileNumber: finalPhoneNumber,
+        guestUUID: guestUUID, // Can be empty string
+      );
+      final response = await _authRepository.signUpStep3(request);
+      
+      if (response.success && response.data != null) {
+        Logger.info('Sign up Step 3 successful for: $username');
+        state = state.copyWith(
+          isLoading: false,
+          signupCompleted: true,
+          error: null,
+        );
+      } else {
+        Logger.warning('Sign up Step 3 failed: ${response.error}');
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: false,
+          error: response.error ?? 'Registration failed',
+        );
+      }
+    } catch (e, stackTrace) {
+      Logger.error('Sign up Step 3 error', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: false,
+        error: 'Registration failed: ${e.toString()}',
+      );
+    }
+  }
+
   /// Logout user and clear session
   Future<void> logout({bool logoutAllDevices = false}) async {
     try {
@@ -244,8 +453,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _authRepository.logout(request);
       }
 
-      // Clear local state
+      // Clear local state - tokens and all stored data
       await TokenStorageService.clearAll();
+      
+      // Reset account switcher state
+      _ref.read(accountSwitcherProvider.notifier).reset();
       
       Logger.info('Logout successful');
       state = state.copyWith(
@@ -262,6 +474,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       Logger.error('Logout error', error: e, stackTrace: stackTrace);
       // Clear state even if logout request fails
       await TokenStorageService.clearAll();
+      
+      // Reset account switcher state even on error
+      _ref.read(accountSwitcherProvider.notifier).reset();
+      
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: false,
@@ -412,6 +628,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       otpContact: null,
       otpVerified: false,
       signupCompleted: false,
+      guestUUID: null,
+      signupContactType: null,
     );
   }
 
@@ -432,7 +650,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 /// Provider for authentication repository
-final authRepositoryProvider = Provider<AuthRepository>((ref) => MockAuthRepository());
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final useMockApi = EnvConfig.useMockApi;
+  final currentApiUrl = EnvConfig.currentApiUrl;
+  
+  if (useMockApi) {
+    Logger.info('🔧 Using MockAuthRepository (no real HTTP calls)', tag: 'AuthProvider');
+    Logger.info('   To use real API: Set USE_MOCK=false', tag: 'AuthProvider');
+    Logger.info('   Mock credentials: user@bel247.com / password123', tag: 'AuthProvider');
+    return MockAuthRepository();
+  } else {
+    Logger.info('🌐 Using LiveAuthRepository with real API', tag: 'AuthProvider');
+    Logger.info('   API URL: $currentApiUrl', tag: 'AuthProvider');
+    Logger.info('   API logging enabled - check console for detailed logs', tag: 'AuthProvider');
+    return LiveAuthRepository(ApiClient.instance);
+  }
+});
 
 /// Provider for authentication state notifier
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

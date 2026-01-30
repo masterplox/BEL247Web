@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 
 import '../../core/config/env.dart';
+import '../../core/services/api_logger_interceptor.dart';
 import '../../core/utils/logger.dart';
 import '../models/auth.dart';
 import 'token_storage_service.dart';
@@ -38,14 +39,11 @@ class HttpClient {
     // Order matters: auth -> retry -> logging
     dio.interceptors.add(_AuthInterceptor(dio));
     dio.interceptors.add(_RetryInterceptor(dio));
-    dio.interceptors.add(LogInterceptor(
-      request: EnvConfig.isDevelopment,
-      requestBody: EnvConfig.isDevelopment,
-      responseBody: EnvConfig.isDevelopment,
-      responseHeader: false,
-      requestHeader: false,
-      error: true,
-      logPrint: (obj) => Logger.debug(obj.toString()),
+    dio.interceptors.add(ApiLoggerInterceptor(
+      enabled: true, // Always enabled to see all API calls
+      logRequestHeaders: true,
+      logResponseHeaders: false,
+      maskSensitiveData: true, // Mask passwords and tokens for security
     ));
 
     Logger.info('HttpClient initialized. Base URL: $baseUrl (mock=${EnvConfig.useMockApi})');

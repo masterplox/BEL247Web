@@ -58,7 +58,7 @@ class ErrorHandler {
         content: Text(getErrorMessage(error)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             child: const Text('OK'),
           ),
         ],

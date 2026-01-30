@@ -10,6 +10,7 @@ import '../../features/auth/signup/signup_contact_page.dart';
 import '../../features/auth/signup/signup_credentials_page.dart';
 import '../../features/auth/signup/signup_success_page.dart';
 import '../../features/auth/signup/signup_verify_otp_page.dart';
+import '../../features/ami_usage/ami_usage_page.dart';
 import '../../features/bills/bills_page.dart';
 import '../../features/daily_bill/pages/daily_bill_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
@@ -157,6 +158,11 @@ class AppRouter {
             builder: (context, state) => const UsagePage(),
           ),
           GoRoute(
+            path: '/ami-usage',
+            name: 'ami-usage',
+            builder: (context, state) => const AmiUsagePage(),
+          ),
+          GoRoute(
             path: '/usage/:period',
             name: 'usage-period',
             builder: (context, state) {
@@ -205,6 +211,8 @@ class AppRouter {
               return const BillsPage();
             case 'usage':
               return const UsagePage();
+            case 'ami-usage':
+              return const AmiUsagePage();
             case 'daily-bill':
               return const DailyBillPage();
             default:

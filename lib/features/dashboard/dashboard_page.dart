@@ -1,299 +1,180 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/widgets/app_responsive_layout.dart';
-import '../../../data/models/consumption.dart';
-import '../../../data/models/user.dart';
+import '../../../core/widgets/account_aware_scaffold.dart';
+import '../../../core/widgets/account_switcher.dart';
+import '../../../core/widgets/app_page_scaffold.dart';
+import '../../../features/bills/state/bills_providers.dart';
+import '../../../features/usage/state/meter_readings_providers.dart';
 import '../../../theme/app_theme.dart';
-import 'state/dashboard_providers.dart';
-import 'widgets/account_balance_widget.dart';
-import 'widgets/daily_cost_summary_widget.dart';
-import 'widgets/energy_price_signal_dashboard.dart';
-import 'widgets/energy_usage_overview_widget.dart';
+import '../../../theme/colors.dart';
+import 'widgets/account_details_widget.dart';
+import 'widgets/balance_card_widget.dart';
+import 'widgets/consumption_chart_widget.dart';
+// import 'widgets/dashboard_account_switcher.dart';
+import 'widgets/gamification_card_widget.dart';
+import 'widgets/usage_stats_widget.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Dashboard'),
-          centerTitle: true,
-          elevation: 0,
-          actions: const [
-            // IconButton(
-            //   icon: const Icon(Icons.refresh),
-            //   onPressed: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-            // ),
-            // IconButton(
-            //   icon: const Icon(Icons.notifications_outlined),
-            //   onPressed: () {},
-            // ),
-            // // Test button for notice banner - Remove this after testing
-            // IconButton(
-            //   icon: const Icon(Icons.info_outline),
-            //   onPressed: () {
-            //     if (NoticeBannerHelper.isVisible(ref)) {
-            //       NoticeBannerHelper.hide(ref);
-            //     } else {
-            //       NoticeBannerHelper.showMaintenanceNotice(
-            //         ref,
-            //         location: 'Belize City area',
-            //         date: DateTime(2025, 10, 5),
-            //         startTime: const TimeOfDay(hour: 6, minute: 0),
-            //         endTime: const TimeOfDay(hour: 10, minute: 0),
-            //       );
-            //     }
-            //   },
-            //   tooltip: 'Toggle Notice Banner',
-            // ),
-          ],
-        ),
-        body: const DashboardLayout(),
-      );
-}
+  Widget build(BuildContext context, WidgetRef ref) => AccountAwareScaffold(
+      emptyMessage:
+          'You don\'t have any accounts connected yet. Connect an account to view your energy dashboard, bills, and usage history.',
+      emptyIcon: Icons.account_circle_outlined,
+      builder: (context, ref, accountState) {
+        final accountDetailsAsync = ref.watch(accountDetailsProvider);
 
-class DashboardLayout extends ConsumerWidget {
-  const DashboardLayout({super.key});
+        // Get the first name from account details name field
+        final firstName = accountDetailsAsync.maybeWhen(
+          data: (accountDetails) {
+            final name = accountDetails?.name;
+            if (name != null && name.isNotEmpty) {
+              final nameParts = name.split(' ');
+              return nameParts.isNotEmpty ? nameParts.first : '';
+            }
+            return '';
+          },
+          orElse: () => '',
+        );
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => const AppResponsiveLayout(
-        mobile: MobileDashboardLayout(),
-        tablet: TabletDashboardLayout(),
-        desktop: DesktopDashboardLayout(),
-      );
-}
+        final header = LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 640;
+            if (isMobile) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Welcome back, $firstName',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                        ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing4),
+                  Text(
+                    "Here's your energy overview",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing12),
+                  const AccountSwitcherCard(
+                    isExpanded: true,
+                  ),
+                ],
+              );
+            }
 
-class DesktopDashboardLayout extends ConsumerWidget {
-  const DesktopDashboardLayout({super.key});
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back, $firstName',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 20,
+                          ),
+                    ),
+                    const SizedBox(height: AppTheme.spacing4),
+                    Text(
+                      "Here's your energy overview",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                    ),
+                  ],
+                ),
+                // Room for a future compact account switcher on larger screens
+              ],
+            );
+          },
+        );
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        padding: EdgeInsets.all(AppTheme.spacing24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AccountBalanceCard(),
-            SizedBox(height: AppTheme.spacing24),
-            DailyCostSummaryCard(),
-            SizedBox(height: AppTheme.spacing24),
-            EnergyUsageOverviewCard(),
-            SizedBox(height: AppTheme.spacing24),
-            EnergyPricesCard(),
-          ],
-        ),
-      );
-}
+        final meterReadingsAsync = ref.watch(meterReadingsThisYearProvider);
+        final showReadingsSection = meterReadingsAsync.maybeWhen(
+          data: (readings) => readings.isNotEmpty,
+          loading: () => true,
+          orElse: () => false,
+        );
 
-class TabletDashboardLayout extends ConsumerWidget {
-  const TabletDashboardLayout({super.key});
+        final grid = LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 1024;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        padding: EdgeInsets.all(AppTheme.spacing20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AccountBalanceCard(),
-            SizedBox(height: AppTheme.spacing20),
-            DailyCostSummaryCard(),
-            SizedBox(height: AppTheme.spacing20),
-            EnergyUsageOverviewCard(),
-            SizedBox(height: AppTheme.spacing20),
-            EnergyPricesCard(),
-          ],
-        ),
-      );
-}
+            if (isDesktop) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(
+                    flex: 5,
+                    child: Column(
+                      children: [
+                        BalanceCardWidget(),
+                        SizedBox(height: AppTheme.spacing16),
+                        GamificationCardWidget(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spacing16),
+                  Expanded(
+                    flex: 7,
+                    child: Column(
+                      children: [
+                        if (showReadingsSection) ...[
+                          const UsageStatsWidget(),
+                          const SizedBox(height: AppTheme.spacing16),
+                          const ConsumptionChartWidget(),
+                          const SizedBox(height: AppTheme.spacing16),
+                        ],
+                        const AccountDetailsWidget(),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
 
-class MobileDashboardLayout extends ConsumerWidget {
-  const MobileDashboardLayout({super.key});
+            return Column(
+              children: [
+                const BalanceCardWidget(),
+                const SizedBox(height: AppTheme.spacing16),
+                const GamificationCardWidget(),
+                const SizedBox(height: AppTheme.spacing16),
+                if (showReadingsSection) ...[
+                  const UsageStatsWidget(),
+                  const SizedBox(height: AppTheme.spacing16),
+                  const ConsumptionChartWidget(),
+                  const SizedBox(height: AppTheme.spacing16),
+                ],
+                const AccountDetailsWidget(),
+              ],
+            );
+          },
+        );
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        padding: EdgeInsets.all(AppTheme.spacing16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AccountBalanceCard(),
-            SizedBox(height: AppTheme.spacing16),
-            DailyCostSummaryCard(),
-            SizedBox(height: AppTheme.spacing16),
-            EnergyUsageOverviewCard(),
-            SizedBox(height: AppTheme.spacing16),
-            EnergyPricesCard(),
-          ],
-        ),
-      );
-}
-
-class DashboardHeader extends StatelessWidget {
-  const DashboardHeader({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Note: This widget is currently unused but kept for potential future use
-    // If used, should be replaced with AppPageHeader
-    return const SizedBox.shrink();
-  }
-}
-
-// Cards now consume providers
-class AccountBalanceCard extends ConsumerWidget {
-  const AccountBalanceCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(accountBalanceProvider);
-    return data.when(
-      loading: () => AccountBalanceWidget(
-        accountBalance: AccountBalance(
-          currentBalance: 0,
-          lastPaymentDate: DateTime(2000, 1, 1),
-          lastPaymentAmount: 0,
-          nextDueDate: DateTime(2000, 1, 2),
-          paymentMethod: 'Loading...',
-        ),
-        isLoading: true,
-      ),
-      error: (e, st) => AccountBalanceWidget(
-        accountBalance: AccountBalance(
-          currentBalance: 0,
-          lastPaymentDate: DateTime(2000, 1, 1),
-          lastPaymentAmount: 0,
-          nextDueDate: DateTime(2000, 1, 2),
-          paymentMethod: 'Error',
-        ),
-      ),
-      data: (balance) => AccountBalanceWidget(
-        accountBalance: balance,
-        onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-      ),
-    );
-  }
-}
-
-class DailyCostSummaryCard extends ConsumerWidget {
-  const DailyCostSummaryCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final consumptionData = ref.watch(dailyConsumptionProvider);
-    final dashboardData = ref.watch(dashboardDataProvider);
-    final sevenDayData = ref.watch(sevenDayConsumptionProvider);
-
-    return dashboardData.when(
-      loading: () => DailyCostSummaryWidget(
-        consumption: DailyConsumption(
-          date: DateTime.now(),
-          totalKwh: 0,
-          cost: 0,
-          hourlyBreakdown: [],
-        ),
-        isLoading: true,
-      ),
-      error: (e, st) => DailyCostSummaryWidget(
-        consumption: DailyConsumption(
-          date: DateTime.now(),
-          totalKwh: 0,
-          cost: 0,
-          hourlyBreakdown: [],
-        ),
-      ),
-      data: (dashboard) => consumptionData.when(
-          loading: () => DailyCostSummaryWidget(
-            consumption: DailyConsumption(
-              date: DateTime.now(),
-              totalKwh: 0,
-              cost: 0,
-              hourlyBreakdown: [],
-            ),
-            dashboardData: dashboard,
-            isLoading: true,
+        return AppPageScaffold(
+          title: 'Dashboard',
+          subtitle: 'Here\'s your energy overview',
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Keep the richer, responsive header instead of the simple title
+              header,
+              const SizedBox(height: AppTheme.spacing20),
+              grid,
+              const SizedBox(height: AppTheme.spacing24),
+            ],
           ),
-          error: (e, st) => DailyCostSummaryWidget(
-            consumption: DailyConsumption(
-              date: DateTime.now(),
-              totalKwh: 0,
-              cost: 0,
-              hourlyBreakdown: [],
-            ),
-            dashboardData: dashboard,
-          ),
-          data: (consumption) => sevenDayData.when(
-            loading: () => DailyCostSummaryWidget(
-              consumption: consumption,
-              dashboardData: dashboard,
-              isLoading: true,
-            ),
-            error: (e, st) => DailyCostSummaryWidget(
-              consumption: consumption,
-              dashboardData: dashboard,
-            ),
-            data: (sevenDay) => DailyCostSummaryWidget(
-              consumption: consumption,
-              dashboardData: dashboard,
-              sevenDayConsumption: sevenDay,
-              onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-            ),
-          ),
-        ),
+        );
+      },
     );
-  }
-}
-
-class EnergyUsageOverviewCard extends ConsumerWidget {
-  const EnergyUsageOverviewCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(dailyConsumptionProvider);
-    return data.when(
-      loading: () => EnergyUsageOverviewWidget(
-        consumption: DailyConsumption(
-          date: DateTime.now(),
-          totalKwh: 0,
-          cost: 0,
-          hourlyBreakdown: [],
-        ),
-        isLoading: true,
-      ),
-      error: (e, st) => EnergyUsageOverviewWidget(
-        consumption: DailyConsumption(
-          date: DateTime.now(),
-          totalKwh: 0,
-          cost: 0,
-          hourlyBreakdown: [],
-        ),
-      ),
-      data: (consumption) => EnergyUsageOverviewWidget(
-        consumption: consumption,
-        onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-      ),
-    );
-  }
-}
-
-class EnergyPricesCard extends ConsumerWidget {
-  const EnergyPricesCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(energyPricesProvider);
-    return data.when(
-      loading: () => const EnergyPriceSignalDashboard(
-        prices: null,
-        isLoading: true,
-      ),
-      error: (e, st) => const EnergyPriceSignalDashboard(
-        prices: null,
-        isLoading: false,
-      ),
-      data: (prices) => EnergyPriceSignalDashboard(
-        prices: prices,
-        isLoading: false,
-        onRefresh: () => ref.read(dashboardRefreshProvider.notifier).refreshAll(ref),
-      ),
-    );
-  }
 }

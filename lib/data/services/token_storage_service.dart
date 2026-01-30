@@ -33,8 +33,35 @@ class TokenStorageService {
   // Fallback storage for web
   static final Map<String, String> _fallbackStorage = <String, String>{};
 
+  // In-memory cache so the rest of the app (and especially interceptors)
+  // can access the latest tokens immediately without waiting on storage.
+  static String? _inMemoryAccessToken;
+  static String? _inMemoryRefreshToken;
+
+  /// Set in-memory access token (used by auth layer / providers).
+  static void setInMemoryAccessToken(String? token) {
+    _inMemoryAccessToken = token;
+    if (token != null && token.isNotEmpty) {
+      Logger.info('In-memory access token updated');
+    } else {
+      Logger.info('In-memory access token cleared');
+    }
+  }
+
+  /// Set in-memory refresh token (used by auth layer / providers).
+  static void setInMemoryRefreshToken(String? token) {
+    _inMemoryRefreshToken = token;
+    if (token != null && token.isNotEmpty) {
+      Logger.info('In-memory refresh token updated');
+    } else {
+      Logger.info('In-memory refresh token cleared');
+    }
+  }
+
   /// Store access token securely
   static Future<void> storeAccessToken(String token) async {
+    // Always keep in-memory copy in sync
+    setInMemoryAccessToken(token);
     try {
       await _storage.write(key: _accessTokenKey, value: token);
       Logger.info('Access token stored securely');
@@ -52,6 +79,8 @@ class TokenStorageService {
 
   /// Store refresh token securely
   static Future<void> storeRefreshToken(String token) async {
+    // Always keep in-memory copy in sync
+    setInMemoryRefreshToken(token);
     try {
       await _storage.write(key: _refreshTokenKey, value: token);
       Logger.info('Refresh token stored securely');
@@ -88,6 +117,9 @@ class TokenStorageService {
 
   /// Store token pair securely
   static Future<void> storeTokenPair(TokenPair tokenPair) async {
+    // Keep in-memory cache in sync immediately
+    setInMemoryAccessToken(tokenPair.accessToken);
+    setInMemoryRefreshToken(tokenPair.refreshToken);
     try {
       await Future.wait([
         storeAccessToken(tokenPair.accessToken),
@@ -183,6 +215,10 @@ class TokenStorageService {
   /// Retrieve access token
   static Future<String?> getAccessToken() async {
     try {
+      // Prefer fast in-memory token if available
+      if (_inMemoryAccessToken != null && _inMemoryAccessToken!.isNotEmpty) {
+        return _inMemoryAccessToken;
+      }
       final token = await _storage.read(key: _accessTokenKey);
       if (token != null) {
         Logger.info('Access token retrieved from secure storage');
@@ -206,6 +242,10 @@ class TokenStorageService {
   /// Retrieve refresh token
   static Future<String?> getRefreshToken() async {
     try {
+      // Prefer fast in-memory token if available
+      if (_inMemoryRefreshToken != null && _inMemoryRefreshToken!.isNotEmpty) {
+        return _inMemoryRefreshToken;
+      }
       final token = await _storage.read(key: _refreshTokenKey);
       if (token != null) {
         Logger.info('Refresh token retrieved from secure storage');
@@ -289,6 +329,9 @@ class TokenStorageService {
     try {
       await _storage.deleteAll();
       Logger.info('All authentication data cleared from secure storage');
+      // Clear in-memory cache as well
+      setInMemoryAccessToken(null);
+      setInMemoryRefreshToken(null);
     } catch (e, stackTrace) {
       Logger.warning('Secure storage clear failed, clearing fallback: $e');
       if (kIsWeb) {
@@ -312,6 +355,9 @@ class TokenStorageService {
         _storage.delete(key: _lastRefreshKey),
       ]);
       Logger.info('Tokens cleared from secure storage');
+      // Clear in-memory cache as well
+      setInMemoryAccessToken(null);
+      setInMemoryRefreshToken(null);
     } catch (e, stackTrace) {
       Logger.warning('Secure storage clear failed, clearing fallback: $e');
       if (kIsWeb) {

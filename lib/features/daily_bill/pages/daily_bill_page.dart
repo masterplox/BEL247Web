@@ -42,8 +42,16 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
   Widget build(BuildContext context) {
     // Recompute when active account changes and reload
     ref.watch(accountSwitcherProvider);
-    ref.listen(accountSwitcherProvider, (_, __) {
-      _loadData();
+    ref.listen(accountSwitcherProvider, (previous, next) {
+      // Only reload if account actually changed
+      if (previous?.activeAccountId != next.activeAccountId) {
+        // Defer execution to prevent rebuild loops
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _loadData();
+          }
+        });
+      }
     });
 
     final dailyBillState = ref.watch(dailyBillProvider);

@@ -73,7 +73,7 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
               // else
               //   const SizedBox.shrink(),
               // if (!isMobile || _showChart)
-                _buildTenDayChart(context, isMobile, isTablet),
+                //_buildTenDayChart(context, isMobile, isTablet),
             ],
           ),
         );
@@ -88,9 +88,9 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
     }
 
     final currentPrice = todayData.price;
-    final priceColor = _getPriceColor(currentPrice);
     final currentHour = DateTime.now().hour;
     final touPeriod = _getTouPeriodForHour(currentHour);
+    final priceColor = _getPriceColor(touPeriod);
     final lastUpdated = DateTime.now();
 
     return AppCard(
@@ -374,8 +374,8 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                _getPriceColor(prices.last).withValues(alpha: 0.3),
-                _getPriceColor(prices.first).withValues(alpha: 0.1),
+                _getPriceColorFromValue(prices.last).withValues(alpha: 0.3),
+                _getPriceColorFromValue(prices.first).withValues(alpha: 0.1),
               ],
             ),
           ),
@@ -454,14 +454,26 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
     return index != null && index >= 0 ? index : null;
   }
 
-  Color _getPriceColor(double price) {
-    // Price ranges: Low < 0.35, Medium 0.35-0.40, High > 0.40
+  Color _getPriceColor(_TouPeriod period) {
+    // Match the same color logic as _buildPeakBadge
+    // Use the TOU period to determine the color, ensuring consistency
+    return switch (period) {
+      _TouPeriod.peak => AppColors.peak,
+      _TouPeriod.midPeak => AppColors.midPeak,
+      _TouPeriod.offPeak => AppColors.offPeak,
+    };
+  }
+
+  Color _getPriceColorFromValue(double price) {
+    // For chart gradients, use price ranges to determine color
+    // This maintains visual consistency with the badge colors
+    // Low prices → offPeak (green), Medium → midPeak (yellow), High → peak (red)
     if (price < 0.35) {
-      return AppColors.offPeak; // Green
+      return AppColors.offPeak; // Same as _buildPeakBadge for offPeak
     } else if (price <= 0.40) {
-      return AppColors.midPeak; // Yellow
+      return AppColors.midPeak; // Same as _buildPeakBadge for midPeak
     } else {
-      return AppColors.peak; // Red
+      return AppColors.peak; // Same as _buildPeakBadge for peak
     }
   }
 

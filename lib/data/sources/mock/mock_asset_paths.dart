@@ -14,5 +14,12 @@ class MockAssetPaths {
   static const String consumption = '$_basePath/mock_consumption.json';
   static const String energyPrices = '$_basePath/mock_energy_prices.json';
   static const String user = '$_basePath/mock_user.json';
+  
+  // AMI Usage asset file paths
+  static const String amiIntervalUsage = '$_basePath/mock_ami_interval_usage.json';
+  static const String amiDailyUsage = '$_basePath/mock_ami_daily_usage.json';
+  static const String amiDailyTotal = '$_basePath/mock_ami_daily_total.json';
+  static const String amiMonthlyUsage = '$_basePath/mock_ami_monthly_usage.json';
+  static const String amiYearlyUsage = '$_basePath/mock_ami_yearly_usage.json';
 }
 

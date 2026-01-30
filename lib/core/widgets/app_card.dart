@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../../theme/colors.dart';
 
 /// A reusable card widget that provides consistent styling across the app.
 /// All customization options are available while maintaining a single source of truth
@@ -19,6 +20,9 @@ class AppCard extends StatelessWidget {
     this.border,
     this.clipBehavior,
     this.semanticContainer = true,
+    this.showBorder = true,
+    this.borderColor,
+    this.borderWidth = 1.0,
   });
 
   /// The main content of the card
@@ -33,10 +37,10 @@ class AppCard extends StatelessWidget {
   /// Margin around the card. Defaults to `null` (no margin)
   final EdgeInsetsGeometry? margin;
 
-  /// Elevation of the card. Defaults to `2`
+  /// Elevation of the card. Defaults to `0` (no elevation)
   final double? elevation;
 
-  /// Background color of the card. Defaults to `AppColors.surface`
+  /// Background color of the card. Defaults to `Theme.of(context).scaffoldBackgroundColor`
   final Color? color;
 
   /// Border radius of the card. Defaults to `AppTheme.radius12`
@@ -47,6 +51,7 @@ class AppCard extends StatelessWidget {
 
   /// Optional custom border configuration
   /// Example: `Border(left: BorderSide(color: AppColors.primary, width: 4))`
+  /// If provided, this overrides showBorder, borderColor, and borderWidth
   final Border? border;
 
   /// Clip behavior for the card. Defaults to `Clip.antiAlias`
@@ -56,35 +61,58 @@ class AppCard extends StatelessWidget {
   /// Defaults to `true`
   final bool semanticContainer;
 
+  /// Whether to show a thin border around the card. Defaults to `true`
+  final bool showBorder;
+
+  /// Color of the border. Defaults to `AppColors.border` or scaffold background divider
+  final Color? borderColor;
+
+  /// Width of the border. Defaults to `1.0`
+  final double borderWidth;
+
   @override
   Widget build(BuildContext context) {
     final cardContent = _buildCardContent();
+    final theme = Theme.of(context);
+    final cardBackgroundColor = color ?? theme.scaffoldBackgroundColor;
+    final defaultBorderColor = borderColor ?? AppColors.border;
+    
+    // Determine the border to use
+    final effectiveBorder = border ?? 
+        (showBorder 
+            ? Border.all(
+                color: defaultBorderColor,
+                width: borderWidth,
+              )
+            : null);
 
-    final card = Card(
-      elevation: elevation ?? 0.0,
-      color: color ?? Theme.of(context).colorScheme.surface,
+    final borderRadiusValue = borderRadius ?? AppTheme.radius12;
+
+    Widget card = Container(
       margin: margin,
-      clipBehavior: clipBehavior ?? Clip.antiAlias,
-      semanticContainer: semanticContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius ?? AppTheme.radius12),
+      decoration: BoxDecoration(
+        color: cardBackgroundColor,
+        borderRadius: BorderRadius.circular(borderRadiusValue),
+        border: effectiveBorder,
+        boxShadow: elevation != null && elevation! > 0
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: elevation! * 2,
+                  offset: Offset(0, elevation!),
+                ),
+              ]
+            : null,
       ),
-      child: border != null
-          ? DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(borderRadius ?? AppTheme.radius12),
-                border: border,
-              ),
-              child: cardContent,
-            )
-          : cardContent,
+      clipBehavior: clipBehavior ?? Clip.antiAlias,
+      child: cardContent,
     );
 
     // Wrap with InkWell if onTap is provided
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(borderRadius ?? AppTheme.radius12),
+        borderRadius: BorderRadius.circular(borderRadiusValue),
         child: card,
       );
     }

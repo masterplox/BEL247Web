@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/account.dart';
+import '../../data/repositories/accounts_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../providers/feature_providers.dart';
+import '../utils/logger.dart';
 
 /// Account switcher card displayed in the sidebar
 class AccountSwitcherCard extends ConsumerWidget {
@@ -20,26 +22,94 @@ class AccountSwitcherCard extends ConsumerWidget {
     final accountState = ref.watch(accountSwitcherProvider);
     final activeAccount = accountState.activeAccount;
 
+    // Show loading state only if accounts haven't been initialized yet
+    // If initialized but empty, we know there are no accounts (don't show loading)
+    if (accountState.accounts.isEmpty && !accountState.isInitialized) {
+      return Container(
+        margin: const EdgeInsets.all(AppTheme.spacing8),
+        padding: const EdgeInsets.all(AppTheme.spacing12),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    // If initialized but empty, show nothing (or could show connect button)
+    // The main pages will show the empty state with connect button
+    if (accountState.accounts.isEmpty && accountState.isInitialized) {
+      return const SizedBox.shrink();
+    }
+
     if (activeAccount == null) {
       return const SizedBox.shrink();
     }
 
     if (!isExpanded) {
-      // Collapsed state - just show icon
-      return Container(
-        margin: const EdgeInsets.all(AppTheme.spacing8),
-        padding: const EdgeInsets.all(AppTheme.spacing8),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight.withValues(alpha: 0.1),
+      // Collapsed state - compact account switcher
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAccountSwitcherDialog(context, ref),
           borderRadius: BorderRadius.circular(AppTheme.radius8),
-        ),
-        child: Center(
-          child: Icon(
-            activeAccount.accountType == 'commercial' 
-                ? Icons.business 
-                : Icons.home,
-            color: AppColors.primary,
-            size: 24,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing12,
+              vertical: AppTheme.spacing8,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radius8),
+              border: Border.all(
+                color: AppColors.primaryLight.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.swap_vert_circle,
+                    color: AppColors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spacing8),
+                // Account name (compact)
+              //   Column(
+              // crossAxisAlignment: CrossAxisAlignment.start,
+              // mainAxisSize: MainAxisSize.min,
+              //     children: [
+                  
+              //   Text(
+              //     activeAccount.nickname ?? activeAccount.formattedAccountNumber,
+              //     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              //           fontWeight: FontWeight.w600,
+              //           color: AppColors.textPrimary,
+              //         ),
+              //   ),
+              //   Text('#${activeAccount.accountNumber}',
+              //     style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              //           fontWeight: FontWeight.normal,
+              //           color: AppColors.textSecondary,
+              //         ),),
+              //   ],),
+                // const SizedBox(width: AppTheme.spacing4),
+                // // Dropdown indicator
+                // const Icon(
+                //   Icons.keyboard_arrow_down,
+                //   color: AppColors.textSecondary,
+                //   size: 18,
+                // ),
+              ],
+            ),
           ),
         ),
       );
@@ -91,10 +161,8 @@ class AccountSwitcherCard extends ConsumerWidget {
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        activeAccount.accountType == 'commercial' 
-                            ? Icons.business 
-                            : Icons.home,
+                      child: const Icon(
+                    Icons.swap_vert_circle,
                         color: AppColors.white,
                         size: 20,
                       ),
@@ -106,7 +174,7 @@ class AccountSwitcherCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            activeAccount.formattedAccountNumber,
+                            activeAccount.nickname ?? activeAccount.formattedAccountNumber,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
@@ -125,12 +193,7 @@ class AccountSwitcherCard extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    // Dropdown indicator
-                    const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: AppColors.textSecondary,
-                      size: 20,
-                    ),
+                    
                   ],
                 ),
               ),
@@ -142,37 +205,119 @@ class AccountSwitcherCard extends ConsumerWidget {
   }
 
   void _showAccountSwitcherDialog(BuildContext context, WidgetRef ref) {
-    final accountState = ref.read(accountSwitcherProvider);
-    final accounts = accountState.accounts;
-
     showDialog(
       context: context,
-      builder: (context) => _AccountSwitcherDialog(
-        accounts: accounts,
-        activeAccountId: accountState.activeAccountId,
-      ),
+      builder: (context) => const _AccountSwitcherDialog(),
     );
   }
 }
 
-/// Account switcher dialog
-class _AccountSwitcherDialog extends ConsumerWidget {
-  const _AccountSwitcherDialog({
-    required this.accounts,
-    required this.activeAccountId,
-  });
-
-  final List<Account> accounts;
-  final String activeAccountId;
+/// Account switcher dialog with search, filters, and sorting
+class _AccountSwitcherDialog extends ConsumerStatefulWidget {
+  const _AccountSwitcherDialog();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Dialog(
+  ConsumerState<_AccountSwitcherDialog> createState() => _AccountSwitcherDialogState();
+}
+
+class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  AccountStatus? _statusFilter;
+  AccountSortField _sortField = AccountSortField.none;
+  bool _sortAscending = true;
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Account> _getFilteredAndSortedAccounts(List<Account> accounts) {
+    // Apply search filter
+    var filtered = accounts.where((account) {
+      if (_searchQuery.isEmpty) return true;
+      
+      final query = _searchQuery.toLowerCase();
+      return account.address.toLowerCase().contains(query) ||
+          account.customerNumber.toLowerCase().contains(query) ||
+          account.accountNumber.toLowerCase().contains(query) ||
+          account.accountType.toLowerCase().contains(query) ||
+          (account.nickname != null && account.nickname!.toLowerCase().contains(query));
+    }).toList();
+
+    // Apply status filter
+    if (_statusFilter != null) {
+      filtered = filtered.where((account) => account.status == _statusFilter).toList();
+    }
+
+    // Apply sorting
+    if (_sortField != AccountSortField.none) {
+      filtered.sort((a, b) {
+        int comparison = 0;
+        switch (_sortField) {
+          case AccountSortField.balance:
+            comparison = a.balance.compareTo(b.balance);
+            break;
+          case AccountSortField.address:
+            comparison = a.address.compareTo(b.address);
+            break;
+          case AccountSortField.accountNumber:
+            comparison = a.accountNumber.compareTo(b.accountNumber);
+            break;
+          case AccountSortField.customerNumber:
+            comparison = a.customerNumber.compareTo(b.customerNumber);
+            break;
+          case AccountSortField.accountType:
+            comparison = a.accountType.compareTo(b.accountType);
+            break;
+          case AccountSortField.none:
+            return 0;
+        }
+        return _sortAscending ? comparison : -comparison;
+      });
+    }
+
+    return filtered;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accountState = ref.watch(accountSwitcherProvider);
+    final accounts = accountState.accounts;
+    final activeAccountId = accountState.activeAccountId;
+
+    // Show loading state only if accounts haven't been initialized yet
+    // If initialized but empty, we know there are no accounts (show empty state in dialog)
+    if (accounts.isEmpty && !accountState.isInitialized) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius12),
+        ),
+        child: Container(
+          width: 500,
+          padding: const EdgeInsets.all(AppTheme.spacing32),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: AppTheme.spacing16),
+              Text('Loading accounts...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final filteredAccounts = _getFilteredAndSortedAccounts(accounts);
+
+    return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius12),
       ),
       child: Container(
-        width: 500,
-        constraints: const BoxConstraints(maxHeight: 600),
+        width: 600,
+        constraints: const BoxConstraints(maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -198,7 +343,7 @@ class _AccountSwitcherDialog extends ConsumerWidget {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
                       minWidth: 32,
@@ -208,28 +353,347 @@ class _AccountSwitcherDialog extends ConsumerWidget {
                 ],
               ),
             ),
-            // Accounts list
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(AppTheme.spacing16),
-                itemCount: accounts.length,
-                itemBuilder: (context, index) {
-                  final account = accounts[index];
-                  final isSelected = account.id == activeAccountId;
-
-                  return _AccountCard(
-                    account: account,
-                    isSelected: isSelected,
-                    onTap: () {
-                      ref.read(accountSwitcherProvider.notifier).switchAccount(account.id);
-                      Navigator.of(context).pop();
-                      // TODO: Refresh data for the new account
-                    },
-                  );
+            // Search field
+            Padding(
+              padding: const EdgeInsets.all(AppTheme.spacing16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by address, customer number, account number, nickname, or type...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radius8),
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() => _searchQuery = value);
                 },
               ),
             ),
+            // Filters and Sorting
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
+              child: Column(
+                children: [
+                  // Status filter chips
+                  Row(
+                    children: [
+                      Text(
+                        'Status:',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(width: AppTheme.spacing8),
+                      Wrap(
+                        spacing: AppTheme.spacing8,
+                        children: [
+                          _StatusChip(
+                            label: 'All',
+                            isSelected: _statusFilter == null,
+                            onTap: () => setState(() => _statusFilter = null),
+                          ),
+                          _StatusChip(
+                            label: 'Paid',
+                            isSelected: _statusFilter == AccountStatus.paid,
+                            onTap: () => setState(() => _statusFilter = AccountStatus.paid),
+                            color: AppColors.success,
+                          ),
+                          _StatusChip(
+                            label: 'Due',
+                            isSelected: _statusFilter == AccountStatus.due,
+                            onTap: () => setState(() => _statusFilter = AccountStatus.due),
+                            color: AppColors.warning,
+                          ),
+                          _StatusChip(
+                            label: 'Overdue',
+                            isSelected: _statusFilter == AccountStatus.overdue,
+                            onTap: () => setState(() => _statusFilter = AccountStatus.overdue),
+                            color: AppColors.error,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spacing12),
+                  // Sorting buttons
+                  Row(
+                    children: [
+                      Text(
+                        'Sort by:',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(width: AppTheme.spacing8),
+                      Wrap(
+                        spacing: AppTheme.spacing4,
+                        children: [
+                          _SortButton(
+                            icon: Icons.account_balance_wallet,
+                            label: 'Balance',
+                            isActive: _sortField == AccountSortField.balance,
+                            isAscending: _sortAscending,
+                            onTap: () {
+                              setState(() {
+                                if (_sortField == AccountSortField.balance) {
+                                  _sortAscending = !_sortAscending;
+                                } else {
+                                  _sortField = AccountSortField.balance;
+                                  _sortAscending = true;
+                                }
+                              });
+                            },
+                          ),
+                          _SortButton(
+                            icon: Icons.location_on,
+                            label: 'Address',
+                            isActive: _sortField == AccountSortField.address,
+                            isAscending: _sortAscending,
+                            onTap: () {
+                              setState(() {
+                                if (_sortField == AccountSortField.address) {
+                                  _sortAscending = !_sortAscending;
+                                } else {
+                                  _sortField = AccountSortField.address;
+                                  _sortAscending = true;
+                                }
+                              });
+                            },
+                          ),
+                          _SortButton(
+                            icon: Icons.numbers,
+                            label: 'Account #',
+                            isActive: _sortField == AccountSortField.accountNumber,
+                            isAscending: _sortAscending,
+                            onTap: () {
+                              setState(() {
+                                if (_sortField == AccountSortField.accountNumber) {
+                                  _sortAscending = !_sortAscending;
+                                } else {
+                                  _sortField = AccountSortField.accountNumber;
+                                  _sortAscending = true;
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacing8),
+            // Accounts list
+            Flexible(
+              child: filteredAccounts.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppTheme.spacing32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 48,
+                            color: AppColors.textSecondary.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: AppTheme.spacing16),
+                          Text(
+                            'No accounts found',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
+                      itemCount: filteredAccounts.length,
+                      itemBuilder: (context, index) {
+                        final account = filteredAccounts[index];
+                        final isSelected = account.id == activeAccountId;
+
+                        return _AccountCard(
+                          account: account,
+                          isSelected: isSelected,
+                          onTap: () {
+                            ref.read(accountSwitcherProvider.notifier).switchAccount(account.id);
+                            Navigator.of(context, rootNavigator: true).pop();
+                          },
+                        );
+                      },
+                    ),
+            ),
+            // Sticky Connect Account Button
+            Container(
+              padding: const EdgeInsets.all(AppTheme.spacing16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                border: const Border(
+                  top: BorderSide(
+                    color: AppColors.border,
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showConnectAccountDialog(context, ref),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Connect Account'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showConnectAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => _ConnectAccountFormDialog(
+        onSuccess: () async {
+          // Refresh accounts after successful connection
+          final accountsRepo = ref.read(accountsRepositoryProvider);
+          try {
+            final accounts = await accountsRepo.fetchConnectedAccounts();
+            ref.read(accountSwitcherProvider.notifier).initializeAccounts(accounts);
+          } catch (e) {
+            Logger.error('Failed to refresh accounts after connection', error: e);
+          }
+        },
+      ),
+    );
+  }
+}
+
+/// Status filter chip
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.color,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.radius16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing12,
+          vertical: AppTheme.spacing8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (color ?? AppColors.primary).withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppTheme.radius16),
+          border: Border.all(
+            color: isSelected
+                ? (color ?? AppColors.primary)
+                : AppColors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: isSelected
+                    ? (color ?? AppColors.primary)
+                    : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+        ),
+      ),
+    );
+}
+
+/// Sort button with up/down icons
+class _SortButton extends StatelessWidget {
+  const _SortButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.isAscending,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final bool isAscending;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.radius8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing8,
+          vertical: AppTheme.spacing8,
+        ),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppTheme.radius8),
+          border: Border.all(
+            color: isActive ? AppColors.primary : AppColors.border,
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isActive ? AppColors.primary : AppColors.textSecondary,
+            ),
+            const SizedBox(width: AppTheme.spacing4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isActive ? AppColors.primary : AppColors.textSecondary,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  ),
+            ),
+            if (isActive) ...[
+              const SizedBox(width: AppTheme.spacing4),
+              Icon(
+                isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 14,
+                color: AppColors.primary,
+              ),
+            ],
           ],
         ),
       ),
@@ -285,13 +749,11 @@ class _AccountCard extends StatelessWidget {
                             : AppColors.primaryLight.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppTheme.radius8),
                       ),
-                      child: Icon(
-                        account.accountType == 'commercial' 
-                            ? Icons.business 
-                            : Icons.home,
-                        color: account.accountType == 'commercial'
-                            ? const Color(0xFF8B5CF6)
-                            : AppColors.primary,
+                      child: const Icon(
+                    Icons.swap_vert_circle,
+                        // color: account.accountType == 'commercial'
+                        //     ? const Color(0xFF8B5CF6)
+                        //     : AppColors.primary,
                         size: 24,
                       ),
                     ),
@@ -304,12 +766,13 @@ class _AccountCard extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                account.formattedAccountNumber,
+                                account.nickname ?? account.formattedAccountNumber,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
                               const SizedBox(width: AppTheme.spacing8),
+                              const Spacer(),
                               // Status tag
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -378,3 +841,227 @@ class _AccountCard extends StatelessWidget {
     );
 }
 
+/// Connect Account Form Dialog
+class _ConnectAccountFormDialog extends ConsumerStatefulWidget {
+  const _ConnectAccountFormDialog({required this.onSuccess});
+
+  final VoidCallback onSuccess;
+
+  @override
+  ConsumerState<_ConnectAccountFormDialog> createState() => _ConnectAccountFormDialogState();
+}
+
+class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _customerNumberController = TextEditingController();
+  final _accountNumberHintController = TextEditingController();
+  final _nicknameController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _customerNumberController.dispose();
+    _accountNumberHintController.dispose();
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final accountsRepo = ref.read(accountsRepositoryProvider);
+      await accountsRepo.connectAccount(
+        customerNumber: _customerNumberController.text.trim(),
+        accountNumberHint: _accountNumberHintController.text.trim(),
+        nickName: _nicknameController.text.trim(),
+      );
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        widget.onSuccess();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account connected successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radius12),
+      ),
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(AppTheme.spacing24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Text(
+                    'Connect Account',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _isLoading ? null : () => Navigator.of(context, rootNavigator: true).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spacing24),
+              // Customer Number
+              TextFormField(
+                controller: _customerNumberController,
+                decoration: const InputDecoration(
+                  labelText: 'Customer Number',
+                  hintText: 'Enter customer number',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Customer number is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppTheme.spacing16),
+              // Account Number Hint
+              TextFormField(
+                controller: _accountNumberHintController,
+                decoration: const InputDecoration(
+                  labelText: 'Account Number Hint',
+                  hintText: 'Enter up to 5 characters',
+                  prefixIcon: Icon(Icons.numbers),
+                  border: OutlineInputBorder(),
+                  helperText: 'Maximum 5 characters',
+                ),
+                keyboardType: TextInputType.number,
+                maxLength: 5,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Account number hint is required';
+                  }
+                  if (value.trim().length > 5) {
+                    return 'Maximum 5 characters allowed';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppTheme.spacing16),
+              // Nickname
+              TextFormField(
+                controller: _nicknameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nickname',
+                  hintText: 'Enter a nickname for this account',
+                  prefixIcon: Icon(Icons.label),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nickname is required';
+                  }
+                  return null;
+                },
+              ),
+              // Error message
+              if (_errorMessage != null) ...[
+                const SizedBox(height: AppTheme.spacing16),
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spacing12),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radius8),
+                    border: Border.all(color: AppColors.error),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: AppColors.error),
+                      const SizedBox(width: AppTheme.spacing8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppTheme.spacing24),
+              // Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _isLoading ? null : () => Navigator.of(context, rootNavigator: true).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: AppTheme.spacing12),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                            ),
+                          )
+                        : const Text('Connect'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+}
+
+/// Enum for account sort fields
+enum AccountSortField {
+  none,
+  balance,
+  address,
+  accountNumber,
+  customerNumber,
+  accountType,
+}

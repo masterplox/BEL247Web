@@ -354,8 +354,8 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
+              Navigator.of(context, rootNavigator: true).pop();
+              Navigator.of(context, rootNavigator: true).pop();
             },
             child: const Text('OK'),
           ),
@@ -378,7 +378,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
         content: Text('Payment could not be processed: $error'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             child: const Text('OK'),
           ),
         ],

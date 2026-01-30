@@ -23,6 +23,8 @@ Account _$AccountFromJson(Map<String, dynamic> json) {
 mixin _$Account {
   String get id => throw _privateConstructorUsedError;
   String get accountNumber => throw _privateConstructorUsedError;
+  String get customerNumber =>
+      throw _privateConstructorUsedError; // Added customer number field
   String get accountType =>
       throw _privateConstructorUsedError; // 'residential' or 'commercial'
   String get address => throw _privateConstructorUsedError;
@@ -34,6 +36,7 @@ mixin _$Account {
   bool get isActive => throw _privateConstructorUsedError;
   String? get meterNumber => throw _privateConstructorUsedError;
   String? get serviceArea => throw _privateConstructorUsedError;
+  String? get nickname => throw _privateConstructorUsedError;
 
   /// Serializes this Account to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -52,6 +55,7 @@ abstract class $AccountCopyWith<$Res> {
   $Res call({
     String id,
     String accountNumber,
+    String customerNumber,
     String accountType,
     String address,
     double balance,
@@ -61,6 +65,7 @@ abstract class $AccountCopyWith<$Res> {
     bool isActive,
     String? meterNumber,
     String? serviceArea,
+    String? nickname,
   });
 }
 
@@ -81,6 +86,7 @@ class _$AccountCopyWithImpl<$Res, $Val extends Account>
   $Res call({
     Object? id = null,
     Object? accountNumber = null,
+    Object? customerNumber = null,
     Object? accountType = null,
     Object? address = null,
     Object? balance = null,
@@ -90,6 +96,7 @@ class _$AccountCopyWithImpl<$Res, $Val extends Account>
     Object? isActive = null,
     Object? meterNumber = freezed,
     Object? serviceArea = freezed,
+    Object? nickname = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -100,6 +107,10 @@ class _$AccountCopyWithImpl<$Res, $Val extends Account>
             accountNumber: null == accountNumber
                 ? _value.accountNumber
                 : accountNumber // ignore: cast_nullable_to_non_nullable
+                      as String,
+            customerNumber: null == customerNumber
+                ? _value.customerNumber
+                : customerNumber // ignore: cast_nullable_to_non_nullable
                       as String,
             accountType: null == accountType
                 ? _value.accountType
@@ -137,6 +148,10 @@ class _$AccountCopyWithImpl<$Res, $Val extends Account>
                 ? _value.serviceArea
                 : serviceArea // ignore: cast_nullable_to_non_nullable
                       as String?,
+            nickname: freezed == nickname
+                ? _value.nickname
+                : nickname // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -154,6 +169,7 @@ abstract class _$$AccountImplCopyWith<$Res> implements $AccountCopyWith<$Res> {
   $Res call({
     String id,
     String accountNumber,
+    String customerNumber,
     String accountType,
     String address,
     double balance,
@@ -163,6 +179,7 @@ abstract class _$$AccountImplCopyWith<$Res> implements $AccountCopyWith<$Res> {
     bool isActive,
     String? meterNumber,
     String? serviceArea,
+    String? nickname,
   });
 }
 
@@ -182,6 +199,7 @@ class __$$AccountImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? accountNumber = null,
+    Object? customerNumber = null,
     Object? accountType = null,
     Object? address = null,
     Object? balance = null,
@@ -191,6 +209,7 @@ class __$$AccountImplCopyWithImpl<$Res>
     Object? isActive = null,
     Object? meterNumber = freezed,
     Object? serviceArea = freezed,
+    Object? nickname = freezed,
   }) {
     return _then(
       _$AccountImpl(
@@ -201,6 +220,10 @@ class __$$AccountImplCopyWithImpl<$Res>
         accountNumber: null == accountNumber
             ? _value.accountNumber
             : accountNumber // ignore: cast_nullable_to_non_nullable
+                  as String,
+        customerNumber: null == customerNumber
+            ? _value.customerNumber
+            : customerNumber // ignore: cast_nullable_to_non_nullable
                   as String,
         accountType: null == accountType
             ? _value.accountType
@@ -238,6 +261,10 @@ class __$$AccountImplCopyWithImpl<$Res>
             ? _value.serviceArea
             : serviceArea // ignore: cast_nullable_to_non_nullable
                   as String?,
+        nickname: freezed == nickname
+            ? _value.nickname
+            : nickname // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -249,6 +276,7 @@ class _$AccountImpl extends _Account {
   const _$AccountImpl({
     required this.id,
     required this.accountNumber,
+    required this.customerNumber,
     required this.accountType,
     required this.address,
     required this.balance,
@@ -258,6 +286,7 @@ class _$AccountImpl extends _Account {
     this.isActive = true,
     this.meterNumber,
     this.serviceArea,
+    this.nickname,
   }) : super._();
 
   factory _$AccountImpl.fromJson(Map<String, dynamic> json) =>
@@ -267,6 +296,9 @@ class _$AccountImpl extends _Account {
   final String id;
   @override
   final String accountNumber;
+  @override
+  final String customerNumber;
+  // Added customer number field
   @override
   final String accountType;
   // 'residential' or 'commercial'
@@ -288,10 +320,12 @@ class _$AccountImpl extends _Account {
   final String? meterNumber;
   @override
   final String? serviceArea;
+  @override
+  final String? nickname;
 
   @override
   String toString() {
-    return 'Account(id: $id, accountNumber: $accountNumber, accountType: $accountType, address: $address, balance: $balance, status: $status, lastPaymentDate: $lastPaymentDate, nextDueDate: $nextDueDate, isActive: $isActive, meterNumber: $meterNumber, serviceArea: $serviceArea)';
+    return 'Account(id: $id, accountNumber: $accountNumber, customerNumber: $customerNumber, accountType: $accountType, address: $address, balance: $balance, status: $status, lastPaymentDate: $lastPaymentDate, nextDueDate: $nextDueDate, isActive: $isActive, meterNumber: $meterNumber, serviceArea: $serviceArea, nickname: $nickname)';
   }
 
   @override
@@ -302,6 +336,8 @@ class _$AccountImpl extends _Account {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.accountNumber, accountNumber) ||
                 other.accountNumber == accountNumber) &&
+            (identical(other.customerNumber, customerNumber) ||
+                other.customerNumber == customerNumber) &&
             (identical(other.accountType, accountType) ||
                 other.accountType == accountType) &&
             (identical(other.address, address) || other.address == address) &&
@@ -316,7 +352,9 @@ class _$AccountImpl extends _Account {
             (identical(other.meterNumber, meterNumber) ||
                 other.meterNumber == meterNumber) &&
             (identical(other.serviceArea, serviceArea) ||
-                other.serviceArea == serviceArea));
+                other.serviceArea == serviceArea) &&
+            (identical(other.nickname, nickname) ||
+                other.nickname == nickname));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -325,6 +363,7 @@ class _$AccountImpl extends _Account {
     runtimeType,
     id,
     accountNumber,
+    customerNumber,
     accountType,
     address,
     balance,
@@ -334,6 +373,7 @@ class _$AccountImpl extends _Account {
     isActive,
     meterNumber,
     serviceArea,
+    nickname,
   );
 
   /// Create a copy of Account
@@ -354,6 +394,7 @@ abstract class _Account extends Account {
   const factory _Account({
     required final String id,
     required final String accountNumber,
+    required final String customerNumber,
     required final String accountType,
     required final String address,
     required final double balance,
@@ -363,6 +404,7 @@ abstract class _Account extends Account {
     final bool isActive,
     final String? meterNumber,
     final String? serviceArea,
+    final String? nickname,
   }) = _$AccountImpl;
   const _Account._() : super._();
 
@@ -372,6 +414,8 @@ abstract class _Account extends Account {
   String get id;
   @override
   String get accountNumber;
+  @override
+  String get customerNumber; // Added customer number field
   @override
   String get accountType; // 'residential' or 'commercial'
   @override
@@ -390,6 +434,8 @@ abstract class _Account extends Account {
   String? get meterNumber;
   @override
   String? get serviceArea;
+  @override
+  String? get nickname;
 
   /// Create a copy of Account
   /// with the given fields replaced by the non-null parameter values.

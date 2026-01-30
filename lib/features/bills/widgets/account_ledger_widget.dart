@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/providers/feature_providers.dart';
+import '../../../core/services/download_service.dart';
 import '../../../core/utils/formatting_utils.dart';
 import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../data/models/bill.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../state/bills_providers.dart';
 
-/// Ledger entry representing either a bill or payment receipt
+/// Ledger entry representing either a bill, payment receipt, or transaction
 class LedgerEntry {
 
   LedgerEntry({
@@ -34,39 +39,57 @@ class LedgerEntry {
   final bool isPaidUp;
 }
 
-/// Account Ledger widget that displays bills and payments in a unified list
-class AccountLedgerWidget extends StatefulWidget {
+/// Account Ledger widget that displays bills, payments, and transactions in a unified list
+class AccountLedgerWidget extends ConsumerStatefulWidget {
   const AccountLedgerWidget({
     super.key,
     required this.bills,
-    this.onDownloadBill,
-    this.onDownloadReceipt,
+    this.transactionHistory = const [],
     this.onViewFullDetails,
     this.isLoading = false,
   });
 
   final List<Bill> bills;
-  final Function(Bill)? onDownloadBill;
-  final Function(PaymentHistory)? onDownloadReceipt;
+  final List<PaymentHistory> transactionHistory; // Live transaction history from API
   final Function(PaymentHistory)? onViewFullDetails;
   final bool isLoading;
 
   @override
-  State<AccountLedgerWidget> createState() => _AccountLedgerWidgetState();
+  ConsumerState<AccountLedgerWidget> createState() => _AccountLedgerWidgetState();
 }
 
-class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
+enum _FilterType {
+  all,
+  bills,
+  payments,
+}
+
+class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
   final Set<String> _expandedItems = {};
+  _FilterType _filterType = _FilterType.all;
+  int? _selectedYear;
+  int? _selectedMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set default to current year/month
+    final now = DateTime.now();
+    // _selectedYear = now.year;
+    // _selectedMonth = now.month;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ledgerEntries = _buildLedgerEntries();
+    final allEntries = _buildLedgerEntries();
+    final filteredEntries = _applyFilters(allEntries);
     final isMobile = MediaQuery.of(context).size.width < 600;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Header
+        // Header with Filters
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.spacing16,
@@ -74,30 +97,17 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.arrow_upward,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: AppTheme.spacing8),
-                  Text(
-                    'Transaction History',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spacing4),
-              Text(
-                'Bills and payments affecting your account balance',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-              ),
+              // Text(
+              //   'Bills and payments affecting your account balance',
+              //   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              //         color: Theme.of(context).textTheme.bodySmall?.color,
+              //       ),
+              // ),
+              // const SizedBox(height: AppTheme.spacing16),
+              // Filter Controls
+              _buildFilterControls(context, isMobile),
             ],
           ),
         ),
@@ -172,16 +182,16 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
             padding: EdgeInsets.all(AppTheme.spacing32),
             child: Center(child: CircularProgressIndicator()),
           )
-        else if (ledgerEntries.isEmpty)
+        else if (filteredEntries.isEmpty)
           _buildEmptyState(context)
         else
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.zero,
-              itemCount: ledgerEntries.length,
+              itemCount: filteredEntries.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final entry = ledgerEntries[index];
+                final entry = filteredEntries[index];
                 final isExpanded = _expandedItems.contains(entry.id);
                 return _buildLedgerRow(context, entry, isExpanded, isMobile: isMobile);
               },
@@ -195,72 +205,342 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
     final entries = <LedgerEntry>[];
     double runningBalance = 0;
 
-    // Sort bills by issue date (newest first) and payments by date
-    final sortedBills = List<Bill>.from(widget.bills)
-      ..sort((a, b) => b.issueDate.compareTo(a.issueDate));
+    // Use transaction history from API if available (live data), otherwise fallback to bills
+    final useTransactionHistory = widget.transactionHistory.isNotEmpty;
 
-    // Create entries from bills and their payments
-    // First, build all entries without sorting
-    final allEntries = <LedgerEntry>[];
-    
-    for (final bill in sortedBills) {
-      // Add bill entry first (before payment)
-      runningBalance += bill.amounts.totalAmount;
-      allEntries.add(LedgerEntry(
-        id: 'bill_${bill.id}',
-        date: bill.issueDate,
-        description: FormattingUtils.formatBillingPeriod(bill.billingPeriod),
-        amount: bill.amounts.totalAmount,
-        accountBalance: runningBalance,
-        isPayment: false,
-        bill: bill,
-        isPaidUp: bill.isPaid && runningBalance == 0,
-      ));
+    if (useTransactionHistory) {
+      // Build entries from live transaction history from API
+      // Transaction history includes both bills (positive amounts) and payments (negative amounts)
+      final sortedTransactions = List<PaymentHistory>.from(widget.transactionHistory)
+        ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
 
-      // Add payment entry if bill is paid
-      // Check both paymentHistory and the payment field
-      PaymentHistory? latestPayment;
-      if (bill.paymentHistory.isNotEmpty) {
-        // Sort payments by date (newest first) to get the latest
-        final sortedPayments = List<PaymentHistory>.from(bill.paymentHistory)
-          ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
-        latestPayment = sortedPayments.first;
-      } else if (bill.isPaid) {
-        // Use the payment field as fallback
-        latestPayment = PaymentHistory(
-          id: 'payment_${bill.id}',
-          amount: bill.payment.paidAmount,
-          paymentDate: bill.payment.paidDate,
-          paymentMethod: bill.payment.paymentMethod,
-          transactionId: bill.payment.transactionId,
-          status: PaymentStatus.completed,
-          referenceNumber: 'RCP-${bill.billNumber}',
-        );
+      // Also include bills data for reference (map by bill number)
+      final billsMap = <String, Bill>{
+        for (final bill in widget.bills) bill.billNumber: bill
+      };
+
+      for (final transaction in sortedTransactions) {
+        // Determine if this is a payment or a bill charge based on transaction description
+        // API sends descriptions like "Payment - Cash (B)" for payments and "Cycle Billing Due: ..." for bills
+        final notes = transaction.notes ?? '';
+        final isPayment = notes.toLowerCase().contains('payment') || 
+                         notes.toLowerCase().startsWith('payment');
+        
+        // Get transactionAmount and accountBalance from metadata (stored from API)
+        final transactionAmount = transaction.metadata?['transactionAmount'] as double?;
+        final accountBalanceFromApi = transaction.metadata?['accountBalance'] as double?;
+        
+        print('[AccountLedgerWidget] Building entry for transaction: ${transaction.id}');
+        print('[AccountLedgerWidget]   - transactionAmount from metadata: $transactionAmount');
+        print('[AccountLedgerWidget]   - accountBalance from metadata: $accountBalanceFromApi');
+        print('[AccountLedgerWidget]   - transaction.amount: ${transaction.amount}');
+        print('[AccountLedgerWidget]   - calculated runningBalance: $runningBalance');
+        print('[AccountLedgerWidget]   - bill number: ${transaction.referenceNumber}');
+        
+        // Use values from API if available, otherwise fallback to calculated values
+        final displayAmount = transactionAmount ?? (isPayment ? -transaction.amount : transaction.amount);
+        final displayBalance = accountBalanceFromApi ?? runningBalance;
+        
+        print('[AccountLedgerWidget]   - Final displayAmount: $displayAmount');
+        print('[AccountLedgerWidget]   - Final displayBalance: $displayBalance');
+        
+        // Update running balance for fallback calculation (only if API values not available)
+        if (transactionAmount == null || accountBalanceFromApi == null) {
+          if (isPayment) {
+            runningBalance -= transaction.amount;
+          } else {
+            runningBalance += transaction.amount;
+          }
+        }
+
+        if (isPayment) {
+          entries.add(LedgerEntry(
+            id: transaction.id,
+            date: transaction.paymentDate,
+            description: notes.isNotEmpty ? notes : 'Payment - ${transaction.paymentMethod}',
+            subDescription: transaction.referenceNumber ?? transaction.transactionId,
+            amount: displayAmount, // Use transactionAmount from API (negative for payments)
+            accountBalance: displayBalance, // Use accountBalance from API
+            isPayment: true,
+            payment: transaction,
+            isPaidUp: displayBalance == 0,
+          ));
+        } else {
+          // Try to find matching bill if available
+          Bill? matchingBill;
+          try {
+            matchingBill = billsMap.values.firstWhere(
+              (bill) => bill.billNumber == transaction.referenceNumber || 
+                       (transaction.referenceNumber?.contains(bill.billNumber) ?? false),
+            );
+          } catch (_) {
+            // No matching bill found, that's OK
+          }
+          entries.add(LedgerEntry(
+            id: transaction.id,
+            date: transaction.paymentDate,
+            description: notes.isNotEmpty ? notes : 'Bill Charge',
+            subDescription: transaction.referenceNumber,
+            amount: displayAmount, // Use transactionAmount from API (positive for bills)
+            accountBalance: displayBalance, // Use accountBalance from API
+            isPayment: false,
+            bill: matchingBill,
+            isPaidUp: displayBalance == 0,
+          ));
+        }
       }
+    } else {
+      // Fallback: Build entries from bills (mock/legacy behavior)
+      final sortedBills = List<Bill>.from(widget.bills)
+        ..sort((a, b) => b.issueDate.compareTo(a.issueDate));
 
-      if (latestPayment != null) {
-        // Payment reduces balance
-        runningBalance -= latestPayment.amount;
-        allEntries.add(LedgerEntry(
-          id: 'payment_${bill.id}',
-          date: latestPayment.paymentDate,
-          description: 'Payment - ${latestPayment.paymentMethod}',
-          subDescription: latestPayment.referenceNumber ?? 'RCP-${bill.billNumber}',
-          amount: -latestPayment.amount, // Negative for payments
+      for (final bill in sortedBills) {
+        // Add bill entry first (before payment)
+        runningBalance += bill.amounts.totalAmount;
+        entries.add(LedgerEntry(
+          id: 'bill_${bill.id}',
+          date: bill.issueDate,
+          description: FormattingUtils.formatBillingPeriod(bill.billingPeriod),
+          amount: bill.amounts.totalAmount,
           accountBalance: runningBalance,
-          isPayment: true,
-          payment: latestPayment,
-          isPaidUp: runningBalance == 0,
+          isPayment: false,
+          bill: bill,
+          isPaidUp: bill.isPaid && runningBalance == 0,
         ));
+
+        // Add payment entry if bill is paid
+        PaymentHistory? latestPayment;
+        if (bill.paymentHistory.isNotEmpty) {
+          final sortedPayments = List<PaymentHistory>.from(bill.paymentHistory)
+            ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+          latestPayment = sortedPayments.first;
+        } else if (bill.isPaid) {
+          latestPayment = PaymentHistory(
+            id: 'payment_${bill.id}',
+            amount: bill.payment.paidAmount,
+            paymentDate: bill.payment.paidDate,
+            paymentMethod: bill.payment.paymentMethod,
+            transactionId: bill.payment.transactionId,
+            status: PaymentStatus.completed,
+            referenceNumber: 'RCP-${bill.billNumber}',
+          );
+        }
+
+        if (latestPayment != null) {
+          runningBalance -= latestPayment.amount;
+          entries.add(LedgerEntry(
+            id: 'payment_${bill.id}',
+            date: latestPayment.paymentDate,
+            description: 'Payment - ${latestPayment.paymentMethod}',
+            subDescription: latestPayment.referenceNumber ?? 'RCP-${bill.billNumber}',
+            amount: -latestPayment.amount,
+            accountBalance: runningBalance,
+            isPayment: true,
+            payment: latestPayment,
+            isPaidUp: runningBalance == 0,
+          ));
+        }
       }
     }
-    
-    entries.addAll(allEntries);
 
     // Sort all entries by date (newest first)
     entries.sort((a, b) => b.date.compareTo(a.date));
 
     return entries;
+  }
+
+  List<LedgerEntry> _applyFilters(List<LedgerEntry> entries) {
+    var filtered = entries;
+
+    // Apply type filter (all/bills/payments)
+    if (_filterType == _FilterType.bills) {
+      filtered = filtered.where((e) => !e.isPayment).toList();
+    } else if (_filterType == _FilterType.payments) {
+      filtered = filtered.where((e) => e.isPayment).toList();
+    }
+
+    // Apply date filters (year and month)
+    if (_selectedYear != null) {
+      filtered = filtered.where((e) => e.date.year == _selectedYear).toList();
+    }
+    if (_selectedMonth != null) {
+      filtered = filtered.where((e) => e.date.month == _selectedMonth).toList();
+    }
+
+    return filtered;
+  }
+
+  Widget _buildFilterControls(BuildContext context, bool isMobile) {
+    // Get available years and months from entries
+    final allEntries = _buildLedgerEntries();
+    final availableYears = allEntries
+        .map((e) => e.date.year)
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a)); // Descending (newest first)
+    
+    final availableMonths = allEntries
+        .map((e) => e.date.month)
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a)); // Descending
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Type filter (dropdown on mobile to avoid overflow)
+          _buildTypeFilterMobile(context),
+          const SizedBox(height: AppTheme.spacing12),
+          // Date filters stacked vertically so each dropdown has full width (avoids overflow)
+          _buildYearFilter(context, availableYears),
+          const SizedBox(height: AppTheme.spacing12),
+          _buildMonthFilter(context, availableMonths),
+        ],
+      );
+    }
+
+    return Wrap(
+      spacing: AppTheme.spacing12,
+      runSpacing: AppTheme.spacing12,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        // Type filter
+        _buildTypeFilter(context),
+        // Year filter
+        SizedBox(
+          width: 150,
+          child: _buildYearFilter(context, availableYears),
+        ),
+        // Month filter
+        SizedBox(
+          width: 150,
+          child: _buildMonthFilter(context, availableMonths),
+        ),
+      ],
+    );
+  }
+
+  /// Mobile: single dropdown for type filter to avoid overflow
+  Widget _buildTypeFilterMobile(BuildContext context) => DropdownButtonFormField<_FilterType>(
+      initialValue: _filterType,
+      decoration: InputDecoration(
+        labelText: 'Filter',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing12,
+          vertical: AppTheme.spacing12,
+        ),
+        isDense: true,
+      ),
+      items: const [
+        DropdownMenuItem(value: _FilterType.all, child: Text('All')),
+        DropdownMenuItem(value: _FilterType.bills, child: Text('Bills')),
+        DropdownMenuItem(value: _FilterType.payments, child: Text('Payments')),
+      ],
+      onChanged: (value) {
+        if (value != null) setState(() => _filterType = value);
+      },
+    );
+
+  Widget _buildTypeFilter(BuildContext context) => DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radius8),
+      ),
+      child: SegmentedButton<_FilterType>(
+        segments: const [
+          ButtonSegment(
+            value: _FilterType.all,
+            label: Text('All'),
+            icon: Icon(Icons.list, size: 16),
+          ),
+          ButtonSegment(
+            value: _FilterType.bills,
+            label: Text('Bills'),
+            icon: Icon(Icons.receipt, size: 16),
+          ),
+          ButtonSegment(
+            value: _FilterType.payments,
+            label: Text('Payments'),
+            icon: Icon(Icons.payment, size: 16),
+          ),
+        ],
+        selected: <_FilterType>{_filterType},
+        onSelectionChanged: (Set<_FilterType> newSelection) {
+          if (newSelection.isNotEmpty) {
+            setState(() {
+              _filterType = newSelection.first;
+            });
+          }
+        },
+      ),
+    );
+
+  Widget _buildYearFilter(BuildContext context, List<int> availableYears) => DropdownButtonFormField<int?>(
+      initialValue: _selectedYear,
+      decoration: InputDecoration(
+        labelText: 'Year',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing12,
+          vertical: AppTheme.spacing12,
+        ),
+        isDense: true,
+      ),
+      items: [
+        const DropdownMenuItem<int>(
+          value: null,
+          child: Text('All'),
+        ),
+        ...availableYears.map((year) => DropdownMenuItem<int>(
+              value: year,
+              child: Text(year.toString()),
+            )),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedYear = value;
+        });
+      },
+    );
+
+  Widget _buildMonthFilter(BuildContext context, List<int> availableMonths) {
+    final monthNames = DateFormat('MMMM').dateSymbols.MONTHS;
+    
+    return DropdownButtonFormField<int?>(
+      initialValue: _selectedMonth,
+      decoration: InputDecoration(
+        labelText: 'Month',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing12,
+          vertical: AppTheme.spacing12,
+        ),
+        isDense: true,
+      ),
+      items: [
+        const DropdownMenuItem<int>(
+          value: null,
+          child: Text('All'),
+        ),
+        ...availableMonths.map((month) => DropdownMenuItem<int>(
+              value: month,
+              child: Text(monthNames[month - 1]),
+            )),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedMonth = value;
+        });
+      },
+    );
   }
 
 
@@ -291,8 +571,8 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                   flex: 2,
                   child: Row(
                     children: [
-                      WidgetBuilderUtils.buildDateIcon(context, entry.isPayment),
-                      const SizedBox(width: AppTheme.spacing8),
+                      // WidgetBuilderUtils.buildDateIcon(context, entry.isPayment),
+                      // const SizedBox(width: AppTheme.spacing8),
                       Flexible(
                         child: Text(
                           FormattingUtils.formatDate(entry.date),
@@ -320,16 +600,16 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                         overflow: TextOverflow.ellipsis,
                         softWrap: false,
                       ),
-                      if (entry.subDescription != null) ...[
-                        const SizedBox(height: AppTheme.spacing4),
-                        Text(
-                          entry.subDescription!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
-                      ],
+                      // if (entry.subDescription != null) ...[
+                      //   const SizedBox(height: AppTheme.spacing4),
+                      //   Text(
+                      //     entry.subDescription!,
+                      //     style: Theme.of(context).textTheme.bodySmall,
+                      //     maxLines: 1,
+                      //     overflow: TextOverflow.ellipsis,
+                      //     softWrap: false,
+                      //   ),
+                      // ],
                     ],
                   ),
                 ),
@@ -370,26 +650,26 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                           ),
                         ],
                       ),
-                      if (entry.isPaidUp) ...[
-                        const SizedBox(height: AppTheme.spacing4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing8,
-                            vertical: AppTheme.spacing4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AppTheme.radius4),
-                          ),
-                          child: Text(
-                            'Paid Up',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                      ],
+                      // if (entry.isPaidUp) ...[
+                      //   const SizedBox(height: AppTheme.spacing4),
+                      //   Container(
+                      //     padding: const EdgeInsets.symmetric(
+                      //       horizontal: AppTheme.spacing8,
+                      //       vertical: AppTheme.spacing4,
+                      //     ),
+                      //     decoration: BoxDecoration(
+                      //       color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      //       borderRadius: BorderRadius.circular(AppTheme.radius4),
+                      //     ),
+                      //     child: Text(
+                      //       'Paid Up',
+                      //       style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      //             color: Theme.of(context).colorScheme.primary,
+                      //             fontWeight: FontWeight.w600,
+                      //           ),
+                      //     ),
+                      //   ),
+                      // ],
                     ],
                   ),
                 ),
@@ -403,17 +683,7 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                         icon: const Icon(Icons.download_outlined),
                         color: Theme.of(context).textTheme.bodySmall?.color,
                         tooltip: entry.isPayment ? 'Download Receipt' : 'Download Bill',
-                        onPressed: () {
-                          if (entry.isPayment) {
-                            if (entry.payment != null) {
-                              widget.onDownloadReceipt?.call(entry.payment!);
-                            }
-                          } else {
-                            if (entry.bill != null) {
-                              widget.onDownloadBill?.call(entry.bill!);
-                            }
-                          }
-                        },
+                        onPressed: () => _handleDownload(context, entry),
                       ),
                       Icon(
                         isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
@@ -431,15 +701,17 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
       ],
     );
 
-  Widget _buildMobileRow(BuildContext context, LedgerEntry entry) => Column(
+  Widget _buildMobileRow(BuildContext context, LedgerEntry entry) {
+    final isExpanded = _expandedItems.contains(entry.id);
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Line 1: icon + date + description (wrap)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              WidgetBuilderUtils.buildDateIcon(context, entry.isPayment),
-              const SizedBox(width: AppTheme.spacing8),
+              // WidgetBuilderUtils.buildDateIcon(context, entry.isPayment),
+              // const SizedBox(width: AppTheme.spacing8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,13 +724,13 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                       entry.description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                     ),
-                    if (entry.subDescription != null)
-                      Text(
-                        entry.subDescription!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    // if (entry.subDescription != null)
+                    //   Text(
+                    //     entry.subDescription!,
+                    //     style: Theme.of(context).textTheme.bodySmall,
+                    //     maxLines: 1,
+                    //     overflow: TextOverflow.ellipsis,
+                    //   ),
                   ],
                 ),
               ),
@@ -487,17 +759,40 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
                         ),
                   ),
                   const SizedBox(width: AppTheme.spacing4),
-                  Icon(
-                    entry.accountBalance == 0 ? Icons.arrow_downward : Icons.arrow_upward,
-                    size: 14,
-                    color: entry.accountBalance == 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
-                  ),
+                  // Icon(
+                  //   entry.accountBalance == 0 ? Icons.arrow_downward : Icons.arrow_upward,
+                  //   size: 14,
+                  //   color: entry.accountBalance == 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error,
+                  // ),
                 ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacing8),
+          // Line 3: Action buttons (download and expand/collapse)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.download_outlined),
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                tooltip: entry.isPayment ? 'Download Receipt' : 'Download Bill',
+                onPressed: () => _handleDownload(context, entry),
+                iconSize: 20,
+                padding: const EdgeInsets.all(AppTheme.spacing8),
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: AppTheme.spacing8),
+              Icon(
+                isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                size: 20,
               ),
             ],
           ),
         ],
       );
+  }
 
 
   Widget _buildExpandedDetails(BuildContext context, LedgerEntry entry) => Container(
@@ -531,45 +826,132 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
   }
 
   Widget _buildBillDetails(BuildContext context, LedgerEntry entry) {
-    final bill = entry.bill;
-    if (bill == null) return const SizedBox.shrink();
+    // Get bill number from entry
+    String? billNumber;
+    
+    if (entry.bill != null) {
+      billNumber = entry.bill!.billNumber;
+    } else if (entry.subDescription != null && entry.subDescription!.isNotEmpty) {
+      // Extract from subDescription (contains referenceNumber/billNumber for transaction history)
+      billNumber = entry.subDescription;
+    } else {
+      // Can't fetch without bill number
+      return const SizedBox.shrink();
+    }
 
-    // Calculate outstanding balance
-    final outstandingBalance = bill.amounts.previousBalance + bill.amounts.totalAmount - bill.payment.paidAmount;
-    final gst = bill.amounts.taxes * 0.125; // Assuming GST is 12.5% of total taxes. This might need adjustment.
+    // Ensure billNumber is not null before using it
+    if (billNumber == null || billNumber.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Bill Details',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+    print('[AccountLedgerWidget] Building bill details for billNumber: $billNumber from $entry');
+
+    // Fetch bill detail using provider (cached)
+    final billDetailAsync = ref.watch(billDetailProvider(billNumber));
+
+    return billDetailAsync.when(
+      loading: () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bill Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: AppTheme.spacing16),
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing32),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ],
+      ),
+      error: (error, stackTrace) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bill Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: AppTheme.spacing16),
+          Text(
+            'Error loading bill details: ${error.toString()}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.error,
+                ),
+          ),
+        ],
+      ),
+      data: (billDetail) {
+        if (billDetail == null) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bill Details',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
-        ),
-        const SizedBox(height: AppTheme.spacing16),
-        _buildDetailRow(context, 'Bill Number', bill.billNumber),
-        _buildDetailRow(context, 'Billing Period', FormattingUtils.formatBillingPeriodDetailed(bill.billingPeriod)),
-        _buildDetailRow(context, 'Due Date', FormattingUtils.formatDate(bill.dueDate)),
-        const Divider(height: AppTheme.spacing24),
-        _buildDetailRow(context, 'Previous Balance', 'BZ\$${bill.amounts.previousBalance.toStringAsFixed(2)}'),
-        _buildDetailRow(context, 'Less Payment', '-BZ\$${bill.payment.paidAmount.toStringAsFixed(2)}'),
-        _buildDetailRow(
-          context,
-          'Outstanding Balance',
-          'BZ\$${outstandingBalance.toStringAsFixed(2)}',
-        ),
-        const Divider(height: AppTheme.spacing24),
-        _buildDetailRow(context, 'Consumption', '${bill.usage.kwhUsed.toStringAsFixed(2)} kWh'),
-        _buildDetailRow(context, 'GST 12.5%', 'BZ\$${gst.toStringAsFixed(2)}'),
-        const Divider(height: AppTheme.spacing24),
-        _buildDetailRow(
-          context,
-          'Total Due',
-          'BZ\$${bill.amounts.totalAmount.toStringAsFixed(2)}',
-          isTotal: true,
-        ),
-      ],
+              const SizedBox(height: AppTheme.spacing16),
+              Text(
+                'Bill details not available',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+            ],
+          );
+        }
+
+        // Display bill detail breakdown
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bill Details',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: AppTheme.spacing16),
+            // Bill Information
+            _buildDetailRow(context, 'Bill Number', billDetail.billNumber),
+            _buildDetailRow(context, 'Reading Date', billDetail.readingDate),
+            _buildDetailRow(context, 'Billing Date', billDetail.billingDate),
+            _buildDetailRow(context, 'Payment Due Date', billDetail.paymentDueDate),
+            _buildDetailRow(context, 'Status', billDetail.paid ? 'Paid' : 'Unpaid'),
+            const Divider(height: AppTheme.spacing24),
+            // Balance Information
+            _buildDetailRow(context, 'Previous Balance', billDetail.previousBalance),
+            _buildDetailRow(context, 'Less Payment', billDetail.lessPayment),
+            _buildDetailRow(context, 'Balance Forward', billDetail.balanceForward),
+            const Divider(height: AppTheme.spacing24),
+            // Consumption Information
+            _buildDetailRow(context, 'Previous Reading', billDetail.previousReading),
+            _buildDetailRow(context, 'Present Reading', billDetail.presentReading),
+            _buildDetailRow(context, 'Total Consumption', '${billDetail.totalConsumption} kWh'),
+            const Divider(height: AppTheme.spacing24),
+            // Charges Breakdown
+            _buildDetailRow(context, 'Consumption', billDetail.consumption),
+            _buildDetailRow(context, 'Minimum Bill', billDetail.minimumBill),
+            _buildDetailRow(context, 'Crime Stoppers Pledge', billDetail.crimeStoppersPledge),
+            _buildDetailRow(context, 'Other Charge', billDetail.otherCharge),
+            _buildDetailRow(context, 'GST Charge', billDetail.gstCharge),
+            _buildDetailRow(context, 'Tax Adjustment', billDetail.taxAdjustment),
+            const Divider(height: AppTheme.spacing24),
+            // Totals
+            _buildDetailRow(context, 'Amount Due', billDetail.amountDue, isTotal: true),
+            _buildDetailRow(context, 'Balance', billDetail.balance),
+            if (billDetail.dueIn.isNotEmpty)
+              _buildDetailRow(context, 'Due In', billDetail.dueIn),
+          ],
+        );
+      },
     );
   }
 
@@ -585,5 +967,182 @@ class _AccountLedgerWidgetState extends State<AccountLedgerWidget> {
         message: 'Your bills and payments will appear here',
         icon: Icons.receipt_long_outlined,
       );
+
+  /// Handle download for bills or receipts
+  Future<void> _handleDownload(BuildContext context, LedgerEntry entry) async {
+    print('[AccountLedgerWidget] ========================================');
+    print('[AccountLedgerWidget] DOWNLOAD BUTTON CLICKED');
+    print('[AccountLedgerWidget] Entry ID: ${entry.id}');
+    print('[AccountLedgerWidget] Entry Date: ${entry.date}');
+    print('[AccountLedgerWidget] Entry Description: ${entry.description}');
+    print('[AccountLedgerWidget] Is Payment: ${entry.isPayment}');
+    print('[AccountLedgerWidget] ========================================');
+    
+    final accountState = ref.read(accountSwitcherProvider);
+    final activeAccount = accountState.activeAccount;
+    
+    print('[AccountLedgerWidget] Active Account: ${activeAccount?.accountNumber}');
+    
+    if (activeAccount == null) {
+      print('[AccountLedgerWidget] ❌ No active account selected');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active account selected'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final customerNumber = activeAccount.customerNumber;
+    final accountNumber = activeAccount.accountNumber;
+    
+    print('[AccountLedgerWidget] Customer Number: $customerNumber');
+    print('[AccountLedgerWidget] Account Number: $accountNumber');
+
+    if (entry.isPayment) {
+      print('[AccountLedgerWidget] Processing RECEIPT download...');
+      
+      // Download receipt
+      final payment = entry.payment;
+      if (payment == null) {
+        print('[AccountLedgerWidget] ❌ Payment information is null');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment information not available'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      print('[AccountLedgerWidget] Payment details:');
+      print('[AccountLedgerWidget]   - ID: ${payment.id}');
+      print('[AccountLedgerWidget]   - Transaction ID: ${payment.transactionId}');
+      print('[AccountLedgerWidget]   - Reference Number: ${payment.referenceNumber}');
+      print('[AccountLedgerWidget]   - Metadata: ${payment.metadata}');
+
+      // Get receipt number from referenceNumber, transactionId, or metadata
+      // The receipt number might be in referenceNumber, transactionId, or metadata
+      String? receiptNumber = payment.referenceNumber;
+      print('[AccountLedgerWidget] Initial receipt number (from referenceNumber): $receiptNumber');
+      
+      // If referenceNumber is not available, try to extract from metadata
+      if (receiptNumber == null || receiptNumber.isEmpty) {
+        if (payment.metadata != null && payment.metadata!.containsKey('receiptNumber')) {
+          receiptNumber = payment.metadata!['receiptNumber'] as String?;
+          print('[AccountLedgerWidget] Receipt number from metadata: $receiptNumber');
+        }
+      }
+      
+      // Fallback to transactionId if still not available
+      if (receiptNumber == null || receiptNumber.isEmpty) {
+        receiptNumber = payment.transactionId;
+        print('[AccountLedgerWidget] Receipt number from transactionId: $receiptNumber');
+      }
+      
+      if (receiptNumber.isEmpty) {
+        print('[AccountLedgerWidget] ❌ Receipt number not available after all attempts');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Receipt number not available'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      print('[AccountLedgerWidget] ✅ Final receipt number: $receiptNumber');
+      print('[AccountLedgerWidget] Calling DownloadService.downloadReceipt...');
+
+      await DownloadService.downloadReceipt(
+        context: context,
+        receiptNumber: receiptNumber,
+        customerNumber: customerNumber,
+        accountNumber: accountNumber,
+        receiptDisplayName: 'Receipt #$receiptNumber',
+      );
+    } else {
+      print('[AccountLedgerWidget] Processing BILL download...');
+      
+      // Download bill
+      final bill = entry.bill;
+      String? billNumber;
+      
+      if (bill != null) {
+        print('[AccountLedgerWidget] Bill object found:');
+        print('[AccountLedgerWidget]   - ID: ${bill.id}');
+        print('[AccountLedgerWidget]   - Bill Number: ${bill.billNumber}');
+        print('[AccountLedgerWidget]   - Account Number: ${bill.accountNumber}');
+        billNumber = bill.billNumber;
+      } else {
+        print('[AccountLedgerWidget] ⚠️ Bill object is null, trying to extract bill number from entry...');
+        print('[AccountLedgerWidget] Entry details:');
+        print('[AccountLedgerWidget]   - ID: ${entry.id}');
+        print('[AccountLedgerWidget]   - Description: ${entry.description}');
+        print('[AccountLedgerWidget]   - Sub Description: ${entry.subDescription}');
+        
+        // Try to extract bill number from subDescription (which contains referenceNumber for bills)
+        if (entry.subDescription != null && entry.subDescription!.isNotEmpty) {
+          billNumber = entry.subDescription;
+          print('[AccountLedgerWidget] ✅ Extracted bill number from subDescription: $billNumber');
+        } else {
+          // Try to extract from entry ID if it contains bill number
+          if (entry.id.startsWith('bill_')) {
+            // For fallback bills, ID is 'bill_${bill.id}', but we need billNumber
+            // This won't work, so we need another approach
+            print('[AccountLedgerWidget] Entry ID format: ${entry.id}');
+          }
+          
+          // Last resort: try to find bill in widget.bills by matching date or amount
+          print('[AccountLedgerWidget] Attempting to find bill in widget.bills list...');
+          print('[AccountLedgerWidget] Available bills count: ${widget.bills.length}');
+          
+          try {
+            final matchingBill = widget.bills.firstWhere(
+              (b) => b.issueDate.year == entry.date.year &&
+                     b.issueDate.month == entry.date.month &&
+                     (b.amounts.totalAmount - entry.amount).abs() < 0.01,
+            );
+            billNumber = matchingBill.billNumber;
+            print('[AccountLedgerWidget] ✅ Found matching bill by date/amount: $billNumber');
+          } catch (e) {
+            print('[AccountLedgerWidget] ❌ Could not find matching bill: $e');
+          }
+        }
+      }
+
+      if (billNumber == null || billNumber.isEmpty) {
+        print('[AccountLedgerWidget] ❌ Bill number not available after all attempts');
+        print('[AccountLedgerWidget] Entry ID: ${entry.id}');
+        print('[AccountLedgerWidget] Entry Date: ${entry.date}');
+        print('[AccountLedgerWidget] Entry Amount: ${entry.amount}');
+        print('[AccountLedgerWidget] Entry Description: ${entry.description}');
+        print('[AccountLedgerWidget] Entry Sub Description: ${entry.subDescription}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bill information not available'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      print('[AccountLedgerWidget] ✅ Final bill number: $billNumber');
+      print('[AccountLedgerWidget] Calling DownloadService.downloadBill...');
+
+      await DownloadService.downloadBill(
+        context: context,
+        billNumber: billNumber,
+        customerNumber: customerNumber,
+        accountNumber: accountNumber,
+        billDisplayName: 'Bill #$billNumber',
+      );
+    }
+    
+    print('[AccountLedgerWidget] ========================================');
+    print('[AccountLedgerWidget] DOWNLOAD HANDLER COMPLETED');
+    print('[AccountLedgerWidget] ========================================');
+  }
 }
 

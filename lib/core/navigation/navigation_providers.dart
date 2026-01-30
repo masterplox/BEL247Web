@@ -95,16 +95,22 @@ class NavigationConfig {
       route: '/dashboard',
     ),
     NavigationItem(
-      label: 'Bills & Receipts',
-      icon: Icons.receipt_outlined,
-      activeIcon: Icons.receipt,
+      label: 'Transaction History',
+      icon: Icons.history_outlined,
+      activeIcon: Icons.history,
       route: '/bills',
     ),
     NavigationItem(
-      label: 'Usage',
+      label: 'Usage History',
       icon: Icons.show_chart_outlined,
       activeIcon: Icons.show_chart,
       route: '/usage',
+    ),
+    NavigationItem(
+      label: 'Smart Meter Data',
+      icon: Icons.electric_meter_outlined,
+      activeIcon: Icons.electric_meter,
+      route: '/ami-usage',
     ),
     /*
     NavigationItem(
@@ -124,16 +130,22 @@ class NavigationConfig {
       route: '/dashboard',
     ),
     NavigationItem(
-      label: 'Bills & Receipts',
-      icon: Icons.receipt_outlined,
-      activeIcon: Icons.receipt,
+      label: 'Transaction History',
+      icon: Icons.history_outlined,
+      activeIcon: Icons.history,
       route: '/bills',
     ),
     NavigationItem(
-      label: 'Usage',
+      label: 'Usage History',
       icon: Icons.show_chart_outlined,
       activeIcon: Icons.show_chart,
       route: '/usage',
+    ),
+    NavigationItem(
+      label: 'Smart Meter Data',
+      icon: Icons.electric_meter_outlined,
+      activeIcon: Icons.electric_meter,
+      route: '/ami-usage',
     ),
     /*
     NavigationItem(

@@ -69,6 +69,11 @@ class AppColors {
     Color(0xFFF97316), // Orange
   ];
   
+  // Specific chart colors for AMI usage
+  static const Color chart2 = Color(0xFFF59E0B); // Amber/Orange for cost
+  static const Color chart3 = Color(0xFFFBBF24); // Light amber for mid-peak
+  static const Color chart4 = Color(0xFFEF4444); // Red for peak
+  
   // Payment Status Colors
   static const Color paid = Color(0xFF10B981); // Green
   static const Color due = Color(0xFFEF4444); // Red

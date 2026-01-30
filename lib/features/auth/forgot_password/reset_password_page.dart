@@ -71,12 +71,12 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     ref.listen(authNotifierProvider, (previous, next) {
       // Check for success (no error and not loading after we initiated the request)
       if (_isResetting && !next.isLoading && next.error == null && (previous?.isLoading ?? false)) {
-        // Password reset successful
-        setState(() {
-          _isResetting = false;
-        });
+        // Password reset successful - defer state update and dialog
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            setState(() {
+              _isResetting = false;
+            });
             _showSuccessDialog();
           }
         });
@@ -85,21 +85,26 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
       if (next.error != null && previous?.error != next.error && _isResetting) {
         // Parse error message to extract field errors if present
         final errorMessage = next.error!;
-        setState(() {
-          _isResetting = false; // Reset loading state on error
-          
-          // Try to extract field-specific errors from error message
-          if (errorMessage.contains('password') || errorMessage.contains('Password')) {
-            if (errorMessage.contains('match')) {
-              _fieldErrors['confirmPassword'] = 'Passwords do not match';
-            } else if (errorMessage.contains('6')) {
-              _fieldErrors['newPassword'] = 'Password must be at least 6 characters';
-            }
-          }
-          if (errorMessage.contains('OTP') || errorMessage.contains('otp') || errorMessage.contains('code')) {
-            _fieldErrors['otp'] = errorMessage.contains('Invalid') 
-                ? 'Invalid OTP code' 
-                : 'OTP code error';
+        // Defer state update to prevent rebuild loops
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _isResetting = false; // Reset loading state on error
+              
+              // Try to extract field-specific errors from error message
+              if (errorMessage.contains('password') || errorMessage.contains('Password')) {
+                if (errorMessage.contains('match')) {
+                  _fieldErrors['confirmPassword'] = 'Passwords do not match';
+                } else if (errorMessage.contains('6')) {
+                  _fieldErrors['newPassword'] = 'Password must be at least 6 characters';
+                }
+              }
+              if (errorMessage.contains('OTP') || errorMessage.contains('otp') || errorMessage.contains('code')) {
+                _fieldErrors['otp'] = errorMessage.contains('Invalid') 
+                    ? 'Invalid OTP code' 
+                    : 'OTP code error';
+              }
+            });
           }
         });
       }
@@ -528,7 +533,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(context, rootNavigator: true).pop();
               // Clear OTP state
               ref.read(authNotifierProvider.notifier).resetOtpState();
               context.go('/login');
@@ -555,7 +560,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(context, rootNavigator: true).pop();
             },
             child: const Text('OK'),
           ),

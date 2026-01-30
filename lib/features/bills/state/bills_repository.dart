@@ -1,12 +1,21 @@
+import 'package:intl/intl.dart';
+
 import '../../../core/config/env.dart';
+import '../../../core/constants/api_endpoints.dart';
+import '../../../core/utils/logger.dart';
+import '../../../data/models/api_response_dtos.dart';
 import '../../../data/models/bill.dart';
 import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
+import '../../../data/services/api_client.dart';
+import '../../../data/services/http_client.dart';
 import '../../../data/sources/mock/mock_app_data_service.dart';
 import '../../../data/sources/mock/mock_bill_repository.dart';
 
 class BillsRepository {
   const BillsRepository();
+
+  static final _apiClient = ApiClient.instance;
 
   Future<List<Bill>> fetchBills(String accountId) async {
     print('[Bills] Repository.fetchBills start accountId=$accountId');
@@ -101,5 +110,238 @@ class BillsRepository {
     
     // Simulate success/failure (95% success rate)
     return DateTime.now().millisecond % 20 < 19;
+  }
+
+  /// Fetch transaction history from API
+  /// GET /Payments/V2/Payments?customerNumber={customerNumber}&accountNumber={accountNumber}
+  Future<List<PaymentHistory>> fetchTransactionHistory({
+    required String customerNumber,
+    required String accountNumber,
+  }) async {
+    try {
+      print('[Bills] Repository.fetchTransactionHistory start customerNumber=$customerNumber accountNumber=$accountNumber');
+      Logger.info('Fetching transaction history...', tag: 'BillsRepository');
+
+      if (EnvConfig.useMockApi) {
+        // Use mock data for now
+        await Future.delayed(const Duration(milliseconds: 300));
+        print('[Bills] Repository.fetchTransactionHistory using mock data');
+        return [];
+      }
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.transactionHistory,
+        authenticated: true, // Transaction history requires authentication
+        queryParameters: {
+          'customerNumber': customerNumber,
+          'accountNumber': accountNumber,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseDto = TransactionHistoryResponseDto.fromJson(response.data!);
+        
+        print('[Bills] ✅ Successfully fetched ${responseDto.paymentTransactions.length} transactions');
+        Logger.info(
+          'Successfully fetched ${responseDto.paymentTransactions.length} transactions',
+          tag: 'BillsRepository',
+        );
+
+        // Map DTOs to PaymentHistory models
+        final transactions = responseDto.paymentTransactions
+            .map(_mapTransactionDtoToPaymentHistory)
+            .toList();
+
+        print('[Bills] ✅ Mapped ${transactions.length} payment history records');
+        return transactions;
+      } else {
+        Logger.warning(
+          'Failed to fetch transaction history. Status: ${response.statusCode}',
+          tag: 'BillsRepository',
+        );
+        return [];
+      }
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error fetching transaction history',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BillsRepository',
+      );
+      return [];
+    }
+  }
+
+  /// Map PaymentTransactionDto to PaymentHistory model
+  /// Note: Transaction amounts from API are negative for payments, positive for bill charges
+  /// We preserve the original amount sign and use description to determine payment vs bill
+  PaymentHistory _mapTransactionDtoToPaymentHistory(PaymentTransactionDto dto) {
+    // Parse transaction date - handle formats like "Jan 08, 2026"
+    final transactionDate = _parseTransactionDate(dto.transactionDate);
+    
+    // Parse transaction amount - API sends negative amounts for payments, positive for bills
+    // Keep the sign - negative = payment, positive = bill
+    final amount = _parseTransactionAmount(dto.transactionAmount);
+    
+    // Parse account balance from DTO
+    final accountBalance = _parseTransactionAmount(dto.accountBalance);
+    
+    // Determine if it's a payment based on description (more reliable than just amount sign)
+    final description = dto.transactionDescription.toLowerCase();
+    final isPayment = description.contains('payment') && amount < 0;
+    
+    // Extract payment method from description (e.g., "Payment - Cash (B)" or "Cycle Billing Due: ...")
+    final paymentMethod = isPayment 
+        ? _extractPaymentMethod(dto.transactionDescription)
+        : 'Bill';
+    
+    // referenceNumber: for bills use billNumber (so bill detail/download API gets correct id); for payments use receiptNumber
+    final referenceNumber = isPayment
+        ? (dto.receiptNumber.isNotEmpty ? dto.receiptNumber : null)
+        : (dto.billNumber.isNotEmpty ? dto.billNumber : null);
+    
+    // Store absolute value since PaymentHistory.amount expects positive
+    // The widget will use the description to determine if it's a payment (negative display) or bill (positive)
+    // Store original transactionAmount and accountBalance in metadata for use in ledger display
+    return PaymentHistory(
+      id: dto.receiptNumber.isNotEmpty ? dto.receiptNumber : dto.row,
+      amount: amount.abs(), // Store as positive value
+      paymentDate: transactionDate,
+      paymentMethod: paymentMethod,
+      transactionId: dto.receiptNumber,
+      status: PaymentStatus.completed,
+      referenceNumber: referenceNumber,
+      notes: dto.transactionDescription, // Preserve original description to determine payment vs bill
+      metadata: {
+        'transactionAmount': amount, // Original signed transaction amount
+        'accountBalance': accountBalance, // Account balance from API
+      },
+    );
+  }
+
+  /// Parse transaction date string to DateTime
+  /// Handles formats like "Jan 08, 2026"
+  DateTime _parseTransactionDate(String dateStr) {
+    if (dateStr.isEmpty) return DateTime.now();
+    
+    try {
+      // Try parsing "Jan 08, 2026" format
+      final format = DateFormat('MMM dd, yyyy');
+      return format.parse(dateStr);
+    } catch (e) {
+      Logger.warning('Failed to parse transaction date: $dateStr', tag: 'BillsRepository');
+      return DateTime.now();
+    }
+  }
+
+  /// Parse transaction amount string to double
+  /// Handles negative amounts for payments (e.g., "-221.61")
+  double _parseTransactionAmount(String amountStr) {
+    if (amountStr.isEmpty) return 0;
+    
+    try {
+      // Remove any currency symbols and parse
+      final cleaned = amountStr
+          .replaceAll(r'$', '')
+          .replaceAll(',', '')
+          .trim();
+      return double.tryParse(cleaned) ?? 0.0;
+    } catch (e) {
+      Logger.warning('Failed to parse transaction amount: $amountStr', tag: 'BillsRepository');
+      return 0;
+    }
+  }
+
+  /// Fetch bill detail from API
+  /// GET /Bills/V3/Detail/{billNumber}
+  Future<BillDetailDataDto?> fetchBillDetail(String billNumber) async {
+    try {
+      print('[Bills] Repository.fetchBillDetail start billNumber=$billNumber');
+      
+      if (EnvConfig.useMockApi) {
+        // Simulate API delay
+        await Future.delayed(const Duration(milliseconds: 500));
+        // Return mock data based on the real response format
+        return BillDetailDataDto(
+          billNumber: billNumber,
+          readingDate: '04 Nov 25 - 04 Dec 25',
+          billingDate: '04-Dec-2025',
+          previousBalance: r'$ 298.04',
+          lessPayment: r'($ 298.04) CR',
+          balanceForward: r'($ 0.00) CR',
+          consumption: r'$ 185.17',
+          minimumBill: r'$ 0.00',
+          crimeStoppersPledge: r'$ 0.00',
+          otherCharge: r'$ 0.00',
+          gstCharge: r'$ 36.44',
+          taxAdjustment: r'$ 0.00',
+          amountDue: r'$ 221.61',
+          balance: r'$ 0.00',
+          paymentDueDate: '03 Jan 26',
+          previousReading: '75,956',
+          presentReading: '76,663',
+          totalConsumption: '707',
+          dueIn: '-18',
+          paid: true,
+          customerName: 'MOCK CUSTOMER',
+          accountNumber: '00000000',
+          customerNumber: '00000000',
+        );
+      }
+
+      final endpoint = ApiEndpoints.billDetail(billNumber);
+      Logger.info('Fetching bill detail from: $endpoint', tag: 'BillsRepository');
+      
+      final response = await HttpClient.instance.client.get<Map<String, dynamic>>(
+        endpoint,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseDto = BillDetailResponseDto.fromJson(response.data!);
+        
+        if (responseDto.status == 200) {
+          print('[Bills] ✅ Successfully fetched bill detail for billNumber=$billNumber');
+          Logger.info('Successfully fetched bill detail', tag: 'BillsRepository');
+          return responseDto.bill;
+        } else {
+          Logger.warning('Failed to fetch bill detail. Status: ${responseDto.status}', tag: 'BillsRepository');
+          return null;
+        }
+      } else {
+        Logger.warning('Failed to fetch bill detail. Status: ${response.statusCode}', tag: 'BillsRepository');
+        return null;
+      }
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error fetching bill detail',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BillsRepository',
+      );
+      return null;
+    }
+  }
+
+  /// Extract payment method from transaction description
+  /// Example: "Payment - Cash (B)" -> "Cash"
+  String _extractPaymentMethod(String description) {
+    if (description.isEmpty) return 'Unknown';
+    
+    // Check for common payment methods in description
+    if (description.toLowerCase().contains('cash')) {
+      return 'Cash';
+    } else if (description.toLowerCase().contains('credit')) {
+      return 'Credit Card';
+    } else if (description.toLowerCase().contains('debit')) {
+      return 'Debit Card';
+    } else if (description.toLowerCase().contains('check') || description.toLowerCase().contains('cheque')) {
+      return 'Check';
+    } else if (description.toLowerCase().contains('bank')) {
+      return 'Bank Transfer';
+    } else if (description.toLowerCase().contains('mobile') || description.toLowerCase().contains('digiwallet')) {
+      return 'Mobile Payment';
+    }
+    
+    return 'Unknown';
   }
 }
