@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -962,9 +965,47 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        // _errorMessage = e.toString().replaceAll('Exception: ', '');
+         _errorMessage = _extractConnectAccountErrorMessage(e);
       });
     }
+  }
+  String _extractConnectAccountErrorMessage(Object error) {
+    print('_extractConnectAccountErrorMessage: $error');
+    // Prefer backend-provided `message` when available.
+    if (error is DioException) {
+      final data = error.response?.data;
+
+      if (data is Map) {
+        final message = data['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message.trim();
+        }
+      }
+
+      if (data is String) {
+        try {
+          final decoded = jsonDecode(data);
+          if (decoded is Map) {
+            final message = decoded['message'];
+            if (message is String && message.trim().isNotEmpty) {
+              return message.trim();
+            }
+          }
+        } catch (_) {
+          // Ignore JSON parse errors and fall back.
+        }
+      }
+
+      // Fallback to Dio's message if present.
+      final msg = error.message;
+      if (msg != null && msg.trim().isNotEmpty) {
+        return msg.trim();
+      }
+    }
+
+    // Generic fallback: strip "Exception: " prefix if present.
+    return error.toString().replaceAll('Exception: ', '').trim();
   }
 
   @override
