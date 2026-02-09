@@ -25,8 +25,7 @@ class SidebarNavItem extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacing8,
         vertical: AppTheme.spacing4,
@@ -70,7 +69,7 @@ class SidebarNavItem extends StatelessWidget {
                         vertical: AppTheme.spacing4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.error,
+                        color: badge == 'AMI' ? AppColors.primary : AppColors.error,
                         borderRadius: BorderRadius.circular(AppTheme.radius12),
                       ),
                       child: AppText(
@@ -87,5 +86,4 @@ class SidebarNavItem extends StatelessWidget {
         ),
       ),
     );
-  }
 }

@@ -202,6 +202,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _handleLogin(),
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: 'Enter your password',

@@ -1,8 +1,4 @@
-import 'env_runtime_stub.dart' if (dart.library.html) 'env_runtime_web.dart' as env_runtime;
-
 class EnvConfig {
-  /// Runtime override from window.__BEL247_CONFIG__.API_BASE_URL (set in index.html at deploy time). Null if not set.
-  static String? get runtimeApiBaseUrl => env_runtime.getRuntimeApiBaseUrl();
 
   // String values from --dart-define (compile-time). Empty = use default (fixes deployed builds when env not passed).
   static String get apiBaseUrl {
@@ -77,9 +73,5 @@ class EnvConfig {
   static bool get isStaging => environment == 'staging';
 
   /// Effective API base URL: runtime override (e.g. from Render env) if set, else compile-time config.
-  static String get currentApiUrl {
-    final runtime = runtimeApiBaseUrl;
-    if (runtime != null && runtime.isNotEmpty) return runtime;
-    return useMockApi ? mockApiBaseUrl : apiBaseUrl;
-  }
+  static String get currentApiUrl => useMockApi ? mockApiBaseUrl : apiBaseUrl;
 }

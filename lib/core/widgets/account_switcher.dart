@@ -6,6 +6,7 @@ import '../../data/repositories/accounts_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../providers/feature_providers.dart';
+import '../providers/meter_data_providers.dart';
 import '../utils/logger.dart';
 
 /// Account switcher card displayed in the sidebar
@@ -21,6 +22,7 @@ class AccountSwitcherCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accountState = ref.watch(accountSwitcherProvider);
     final activeAccount = accountState.activeAccount;
+    final isAmiMeter = ref.watch(isAmiMeterProvider);
 
     // Show loading state only if accounts haven't been initialized yet
     // If initialized but empty, we know there are no accounts (don't show loading)
@@ -68,18 +70,48 @@ class AccountSwitcherCard extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Icon
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.swap_vert_circle,
-                    color: AppColors.white,
-                    size: 18,
-                  ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.swap_vert_circle,
+                        color: AppColors.white,
+                        size: 18,
+                      ),
+                    ),
+                    if (isAmiMeter)
+                      Positioned(
+                        right: -6,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.white, width: 1),
+                          ),
+                          child: const Text(
+                            'AMI',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: AppTheme.spacing8),
                 // Account name (compact)
@@ -173,12 +205,44 @@ class AccountSwitcherCard extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            activeAccount.nickname ?? activeAccount.formattedAccountNumber,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  activeAccount.nickname ?? activeAccount.formattedAccountNumber,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
+                              ),
+                              if (isAmiMeter) ...[
+                                const SizedBox(width: AppTheme.spacing8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(AppTheme.radius12),
+                                    border: Border.all(
+                                      color: AppColors.primary.withValues(alpha: 0.35),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'AMI',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11,
+                                          letterSpacing: 0.5,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           Text(
@@ -817,7 +881,7 @@ class _AccountCard extends StatelessWidget {
                 // Selected indicator
                 if (isSelected)
                   Positioned(
-                    top: 0,
+                    bottom: 0,
                     right: 0,
                     child: Container(
                       width: 24,

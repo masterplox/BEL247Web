@@ -169,7 +169,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             children: [
               // Page Header
               Text(
-                'Smart Meter Data',
+                'Usage History',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
@@ -220,7 +220,8 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                       filterType: _filterType,
                     ),
                     const SizedBox(height: AppTheme.spacing20),
-                    // View Mode Toggle
+                    /*
+                    // View Mode Toggle (kWh / Cost) - temporarily disabled
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -251,6 +252,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                         ),
                       ],
                     ),
+                    */
                     // Chart
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,6 +343,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildViewModeButton(
     BuildContext context,
     ViewMode mode,
@@ -594,6 +597,20 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
       return intervalsAsync.when(
         data: (intervals) {
+          // If the API returns no intervals, treat this as "no data" for day view.
+          // This prevents charts/summary from showing misleading 0-values and avoids edge cases.
+          if (intervals.isEmpty) {
+            final dateLabel = _formatDateLong(_currentDate);
+            final stats = calculateHourlyStats(const <HourlyData>[]);
+            return AsyncValue.data((
+              dailyData: <DailyReading>[],
+              hourlyData: <HourlyData>[],
+              stats: stats,
+              dateLabel: dateLabel,
+              selectedDetail: null,
+            ));
+          }
+
           // Transform DTOs to IntervalReading
           final intervalData = intervals.map(_dtoToIntervalReading).toList();
           final hourlyData = aggregateToHourly(intervalData);
@@ -731,6 +748,24 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
     return monthlyAsync.when(
       data: (monthlyUsages) {
+        if (monthlyUsages.isEmpty) {
+          // Avoid reduce/firstWhere on empty; show empty chart state upstream.
+          final stats = DailyStats(
+            totalKWh: 0,
+            estimatedCost: 0,
+            avgKWh: 0,
+            peakKWh: 0,
+            peakDate: '-',
+          );
+          return AsyncValue.data((
+            dailyData: <DailyReading>[],
+            hourlyData: <HourlyData>[],
+            stats: stats,
+            dateLabel: _currentDate.year.toString(),
+            selectedDetail: null,
+          ));
+        }
+
         // Transform MonthlyUsageEntryDto to DailyReading for chart
         final monthlyData = monthlyUsages
             .map((dto) => _monthlyDtoToDailyReading(dto, meterIdStr))
@@ -758,7 +793,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
         ];
 
         final totalKWh = monthlyTotals.values.fold<double>(0, (a, b) => a + b);
-        final avgKWh = totalKWh / monthlyTotals.length;
+        final avgKWh = monthlyTotals.isEmpty ? 0.0 : totalKWh / monthlyTotals.length;
         final peakMonth = monthlyTotals.entries.reduce(
           (max, entry) => entry.value > max.value ? entry : max,
         );

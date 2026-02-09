@@ -12,6 +12,39 @@ class AmiUsageRepository {
 
   static final _apiClient = ApiClient.instance;
 
+  static List<Map<String, dynamic>> _extractList(dynamic json) {
+    if (json is List) {
+      return json
+          .whereType<Object?>()
+          .map<Map<String, dynamic>?>(_asStringMapOrNull)
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    }
+
+    if (json is Map) {
+      final data = json['data'];
+      if (data is List) {
+        return data
+            .whereType<Object?>()
+            .map<Map<String, dynamic>?>(_asStringMapOrNull)
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+    }
+
+    return const <Map<String, dynamic>>[];
+  }
+
+  static Map<String, dynamic>? _asStringMapOrNull(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map(
+        (k, v) => MapEntry(k.toString(), v),
+      );
+    }
+    return null;
+  }
+
   /// Fetch daily interval kWh details for a meter and date
   /// GET /V1/MeterUsage/DailyIntervals?meterId={meterId}&targetDate={targetDate}
   /// 
@@ -22,23 +55,26 @@ class AmiUsageRepository {
   }) async {
     try {
       final targetDateStr = targetDate.toIso8601String().split('T')[0];
-      Logger.info(
-        'Fetching daily intervals for meter $meterId on $targetDateStr...',
-        tag: 'AmiUsageRepository',
-      );
+      print('[AmiUsage] Repository.fetchDailyIntervals start meterId=$meterId targetDate=$targetDateStr');
 
       if (EnvConfig.useMockAmiUsage) {
         await Future.delayed(const Duration(milliseconds: 300));
-        Logger.info('Using mock daily intervals data', tag: 'AmiUsageRepository');
+        print('[AmiUsage] Repository.fetchDailyIntervals using mock data');
         
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiIntervalUsage,
         );
-        final responseDto = IntervalUsageResponseDto.fromJson(jsonData);
-        return responseDto.data;
+        final rows = _extractList(jsonData);
+        final entries = rows.map((row) => IntervalUsageEntryDto.fromJson({
+            ...row,
+            // Live API no longer includes meterId; ensure DTO always has it.
+            'meterId': (row['meterId'] ?? meterId).toString(),
+          })).toList();
+        print('[AmiUsage] ✅ Successfully fetched ${entries.length} interval entries for daily view');
+        return entries;
       }
 
-      final response = await _apiClient.get<Map<String, dynamic>>(
+      final response = await _apiClient.get<dynamic>(
         ApiEndpoints.amiDailyIntervals,
         authenticated: true,
         queryParameters: {
@@ -48,20 +84,20 @@ class AmiUsageRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final responseDto = IntervalUsageResponseDto.fromJson(response.data!);
-        Logger.info(
-          'Successfully fetched ${responseDto.data.length} daily interval entries',
-          tag: 'AmiUsageRepository',
-        );
-        return responseDto.data;
+        final rows = _extractList(response.data);
+        final entries = rows.map((row) => IntervalUsageEntryDto.fromJson({
+            ...row,
+            // Live API no longer includes meterId; ensure DTO always has it.
+            'meterId': (row['meterId'] ?? meterId).toString(),
+          })).toList();
+        print('[AmiUsage] ✅ Successfully fetched ${entries.length} interval entries for daily view');
+        return entries;
       } else {
-        Logger.warning(
-          'Failed to fetch daily intervals. Status: ${response.statusCode}',
-          tag: 'AmiUsageRepository',
-        );
+        print('[AmiUsage] Repository.fetchDailyIntervals [ERROR] Failed to fetch. Status: ${response.statusCode}');
         return [];
       }
     } catch (e, stackTrace) {
+      print('[AmiUsage] Repository.fetchDailyIntervals [ERROR] $e');
       Logger.error(
         'Error fetching daily intervals',
         error: e,
@@ -84,31 +120,31 @@ class AmiUsageRepository {
     try {
       final startDateStr = startDate.toIso8601String().split('T')[0];
       final endDateStr = endDate.toIso8601String().split('T')[0];
-      Logger.info(
-        'Fetching daily range for meter $meterId from $startDateStr to $endDateStr...',
-        tag: 'AmiUsageRepository',
-      );
+      print('[AmiUsage] Repository.fetchDailyRange start meterId=$meterId startDate=$startDateStr endDate=$endDateStr');
 
       if (EnvConfig.useMockAmiUsage) {
         await Future.delayed(const Duration(milliseconds: 300));
-        Logger.info('Using mock daily range data', tag: 'AmiUsageRepository');
+        print('[AmiUsage] Repository.fetchDailyRange using mock data');
         
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiDailyUsage,
         );
-        final responseDto = DailyUsageResponseDto.fromJson(jsonData);
+        final rows = _extractList(jsonData);
+        final allEntries = rows.map(DailyUsageEntryDto.fromJson).toList();
         // Filter to requested date range so week view gets 7 days, not full month
         final startDay = DateTime(startDate.year, startDate.month, startDate.day);
         final endDay = DateTime(endDate.year, endDate.month, endDate.day);
-        return responseDto.data.where((dto) {
+        final filteredData = allEntries.where((dto) {
           final d = DateTime.tryParse(dto.usageDate.trim().split(RegExp('[T ]')).first);
           if (d == null) return false;
           final entryDay = DateTime(d.year, d.month, d.day);
           return !entryDay.isBefore(startDay) && !entryDay.isAfter(endDay);
         }).toList();
+        print('[AmiUsage] ✅ Successfully fetched ${filteredData.length} daily entries for range view');
+        return filteredData;
       }
 
-      final response = await _apiClient.get<Map<String, dynamic>>(
+      final response = await _apiClient.get<dynamic>(
         ApiEndpoints.amiDailyRange,
         authenticated: true,
         queryParameters: {
@@ -119,20 +155,16 @@ class AmiUsageRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final responseDto = DailyUsageResponseDto.fromJson(response.data!);
-        Logger.info(
-          'Successfully fetched ${responseDto.data.length} daily usage entries',
-          tag: 'AmiUsageRepository',
-        );
-        return responseDto.data;
+        final rows = _extractList(response.data);
+        final entries = rows.map(DailyUsageEntryDto.fromJson).toList();
+        print('[AmiUsage] ✅ Successfully fetched ${entries.length} daily entries for range view');
+        return entries;
       } else {
-        Logger.warning(
-          'Failed to fetch daily range. Status: ${response.statusCode}',
-          tag: 'AmiUsageRepository',
-        );
+        print('[AmiUsage] Repository.fetchDailyRange [ERROR] Failed to fetch. Status: ${response.statusCode}');
         return [];
       }
     } catch (e, stackTrace) {
+      print('[AmiUsage] Repository.fetchDailyRange [ERROR] $e');
       Logger.error(
         'Error fetching daily range',
         error: e,
@@ -152,23 +184,22 @@ class AmiUsageRepository {
     required int year,
   }) async {
     try {
-      Logger.info(
-        'Fetching monthly totals for meter $meterId in year $year...',
-        tag: 'AmiUsageRepository',
-      );
+      print('[AmiUsage] Repository.fetchMonthlyTotals start meterId=$meterId year=$year');
 
       if (EnvConfig.useMockAmiUsage) {
         await Future.delayed(const Duration(milliseconds: 300));
-        Logger.info('Using mock monthly totals data', tag: 'AmiUsageRepository');
+        print('[AmiUsage] Repository.fetchMonthlyTotals using mock data');
         
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiMonthlyUsage,
         );
-        final responseDto = MonthlyUsageResponseDto.fromJson(jsonData);
-        return responseDto.data;
+        final rows = _extractList(jsonData);
+        final entries = rows.map(MonthlyUsageEntryDto.fromJson).toList();
+        print('[AmiUsage] ✅ Successfully fetched ${entries.length} monthly totals for year view');
+        return entries;
       }
 
-      final response = await _apiClient.get<Map<String, dynamic>>(
+      final response = await _apiClient.get<dynamic>(
         ApiEndpoints.amiMonthlyTotals,
         authenticated: true,
         queryParameters: {
@@ -178,20 +209,16 @@ class AmiUsageRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final responseDto = MonthlyUsageResponseDto.fromJson(response.data!);
-        Logger.info(
-          'Successfully fetched ${responseDto.data.length} monthly totals',
-          tag: 'AmiUsageRepository',
-        );
-        return responseDto.data;
+        final rows = _extractList(response.data);
+        final entries = rows.map(MonthlyUsageEntryDto.fromJson).toList();
+        print('[AmiUsage] ✅ Successfully fetched ${entries.length} monthly totals for year view');
+        return entries;
       } else {
-        Logger.warning(
-          'Failed to fetch monthly totals. Status: ${response.statusCode}',
-          tag: 'AmiUsageRepository',
-        );
+        print('[AmiUsage] Repository.fetchMonthlyTotals [ERROR] Failed to fetch. Status: ${response.statusCode}');
         return [];
       }
     } catch (e, stackTrace) {
+      print('[AmiUsage] Repository.fetchMonthlyTotals [ERROR] $e');
       Logger.error(
         'Error fetching monthly totals',
         error: e,

@@ -215,14 +215,18 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                         ],
                       ),
                       const SizedBox(height: AppTheme.spacing12),
-                      Expanded(
-                        child: _buildStatButton(
-                          context,
-                          'ssssssss',
-                          FormattingUtils.formatCurrency(pastDue),
-                          Icons.schedule,
-                          (){},
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatButton(
+                              context,
+                              'Past due',
+                              FormattingUtils.formatCurrency(pastDue),
+                              Icons.schedule,
+                              null,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   );

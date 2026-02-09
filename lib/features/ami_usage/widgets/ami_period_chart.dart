@@ -28,7 +28,21 @@ class AmiPeriodChart extends StatelessWidget {
     if (data.isEmpty) {
       return const AppCard(
         child: Center(
-          child: Text('No data available'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.query_stats_outlined,
+                size: 44,
+                color: AppColors.textSecondary,
+              ),
+              SizedBox(height: AppTheme.spacing8),
+              Text(
+                'No data available',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -74,17 +88,20 @@ class AmiPeriodChart extends StatelessWidget {
         return value > max ? value : max;
       },
     );
+    // fl_chart asserts when maxY == minY (common when all values are 0)
+    final safeMaxY = maxValue > 0 ? maxValue * 1.1 : 1.0;
 
     final barColor = viewMode == ViewMode.cost ? AppColors.chart2 : AppColors.primary;
 
     return AppCard(
+      clipBehavior: Clip.none,
       padding: const EdgeInsets.all(AppTheme.spacing16),
       child: SizedBox(
         height: 300,
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            maxY: maxValue * 1.1,
+            maxY: safeMaxY,
             barTouchData: BarTouchData(
               enabled: true,
               touchTooltipData: BarTouchTooltipData(
@@ -195,7 +212,7 @@ class AmiPeriodChart extends StatelessWidget {
             gridData: FlGridData(
               show: true,
               drawVerticalLine: false,
-              horizontalInterval: maxValue / 5,
+              horizontalInterval: safeMaxY / 5,
               getDrawingHorizontalLine: (value) => const FlLine(
                   color: AppColors.border,
                   strokeWidth: 1,

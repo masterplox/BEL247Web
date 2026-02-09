@@ -154,12 +154,10 @@ class ApiLoggerInterceptor extends Interceptor {
     }
 
     // Log stack trace for debugging (only in debug mode)
-    if (err.stackTrace != null) {
-      Logger.debug(
-        'Error Stack Trace:\n${err.stackTrace}',
-        tag: 'API_Logger',
-      );
-    }
+    Logger.debug(
+      'Error Stack Trace:\n${err.stackTrace}',
+      tag: 'API_Logger',
+    );
 
     handler.next(err);
   }
@@ -220,9 +218,7 @@ class ApiLoggerInterceptor extends Interceptor {
 
     String bodyStr;
     if (data is Map || data is List) {
-      final maskedData = _maskSensitiveData 
-          ? _maskSensitiveFields(data as Map<String, dynamic>? ?? {}) 
-          : data;
+      final maskedData = _maskSensitiveData ? _maskSensitiveDynamic(data) : data;
       bodyStr = _formatJson(maskedData);
     } else if (data is String) {
       bodyStr = _maskSensitiveData 
@@ -283,19 +279,15 @@ class ApiLoggerInterceptor extends Interceptor {
     if (responseType == ResponseType.plain) {
       bodyStr = data.toString();
     } else if (data is Map || data is List) {
-      final maskedData = _maskSensitiveData 
-          ? _maskSensitiveFields(data as Map<String, dynamic>? ?? {}) 
-          : data;
+      final maskedData = _maskSensitiveData ? _maskSensitiveDynamic(data) : data;
       bodyStr = _formatJson(maskedData);
     } else if (data is String) {
       try {
         // Try to parse as JSON for better formatting
         final json = _parseJsonString(data);
         if (json != null) {
-          final masked = _maskSensitiveData 
-              ? _maskSensitiveFields(json as Map<String, dynamic>? ?? {}) 
-              : json;
-          bodyStr = _formatJson(masked);
+          final maskedJson = _maskSensitiveData ? _maskSensitiveDynamic(json) : json;
+          bodyStr = _formatJson(maskedJson);
         } else {
           bodyStr = _maskSensitiveData 
               ? _maskSensitiveString(data) 
@@ -346,13 +338,17 @@ class ApiLoggerInterceptor extends Interceptor {
   void _logErrorResponse(dynamic errorData, int? statusCode) {
     String errorStr;
     if (errorData is Map || errorData is List) {
-      errorStr = _formatJson(errorData as Map<String, dynamic>? ?? {});
+      final masked = _maskSensitiveData ? _maskSensitiveDynamic(errorData) : errorData;
+      errorStr = _formatJson(masked);
     } else if (errorData is String) {
       try {
         final json = _parseJsonString(errorData);
-        errorStr = json != null 
-            ? _formatJson(json as Map<String, dynamic>? ?? {}) 
-            : errorData;
+        if (json != null) {
+          final maskedJson = _maskSensitiveData ? _maskSensitiveDynamic(json) : json;
+          errorStr = _formatJson(maskedJson);
+        } else {
+          errorStr = errorData;
+        }
       } catch (e) {
         errorStr = errorData;
       }
@@ -451,6 +447,22 @@ class ApiLoggerInterceptor extends Interceptor {
     }
 
     return masked;
+  }
+
+  /// Mask sensitive fields in any JSON-like structure (Map/List).
+  dynamic _maskSensitiveDynamic(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return _maskSensitiveFields(value);
+    }
+    if (value is Map) {
+      // Convert keys to strings so masking logic can work consistently.
+      final asStringMap = value.map((k, v) => MapEntry(k.toString(), v));
+      return _maskSensitiveFields(Map<String, dynamic>.from(asStringMap));
+    }
+    if (value is List) {
+      return value.map(_maskSensitiveDynamic).toList();
+    }
+    return value;
   }
 
   /// Mask sensitive headers

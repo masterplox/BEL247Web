@@ -237,6 +237,16 @@ TimeOfUsePeriod getTimeOfUsePeriod(int hour) {
 
 /// Calculate statistics for hourly data
 HourlyStats calculateHourlyStats(List<HourlyData> hourlyData) {
+  if (hourlyData.isEmpty) {
+    return HourlyStats(
+      totalKWh: 0,
+      estimatedCost: 0,
+      avgKWh: 0,
+      peakKWh: 0,
+      peakTime: '-',
+      peakHour: 0,
+    );
+  }
   final totalKWh = hourlyData.fold<double>(0, (sum, d) => sum + d.kWh);
   final estimatedCost = totalKWh * ratePerKwh;
   final avgKWh = totalKWh / hourlyData.length;

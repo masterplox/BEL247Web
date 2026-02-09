@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/meter_data_providers.dart';
+
 /// Navigation state for managing responsive navigation
 class NavigationState {
   const NavigationState({
@@ -31,17 +33,6 @@ class NavigationState {
   NavigationMode get effectiveMode => mode == NavigationMode.auto 
       ? (isMobile ? NavigationMode.bottomNav : NavigationMode.sidebar)
       : mode;
-
-  /// Get current route based on selected index
-  String get currentRoute {
-    if (selectedIndex < NavigationConfig.items.length) {
-      return NavigationConfig.items[selectedIndex].route;
-    }
-    return '/dashboard';
-  }
-
-  /// Check if route is active
-  bool isRouteActive(String route) => currentRoute == route;
 
   /// Create a copy with updated values
   NavigationState copyWith({
@@ -87,75 +78,45 @@ class NavigationItem {
 
 /// Navigation configuration
 class NavigationConfig {
-  static const List<NavigationItem> items = [
-    NavigationItem(
-      label: 'Dashboard',
-      icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard,
-      route: '/dashboard',
-    ),
-    NavigationItem(
-      label: 'Transaction History',
-      icon: Icons.history_outlined,
-      activeIcon: Icons.history,
-      route: '/bills',
-    ),
-    NavigationItem(
-      label: 'Usage History',
-      icon: Icons.show_chart_outlined,
-      activeIcon: Icons.show_chart,
-      route: '/usage',
-    ),
-    NavigationItem(
-      label: 'Smart Meter Data',
-      icon: Icons.electric_meter_outlined,
-      activeIcon: Icons.electric_meter,
-      route: '/ami-usage',
-    ),
-    /*
-    NavigationItem(
-      label: 'Daily Bill',
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today,
-      route: '/daily-bill',
-    ),
-    */
-  ];
+  static const NavigationItem dashboard = NavigationItem(
+    label: 'Dashboard',
+    icon: Icons.dashboard_outlined,
+    activeIcon: Icons.dashboard,
+    route: '/dashboard',
+  );
 
-  static const List<NavigationItem> bottomNavItems = [
-    NavigationItem(
-      label: 'Dashboard',
-      icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard,
-      route: '/dashboard',
-    ),
-    NavigationItem(
-      label: 'Transaction History',
-      icon: Icons.history_outlined,
-      activeIcon: Icons.history,
-      route: '/bills',
-    ),
-    NavigationItem(
-      label: 'Usage History',
-      icon: Icons.show_chart_outlined,
-      activeIcon: Icons.show_chart,
-      route: '/usage',
-    ),
-    NavigationItem(
-      label: 'Smart Meter Data',
-      icon: Icons.electric_meter_outlined,
-      activeIcon: Icons.electric_meter,
-      route: '/ami-usage',
-    ),
-    /*
-    NavigationItem(
-      label: 'Daily Bill',
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today,
-      route: '/daily-bill',
-    ),
-    */
-  ];
+  static const NavigationItem bills = NavigationItem(
+    label: 'Transaction History',
+    icon: Icons.history_outlined,
+    activeIcon: Icons.history,
+    route: '/bills',
+  );
+
+  static const NavigationItem usageHistory = NavigationItem(
+    label: 'Usage History',
+    icon: Icons.show_chart_outlined,
+    activeIcon: Icons.show_chart,
+    route: '/usage',
+  );
+
+  static const NavigationItem smartMeterData = NavigationItem(
+    label: 'Usage History',
+    icon: Icons.electric_meter_outlined,
+    activeIcon: Icons.electric_meter,
+    route: '/ami-usage',
+  );
+
+  static List<NavigationItem> sidebarItemsFor({required bool isAmi}) => <NavigationItem>[
+        dashboard,
+        if (isAmi) smartMeterData else usageHistory,
+        bills,
+      ];
+
+  static List<NavigationItem> bottomNavItemsFor({required bool isAmi}) => <NavigationItem>[
+        dashboard,
+        if (isAmi) smartMeterData else usageHistory,
+        bills,
+      ];
 }
 
 /// Navigation notifier for managing navigation state
@@ -241,28 +202,19 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
 
   /// Navigate to route and update selected index
   /// Preserves current sidebar state instead of forcing it open
-  void navigateToRoute(String route) {
-    final index = NavigationConfig.items.indexWhere((item) => item.route == route);
+  void navigateToRoute(String route, List<NavigationItem> items) {
+    final index = items.indexWhere((item) => item.route == route);
     if (index != -1 && index != state.selectedIndex) {
-      // Only update if the route actually changed
-      // Preserve current sidebar state instead of forcing it open
-      state = state.copyWith(
-        selectedIndex: index,
-        // Don't modify isSidebarOpen - preserve user's manual toggle
-      );
+      state = state.copyWith(selectedIndex: index);
+      return;
+    }
+
+    // If the current selection is no longer valid for the active meter type,
+    // fall back to Dashboard.
+    if (state.selectedIndex >= items.length) {
+      state = state.copyWith(selectedIndex: 0);
     }
   }
-
-  /// Get current route based on selected index
-  String get currentRoute {
-    if (state.selectedIndex < NavigationConfig.items.length) {
-      return NavigationConfig.items[state.selectedIndex].route;
-    }
-    return '/dashboard';
-  }
-
-  /// Check if route is active
-  bool isRouteActive(String route) => currentRoute == route;
 }
 
 /// Provider for navigation state
@@ -274,13 +226,18 @@ final navigationNotifierProvider = Provider<NavigationNotifier>((ref) => ref.wat
 /// Provider for current route
 final currentRouteProvider = Provider<String>((ref) {
   final navigation = ref.watch(navigationProvider);
-  return navigation.currentRoute;
+  final items = ref.watch(navigationItemsProvider);
+  if (navigation.selectedIndex >= 0 && navigation.selectedIndex < items.length) {
+    return items[navigation.selectedIndex].route;
+  }
+  return '/dashboard';
 });
 
 /// Provider for navigation items
 final navigationItemsProvider = Provider<List<NavigationItem>>((ref) {
   final navigation = ref.watch(navigationProvider);
-  return navigation.shouldShowBottomNav 
-      ? NavigationConfig.bottomNavItems 
-      : NavigationConfig.items;
+  final isAmi = ref.watch(isAmiMeterProvider);
+  return navigation.shouldShowBottomNav
+      ? NavigationConfig.bottomNavItemsFor(isAmi: isAmi)
+      : NavigationConfig.sidebarItemsFor(isAmi: isAmi);
 });

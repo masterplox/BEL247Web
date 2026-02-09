@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/meter_data_config.dart';
+import '../../../core/providers/meter_data_providers.dart';
 import '../../../core/widgets/account_aware_scaffold.dart';
 import '../../../core/widgets/account_switcher.dart';
 import '../../../core/widgets/app_page_scaffold.dart';
@@ -8,7 +10,10 @@ import '../../../features/bills/state/bills_providers.dart';
 import '../../../features/usage/state/meter_readings_providers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import 'state/ami_dashboard_usage_providers.dart';
 import 'widgets/account_details_widget.dart';
+import 'widgets/ami_consumption_chart_widget.dart';
+import 'widgets/ami_usage_stats_widget.dart';
 import 'widgets/balance_card_widget.dart';
 import 'widgets/consumption_chart_widget.dart';
 // import 'widgets/dashboard_account_switcher.dart';
@@ -25,6 +30,7 @@ class DashboardPage extends ConsumerWidget {
       emptyIcon: Icons.account_circle_outlined,
       builder: (context, ref, accountState) {
         final accountDetailsAsync = ref.watch(accountDetailsProvider);
+        final meterDataSource = ref.watch(meterDataSourceProvider);
 
         // Get the first name from account details name field
         final firstName = accountDetailsAsync.maybeWhen(
@@ -99,12 +105,17 @@ class DashboardPage extends ConsumerWidget {
           },
         );
 
-        final meterReadingsAsync = ref.watch(meterReadingsThisYearProvider);
-        final showReadingsSection = meterReadingsAsync.maybeWhen(
-          data: (readings) => readings.isNotEmpty,
-          loading: () => true,
-          orElse: () => false,
-        );
+        final showReadingsSection = meterDataSource == MeterDataSource.ami
+            ? ref.watch(amiDashboardHasUsageDataProvider).maybeWhen(
+                data: (hasData) => hasData,
+                loading: () => true,
+                orElse: () => false,
+              )
+            : ref.watch(meterReadingsThisYearProvider).maybeWhen(
+                data: (readings) => readings.isNotEmpty,
+                loading: () => true,
+                orElse: () => false,
+              );
 
         final grid = LayoutBuilder(
           builder: (context, constraints) {
@@ -130,9 +141,15 @@ class DashboardPage extends ConsumerWidget {
                     child: Column(
                       children: [
                         if (showReadingsSection) ...[
-                          const UsageStatsWidget(),
-                          const SizedBox(height: AppTheme.spacing16),
-                          const ConsumptionChartWidget(),
+                          if (meterDataSource == MeterDataSource.ami) ...[
+                            const AmiUsageStatsWidget(),
+                            const SizedBox(height: AppTheme.spacing16),
+                            const AmiConsumptionChartWidget(),
+                          ] else ...[
+                            const UsageStatsWidget(),
+                            const SizedBox(height: AppTheme.spacing16),
+                            const ConsumptionChartWidget(),
+                          ],
                           const SizedBox(height: AppTheme.spacing16),
                         ],
                         const AccountDetailsWidget(),
@@ -150,9 +167,15 @@ class DashboardPage extends ConsumerWidget {
                 const GamificationCardWidget(),
                 const SizedBox(height: AppTheme.spacing16),
                 if (showReadingsSection) ...[
-                  const UsageStatsWidget(),
-                  const SizedBox(height: AppTheme.spacing16),
-                  const ConsumptionChartWidget(),
+                  if (meterDataSource == MeterDataSource.ami) ...[
+                    const AmiUsageStatsWidget(),
+                    const SizedBox(height: AppTheme.spacing16),
+                    const AmiConsumptionChartWidget(),
+                  ] else ...[
+                    const UsageStatsWidget(),
+                    const SizedBox(height: AppTheme.spacing16),
+                    const ConsumptionChartWidget(),
+                  ],
                   const SizedBox(height: AppTheme.spacing16),
                 ],
                 const AccountDetailsWidget(),

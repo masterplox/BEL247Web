@@ -32,7 +32,8 @@ class DeepLinkingService {
       
       // Update navigation state if needed
       final navigationNotifier = ref.read(navigationNotifierProvider);
-      navigationNotifier.navigateToRoute(path);
+      final items = ref.read(navigationItemsProvider);
+      navigationNotifier.navigateToRoute(path, items);
       
       // Navigate to the route
       if (allParams.isNotEmpty) {
@@ -133,6 +134,7 @@ class DeepLinkingService {
       '/dashboard',
       '/bills',
       '/usage',
+      '/ami-usage',
       '/daily-bill',
       '/login',
     ];

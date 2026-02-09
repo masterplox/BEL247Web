@@ -33,7 +33,8 @@ class ResponsiveNavigation extends ConsumerWidget {
       
       // Sync navigation state with current route (only updates if route changed)
       final currentLocation = GoRouterState.of(context).matchedLocation;
-      navigationNotifier.navigateToRoute(currentLocation);
+      final items = ref.read(navigationItemsProvider);
+      navigationNotifier.navigateToRoute(currentLocation, items);
     });
 
     if (navigation.shouldShowSidebar) {
@@ -222,7 +223,7 @@ class _SidebarHeader extends StatelessWidget {
 }
 
 /// Sidebar menu items
-class _SidebarMenu extends StatelessWidget {
+class _SidebarMenu extends ConsumerWidget {
   const _SidebarMenu({
     required this.navigation,
     required this.navigationNotifier,
@@ -232,11 +233,13 @@ class _SidebarMenu extends StatelessWidget {
   final NavigationNotifier navigationNotifier;
 
   @override
-  Widget build(BuildContext context) => ListView.builder(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(navigationItemsProvider);
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
-      itemCount: NavigationConfig.items.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final item = NavigationConfig.items[index];
+        final item = items[index];
         final isSelected = navigation.selectedIndex == index;
 
         return SidebarNavItem(
@@ -253,6 +256,7 @@ class _SidebarMenu extends StatelessWidget {
         );
       },
     );
+  }
 }
 
 /// Sidebar footer
@@ -374,7 +378,7 @@ class _SidebarFooter extends ConsumerWidget {
 }
 
 /// Bottom navigation bar
-class _BottomNavigationBar extends StatelessWidget {
+class _BottomNavigationBar extends ConsumerWidget {
   const _BottomNavigationBar({
     required this.navigation,
     required this.navigationNotifier,
@@ -384,7 +388,9 @@ class _BottomNavigationBar extends StatelessWidget {
   final NavigationNotifier navigationNotifier;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(navigationItemsProvider);
+    return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(
@@ -400,7 +406,7 @@ class _BottomNavigationBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: NavigationConfig.bottomNavItems.asMap().entries.map((entry) {
+            children: items.asMap().entries.map((entry) {
               final index = entry.key;
               final item = entry.value;
               final isSelected = navigation.selectedIndex == index;
@@ -477,4 +483,5 @@ class _BottomNavigationBar extends StatelessWidget {
         ),
       ),
     );
+  }
 }
