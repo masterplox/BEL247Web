@@ -63,6 +63,18 @@ class ApiEndpoints {
   /// Query: None
   static String get connectedAccounts => '/CustomerAccounts/V4/PreferredCustomerAccounts';
 
+  /// Deliver activation code for Premium Access (full account access)
+  /// POST /CustomerAccounts/V5/FullAccess/ActivationCode
+  /// Auth: Yes (1)
+  /// Body: { CustomerNumber, AccountNumber, MobileNumber or Email }
+  static String get fullAccessActivationCode => '/CustomerAccounts/V5/FullAccess/ActivationCode';
+
+  /// Activate Premium Access using code
+  /// POST /CustomerAccounts/V5/FullAccess/Activate
+  /// Auth: Yes (1)
+  /// Body: { UserId, Code, CustomerNumber, AccountNumber, MobileNumber or Email }
+  static String get fullAccessActivate => '/CustomerAccounts/V5/FullAccess/Activate';
+
   /// Get customer account information
   /// GET /CustomerAccounts/V3/Detail
   /// Auth: Yes (1)
@@ -91,6 +103,18 @@ class ApiEndpoints {
   /// Path: billNumber, customerNumber
   static String billDownloadUrl(String billNumber, String customerNumber, String accountNumber) => 
       '/Bills/V1/Url/PDFString/$billNumber/$customerNumber/$accountNumber';
+
+  /// Deliver activation code for bill download access
+  /// POST /Bills/V5/BillDownloadActivationCode
+  /// Auth: Yes (1)
+  /// Body: { BillNumber }
+  static String get billDownloadActivationCode => '/Bills/V5/BillDownloadActivationCode';
+
+  /// Validate activation code for bill download access
+  /// POST /Bills/V5/BillDownloadAuthenticationCode
+  /// Auth: Yes (1)
+  /// Body: { Code, BillNumber }
+  static String get billDownloadAuthenticationCode => '/Bills/V5/BillDownloadAuthenticationCode';
 
   // ============================================================================
   // Payment/Transaction Endpoints

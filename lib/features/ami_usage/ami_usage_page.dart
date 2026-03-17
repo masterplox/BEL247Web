@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,7 +9,7 @@ import '../../data/models/api_response_dtos.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import 'ami_usage_date_limits.dart';
-import 'state/ami_usage_providers.dart';
+import 'state/ami_usage_providers.dart' show amiDailyIntervalsProvider, amiDailyRangeProvider, amiMonthlyTotalsProvider, amiTouRangeDataProvider, DayTou;
 import 'widgets/ami_day_chart.dart';
 import 'widgets/ami_detail_cards.dart'
     show AmiDetail, AmiDetailCard, HourlyDetail, DayDetail, MonthDetail;
@@ -32,11 +30,15 @@ class AmiUsagePage extends ConsumerStatefulWidget {
 
 class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   FilterType _filterType = FilterType.day;
-  DateTime _currentDate = DateTime.now();
+  // Independent anchor dates per filter so changing one does not affect others.
+  DateTime _dayDate = AmiUsageDateLimits.lastSelectableDate;
+  DateTime _weekDate = AmiUsageDateLimits.lastSelectableDate;
+  DateTime _monthDate = DateTime.now();
+  DateTime _yearDate = DateTime.now();
   int? _selectedIndex;
   ViewMode _viewMode = ViewMode.kwh;
 
-  /// User-selected week range (any span up to 7 days). Null = use getWeekRange(_currentDate).
+  /// User-selected week range (any span up to 7 days). Null = use getWeekRange(_weekDate).
   DateTime? _weekRangeStart;
   DateTime? _weekRangeEnd;
 
@@ -49,7 +51,20 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
   void _handleDateChange(DateTime date) {
     setState(() {
-      _currentDate = date;
+      switch (_filterType) {
+        case FilterType.day:
+          _dayDate = date;
+          break;
+        case FilterType.week:
+          _weekDate = date;
+          break;
+        case FilterType.month:
+          _monthDate = date;
+          break;
+        case FilterType.year:
+          _yearDate = date;
+          break;
+      }
       _selectedIndex = null;
       if (_filterType == FilterType.week) {
         final startDay = DateTime(date.year, date.month, date.day);
@@ -70,17 +85,17 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     setState(() {
       _weekRangeStart = startDay;
       _weekRangeEnd = endDay;
-      _currentDate = startDay;
+      _weekDate = startDay;
       _selectedIndex = null;
     });
   }
 
-  /// Current week range for display and data: user selection or default week containing _currentDate.
+  /// Current week range for display and data: user selection or default week containing _weekDate.
   ({DateTime start, DateTime end}) _getWeekRange() {
     if (_weekRangeStart != null && _weekRangeEnd != null) {
       return (start: _weekRangeStart!, end: _weekRangeEnd!);
     }
-    final r = getWeekRange(_currentDate);
+    final r = getWeekRange(_weekDate);
     return (start: r.start, end: r.end);
   }
 
@@ -150,6 +165,31 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     // Watch the appropriate provider based on filter type
     final dataAsync = _watchDataProvider(meterId);
 
+    // For week/month: fetch TOU breakdown for stacked chart and consumption section
+    DateTime? rangeStart;
+    DateTime? rangeEnd;
+    if (_filterType == FilterType.week) {
+      final r = _getWeekRange();
+      rangeStart = r.start;
+      rangeEnd = r.end;
+    } else if (_filterType == FilterType.month) {
+      final r = getMonthRange(_monthDate);
+      rangeStart = r.start;
+      rangeEnd = r.end;
+    }
+    final touRangeAsync = (rangeStart != null && rangeEnd != null)
+        ? ref.watch(amiTouRangeDataProvider((
+            meterId: meterId,
+            startDate: rangeStart,
+            endDate: rangeEnd,
+          )))
+        : null;
+    final touTotal = touRangeAsync?.whenOrNull(data: (v) => v.total);
+    final touPerDay = touRangeAsync?.whenOrNull(data: (v) => v.perDay) ?? const <DayTou>[];
+    // TOU is considered "loading" for the UI when we expect a range (week/month)
+    // but the async value has not yet produced data for total consumption.
+    final isTouLoading = (rangeStart != null && rangeEnd != null) && touTotal == null;
+
     return Scaffold(
       // appBar: AppBar(
       //   title: const Text('Smart Meter Data'),
@@ -194,7 +234,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                     AmiFilterControls(
                       filterType: _filterType,
                       onFilterChange: _handleFilterChange,
-                      currentDate: _currentDate,
+                      currentDate: _currentFilterDate,
                       onDateChange: _handleDateChange,
                       dateLabel: data.dateLabel,
                       lastSelectableDate: AmiUsageDateLimits.lastSelectableDate,
@@ -210,13 +250,31 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
                     // Summary Cards
                     AmiSummaryCards(
-                      totalKWh: data.stats.totalKWh,
-                      estimatedCost: data.stats.estimatedCost,
-                      peakKWh: data.stats.peakKWh,
-                      peakTime: _filterType == FilterType.day
-                          ? (data.stats as HourlyStats).peakTime
-                          : (data.stats as DailyStats).peakDate,
-                      avgKWh: data.stats.avgKWh,
+                      totalKWh: _getSummaryTotalKwh(
+                        data.stats,
+                        filterType: _filterType,
+                        touPerDay: touPerDay,
+                      ),
+                      estimatedCost: _getSummaryEstimatedCost(
+                        data.stats,
+                        filterType: _filterType,
+                        touPerDay: touPerDay,
+                      ),
+                      peakKWh: _getSummaryPeakKwh(
+                        data.stats,
+                        filterType: _filterType,
+                        touPerDay: touPerDay,
+                      ),
+                      peakTime: _getSummaryPeakLabel(
+                        data.stats,
+                        filterType: _filterType,
+                        touPerDay: touPerDay,
+                      ),
+                      avgKWh: _getSummaryAvgKwh(
+                        data.stats,
+                        filterType: _filterType,
+                        touPerDay: touPerDay,
+                      ),
                       filterType: _filterType,
                     ),
                     const SizedBox(height: AppTheme.spacing20),
@@ -303,6 +361,8 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                               });
                             },
                             viewMode: _viewMode,
+                            touPerDay: touPerDay.isNotEmpty ? touPerDay : null,
+                            showLoading: isTouLoading,
                           ),
                       ],
                     ),
@@ -318,6 +378,18 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                           });
                         },
                       ),
+                    // Time of Use Consumption (day: from hourlyData; week/month: from provider)
+                    if (_filterType != FilterType.year) ...[
+                      const SizedBox(height: AppTheme.spacing20),
+                      _buildTimeOfUseSection(
+                        context,
+                        filterType: _filterType,
+                        dayTou: _filterType == FilterType.day
+                            ? computeTouFromHourly(data.hourlyData)
+                            : null,
+                        rangeTou: touTotal,
+                      ),
+                    ],
                   ],
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -330,12 +402,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                   ),
                 ),
               ),
-
-              // Time of Use Info (Day view only)
-              if (_filterType == FilterType.day) ...[
-                const SizedBox(height: AppTheme.spacing20),
-                _buildTimeOfUseInfo(context),
-              ],
             ],
           ),
         ),
@@ -388,7 +454,13 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     );
   }
 
-  Widget _buildTimeOfUseInfo(BuildContext context) {
+  Widget _buildTimeOfUseSection(
+    BuildContext context, {
+    required FilterType filterType,
+    TouConsumption? dayTou,
+    TouConsumption? rangeTou,
+  }) {
+    final tou = dayTou ?? rangeTou;
     final isMobile = MediaQuery.of(context).size.width < AppTheme.tabletBreakpoint;
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacing16),
@@ -401,13 +473,18 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Time of Use Rates',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            'Time of Use Consumption',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: AppTheme.spacing12),
-          if (isMobile)
+          if (tou == null)
+            const Padding(
+              padding: EdgeInsets.all(AppTheme.spacing12),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (isMobile)
             Column(
               children: [
                 _buildTimeOfUsePeriod(
@@ -415,7 +492,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                   'Off-Peak',
                   '12:00 AM - 10:00 AM',
                   AppColors.primary,
-                  _randomCentsForLabel('Off-Peak'),
+                  tou.offPeakKwh,
                 ),
                 const SizedBox(height: AppTheme.spacing12),
                 _buildTimeOfUsePeriod(
@@ -423,7 +500,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                   'Peak',
                   '11:00 AM - 8:00 PM',
                   AppColors.chart4,
-                  _randomCentsForLabel('Peak'),
+                  tou.peakKwh,
                 ),
                 const SizedBox(height: AppTheme.spacing12),
                 _buildTimeOfUsePeriod(
@@ -431,7 +508,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                   'Mid-Peak',
                   '9:00 PM - 11:00 PM',
                   AppColors.chart3,
-                  _randomCentsForLabel('Mid-Peak'),
+                  tou.midPeakKwh,
                 ),
               ],
             )
@@ -444,7 +521,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                     'Off-Peak',
                     '12:00 AM - 10:00 AM',
                     AppColors.primary,
-                    _randomCentsForLabel('Off-Peak'),
+                    tou.offPeakKwh,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spacing12),
@@ -454,7 +531,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                     'Peak',
                     '11:00 AM - 8:00 PM',
                     AppColors.chart4,
-                    _randomCentsForLabel('Peak'),
+                    tou.peakKwh,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spacing12),
@@ -464,7 +541,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                     'Mid-Peak',
                     '9:00 PM - 11:00 PM',
                     AppColors.chart3,
-                    _randomCentsForLabel('Mid-Peak'),
+                    tou.midPeakKwh,
                   ),
                 ),
               ],
@@ -474,64 +551,60 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     );
   }
 
-  /// Stable "random" cent price per label (8–25¢) for display.
-  double _randomCentsForLabel(String label) {
-    final r = Random(label.hashCode);
-    return (8 + r.nextInt(50)) + (r.nextInt(50) / 5.0); // 8.0–25.9
-  }
-
   Widget _buildTimeOfUsePeriod(
     BuildContext context,
     String label,
     String time,
     Color color,
-    double centsPerKwh,
-  ) => Container(
-    padding: const EdgeInsets.all(AppTheme.spacing12),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: color.withOpacity(0.2)),
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    double kwh,
+  ) =>
+      Container(
+        padding: const EdgeInsets.all(AppTheme.spacing12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.2)),
         ),
-        const SizedBox(width: AppTheme.spacing12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        child: Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: AppTheme.spacing12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    time,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
+                ],
               ),
-              Text(
-                time,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
+            ),
+            Text(
+              '${kwh.toStringAsFixed(1)} kWh',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                  ),
+            ),
+          ],
         ),
-        Text(
-          '${centsPerKwh.toStringAsFixed(1)}¢',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
-              ),
-        ),
-      ],
-    ),
-  );
+      );
 
   String _getChartTitle() {
     switch (_filterType) {
@@ -543,6 +616,154 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       case FilterType.year:
         return 'MONTHLY CONSUMPTION (kWh)';
     }
+  }
+
+  /// Current anchor date for the active filter, used by the shared date picker.
+  DateTime get _currentFilterDate {
+    switch (_filterType) {
+      case FilterType.day:
+        return _dayDate;
+      case FilterType.week:
+        // Use the start of the current week range as the anchor.
+        return _getWeekRange().start;
+      case FilterType.month:
+        return _monthDate;
+      case FilterType.year:
+        return _yearDate;
+    }
+  }
+
+  // ---- Summary helpers ------------------------------------------------------
+
+  double _getSummaryTotalKwh(
+    dynamic stats, {
+    required FilterType filterType,
+    required List<DayTou> touPerDay,
+  }) {
+    if (filterType == FilterType.day) {
+      return (stats as HourlyStats).totalKWh;
+    }
+    final dailyStats = stats as DailyStats;
+    if ((filterType == FilterType.week || filterType == FilterType.month) &&
+        dailyStats.totalKWh == 0 &&
+        touPerDay.isNotEmpty) {
+      final totals = touPerDay
+          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
+          .toList();
+      final total = totals.fold<double>(0, (a, b) => a + b);
+      return double.parse(total.toStringAsFixed(2));
+    }
+    return dailyStats.totalKWh;
+  }
+
+  double _getSummaryEstimatedCost(
+    dynamic stats, {
+    required FilterType filterType,
+    required List<DayTou> touPerDay,
+  }) {
+    if (filterType == FilterType.day) {
+      return (stats as HourlyStats).estimatedCost;
+    }
+    final dailyStats = stats as DailyStats;
+    if ((filterType == FilterType.week || filterType == FilterType.month) &&
+        dailyStats.totalKWh == 0 &&
+        touPerDay.isNotEmpty) {
+      final totalKwh = _getSummaryTotalKwh(
+        stats,
+        filterType: filterType,
+        touPerDay: touPerDay,
+      );
+      final cost = totalKwh * ratePerKwh;
+      return double.parse(cost.toStringAsFixed(2));
+    }
+    return dailyStats.estimatedCost;
+  }
+
+  double _getSummaryAvgKwh(
+    dynamic stats, {
+    required FilterType filterType,
+    required List<DayTou> touPerDay,
+  }) {
+    if (filterType == FilterType.day) {
+      return (stats as HourlyStats).avgKWh;
+    }
+    final dailyStats = stats as DailyStats;
+    if ((filterType == FilterType.week || filterType == FilterType.month) &&
+        dailyStats.totalKWh == 0 &&
+        touPerDay.isNotEmpty) {
+      final totals = touPerDay
+          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
+          .toList();
+      if (totals.isEmpty) return 0;
+      final total = totals.fold<double>(0, (a, b) => a + b);
+      final avg = total / totals.length;
+      return double.parse(avg.toStringAsFixed(2));
+    }
+    return dailyStats.avgKWh;
+  }
+
+  double _getSummaryPeakKwh(
+    dynamic stats, {
+    required FilterType filterType,
+    required List<DayTou> touPerDay,
+  }) {
+    if (filterType == FilterType.day) {
+      return (stats as HourlyStats).peakKWh;
+    }
+    final dailyStats = stats as DailyStats;
+    if ((filterType == FilterType.week || filterType == FilterType.month) &&
+        dailyStats.totalKWh == 0 &&
+        touPerDay.isNotEmpty) {
+      final totals = touPerDay
+          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
+          .toList();
+      if (totals.isEmpty) return 0;
+      final peak = totals.reduce((a, b) => a > b ? a : b);
+      return double.parse(peak.toStringAsFixed(2));
+    }
+    return dailyStats.peakKWh;
+  }
+
+  String _getSummaryPeakLabel(
+    dynamic stats, {
+    required FilterType filterType,
+    required List<DayTou> touPerDay,
+  }) {
+    if (filterType == FilterType.day) {
+      return (stats as HourlyStats).peakTime;
+    }
+    final dailyStats = stats as DailyStats;
+    if ((filterType == FilterType.week || filterType == FilterType.month) &&
+        dailyStats.totalKWh == 0 &&
+        touPerDay.isNotEmpty) {
+      final totals = touPerDay
+          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
+          .toList();
+      if (totals.isEmpty) return '-';
+      final peak = totals.reduce((a, b) => a > b ? a : b);
+      final peakIndex = totals.indexOf(peak);
+      final peakDate = touPerDay[peakIndex].date;
+      return _formatShortDateForSummary(peakDate);
+    }
+    return dailyStats.peakDate;
+  }
+
+  String _formatShortDateForSummary(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}';
   }
 
   /// Transform IntervalUsageEntryDto to IntervalReading
@@ -592,7 +813,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
     if (_filterType == FilterType.day) {
       final intervalsAsync = ref.watch(
-        amiDailyIntervalsProvider((meterId: meterId, targetDate: _currentDate)),
+        amiDailyIntervalsProvider((meterId: meterId, targetDate: _dayDate)),
       );
 
       return intervalsAsync.when(
@@ -600,7 +821,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           // If the API returns no intervals, treat this as "no data" for day view.
           // This prevents charts/summary from showing misleading 0-values and avoids edge cases.
           if (intervals.isEmpty) {
-            final dateLabel = _formatDateLong(_currentDate);
+            final dateLabel = _formatDateLong(_dayDate);
             final stats = calculateHourlyStats(const <HourlyData>[]);
             return AsyncValue.data((
               dailyData: <DailyReading>[],
@@ -615,7 +836,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           final intervalData = intervals.map(_dtoToIntervalReading).toList();
           final hourlyData = aggregateToHourly(intervalData);
           final stats = calculateHourlyStats(hourlyData);
-          final dateLabel = _formatDateLong(_currentDate);
+          final dateLabel = _formatDateLong(_dayDate);
 
           HourlyDetail? selectedDetail;
           if (_selectedIndex != null && _selectedIndex! < hourlyData.length) {
@@ -698,7 +919,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     }
 
     if (_filterType == FilterType.month) {
-      final monthRange = getMonthRange(_currentDate);
+      final monthRange = getMonthRange(_monthDate);
       final dailyAsync = ref.watch(
         amiDailyRangeProvider((
           meterId: meterId,
@@ -714,7 +935,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
               .map((dto) => _dtoToDailyReading(dto, meterIdStr))
               .toList();
           final stats = calculateDailyStats(dailyData);
-          final dateLabel = _formatMonthYear(_currentDate);
+          final dateLabel = _formatMonthYear(_monthDate);
 
           DayDetail? selectedDetail;
           if (_selectedIndex != null && _selectedIndex! < dailyData.length) {
@@ -743,7 +964,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
     // Year view - use MonthlyTotals endpoint
     final monthlyAsync = ref.watch(
-      amiMonthlyTotalsProvider((meterId: meterId, year: _currentDate.year)),
+      amiMonthlyTotalsProvider((meterId: meterId, year: _yearDate.year)),
     );
 
     return monthlyAsync.when(
@@ -761,7 +982,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             dailyData: <DailyReading>[],
             hourlyData: <HourlyData>[],
             stats: stats,
-            dateLabel: _currentDate.year.toString(),
+            dateLabel: _yearDate.year.toString(),
             selectedDetail: null,
           ));
         }
@@ -808,25 +1029,25 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           peakDate: monthNames[peakMonth.key],
         );
 
-        MonthDetail? selectedDetail;
-        if (_selectedIndex != null && _selectedIndex! < monthlyData.length) {
-          final monthIndex = _selectedIndex!;
-          final monthDto = monthlyUsages.firstWhere(
-            (dto) => dto.month - 1 == monthIndex,
-            orElse: () => monthlyUsages.first,
-          );
-          selectedDetail = MonthDetail(
-            month: monthNames[monthIndex],
-            year: _currentDate.year,
-            kWh: monthDto.monthlyUsageKwh,
-          );
-        }
+          MonthDetail? selectedDetail;
+          if (_selectedIndex != null && _selectedIndex! < monthlyData.length) {
+            final monthIndex = _selectedIndex!;
+            final monthDto = monthlyUsages.firstWhere(
+              (dto) => dto.month - 1 == monthIndex,
+              orElse: () => monthlyUsages.first,
+            );
+            selectedDetail = MonthDetail(
+              month: monthNames[monthIndex],
+              year: _yearDate.year,
+              kWh: monthDto.monthlyUsageKwh,
+            );
+          }
 
         return AsyncValue.data((
           dailyData: monthlyData,
           hourlyData: [],
           stats: stats,
-          dateLabel: _currentDate.year.toString(),
+          dateLabel: _yearDate.year.toString(),
           selectedDetail: selectedDetail,
         ));
       },
@@ -859,7 +1080,9 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       'November',
       'December',
     ];
-    return '${weekdays[date.weekday % 7]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
+    // Dart's DateTime.weekday is 1 (Monday) to 7 (Sunday),
+    // so map directly with index = weekday - 1.
+    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   String _formatMonthYear(DateTime date) {

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/account_access_activation_dialog.dart';
+import '../../../core/providers/account_verification_providers.dart';
 import '../../../data/models/api_response_dtos.dart';
 import '../../../features/bills/state/bills_providers.dart';
 import '../../../theme/app_theme.dart';
@@ -42,7 +44,7 @@ class AccountDetailsWidget extends ConsumerWidget {
                         ),
                   ),
                   TextButton(
-                    onPressed: () => _showFullDetailsDialog(context, accountDetails),
+                    onPressed: () => _handleViewAllPressed(context, ref, accountDetails),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing8),
                       minimumSize: const Size(0, 28),
@@ -206,9 +208,31 @@ class AccountDetailsWidget extends ConsumerWidget {
     );
   }
 
-  void _showFullDetailsDialog(BuildContext context, EditableCustomerAccountDto accountDetails) {
-    final creditStatus = _getCreditStatus(accountDetails.collectionStatus ?? '');
+  Future<void> _handleViewAllPressed(
+    BuildContext context,
+    WidgetRef ref,
+    EditableCustomerAccountDto accountDetails,
+  ) async {
+    var isVerified =
+        await ref.read(accountVerificationStatusProvider.future);
 
+    if (!isVerified) {
+      final result = await showFullAccessActivationDialog(context);
+      if (result == true) {
+        // Re-check verification status after the flow completes.
+        isVerified =
+            await ref.refresh(accountVerificationStatusProvider.future);
+      }
+    }
+
+    if (!isVerified) {
+      return;
+    }
+
+    _showFullDetailsDialog(context, accountDetails);
+  }
+
+  void _showFullDetailsDialog(BuildContext context, EditableCustomerAccountDto accountDetails) {
     AppDialog.showCenter(
       context: context,
       title: 'Account Details',
@@ -286,27 +310,6 @@ class AccountDetailsWidget extends ConsumerWidget {
         ],
       ),
     );
-
-  String _getCreditStatus(String collectionStatus) {
-    final status = collectionStatus.toLowerCase();
-    if (status.contains('poor')) {
-      return 'destructive';
-    } else if (status.contains('good')) {
-      return 'primary';
-    } else {
-      return 'warning';
-    }
-  }
-
-  String _formatCreditStatus(String collectionStatus) {
-    if (collectionStatus.toUpperCase().contains('POOR')) {
-      return 'Poor';
-    } else if (collectionStatus.toUpperCase().contains('GOOD')) {
-      return 'Good';
-    } else {
-      return 'Fair';
-    }
-  }
 
   String _formatAddress(
     String? street,

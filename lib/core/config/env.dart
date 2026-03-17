@@ -19,21 +19,11 @@ class EnvConfig {
     return value;
   }
 
-  /// Global flag to determine if the app should use mock APIs.
-  /// Empty or not set = false (use real API) so production/deployed builds work when USE_MOCK isn't passed at build time.
-  static bool get useMockApi {
-    const value = String.fromEnvironment('USE_MOCK', defaultValue: '');
-    if (value.isEmpty) return false;
-    return value.toLowerCase() == 'true';
-  }
+  /// Mock flags are hard-disabled – app always uses real APIs now.
+  static bool get useMockApi => false;
 
-  /// Feature-specific flag to control AMI (smart meter) usage mock data.
-  /// Controlled via --dart-define=USE_AMI_MOCK=true/false. Empty = false.
-  static bool get useMockAmiUsage {
-    const value = String.fromEnvironment('USE_AMI_MOCK', defaultValue: '');
-    if (value.isEmpty) return false;
-    return value.toLowerCase() == 'true';
-  }
+  /// AMI mock flag is also hard-disabled – AMI always uses live APIs.
+  static bool get useMockAmiUsage => false;
 
   static String get encryptionKey {
     const key = String.fromEnvironment('ENCRYPTION_KEY');
@@ -73,5 +63,5 @@ class EnvConfig {
   static bool get isStaging => environment == 'staging';
 
   /// Effective API base URL: runtime override (e.g. from Render env) if set, else compile-time config.
-  static String get currentApiUrl => useMockApi ? mockApiBaseUrl : apiBaseUrl;
+  static String get currentApiUrl => apiBaseUrl;
 }

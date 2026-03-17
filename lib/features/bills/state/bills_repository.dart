@@ -322,6 +322,94 @@ class BillsRepository {
     }
   }
 
+  /// Request an activation code for bill download access.
+  ///
+  /// POST /Bills/V5/BillDownloadActivationCode
+  /// For activation code requests, the code itself is returned in the
+  /// `message` field.
+  Future<BaseApiResponseDto> requestBillDownloadActivationCode({
+    required String billNumber,
+  }) async {
+    try {
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.billDownloadActivationCode,
+        data: {
+          'BillNumber': billNumber,
+        },
+        authenticated: true,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return BaseApiResponseDto.fromJson(response.data!);
+      }
+
+      Logger.warning(
+        'Bill download activationCode request failed. Status: ${response.statusCode}',
+        tag: 'BillsRepository',
+      );
+      return BaseApiResponseDto(
+        status: response.statusCode ?? 500,
+        message: 'Failed to send activation code.',
+      );
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error requesting bill download activation code',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BillsRepository',
+      );
+      return const BaseApiResponseDto(
+        status: 500,
+        message: 'Unexpected error while sending activation code.',
+      );
+    }
+  }
+
+  /// Validate bill download activation code.
+  ///
+  /// POST /Bills/V5/BillDownloadAuthenticationCode
+  /// For activation, the human-readable result is returned in the `message`
+  /// field.
+  Future<BaseApiResponseDto> validateBillDownloadActivationCode({
+    required String billNumber,
+    required String code,
+  }) async {
+    try {
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.billDownloadAuthenticationCode,
+        data: {
+          'BillNumber': billNumber,
+          'Code': code,
+        },
+        authenticated: true,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return BaseApiResponseDto.fromJson(response.data!);
+      }
+
+      Logger.warning(
+        'Bill download authenticationCode request failed. Status: ${response.statusCode}',
+        tag: 'BillsRepository',
+      );
+      return BaseApiResponseDto(
+        status: response.statusCode ?? 500,
+        message: 'Failed to verify activation code.',
+      );
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error validating bill download activation code',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BillsRepository',
+      );
+      return const BaseApiResponseDto(
+        status: 500,
+        message: 'Unexpected error while verifying activation code.',
+      );
+    }
+  }
+
   /// Extract payment method from transaction description
   /// Example: "Payment - Cash (B)" -> "Cash"
   String _extractPaymentMethod(String description) {

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers/feature_providers.dart';
+import '../../../core/providers/account_verification_providers.dart';
 import '../../../core/services/download_service.dart';
+import '../../../core/widgets/account_access_activation_dialog.dart';
 import '../../../core/utils/formatting_utils.dart';
 import '../../../core/utils/widget_builder_utils.dart';
 import '../../../core/widgets/app_empty_state.dart';
@@ -73,8 +75,8 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
   @override
   void initState() {
     super.initState();
-    // Set default to current year/month
-    final now = DateTime.now();
+    // Set default to current year/month (left commented out intentionally)
+    // final now = DateTime.now();
     // _selectedYear = now.year;
     // _selectedMonth = now.month;
   }
@@ -978,6 +980,42 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     print('[AccountLedgerWidget] Is Payment: ${entry.isPayment}');
     print('[AccountLedgerWidget] ========================================');
     
+    var isVerified =
+        await ref.read(accountVerificationStatusProvider.future);
+
+    if (!isVerified) {
+      final result = await showFullAccessActivationDialog(context);
+      if (result == true) {
+        isVerified =
+            await ref.refresh(accountVerificationStatusProvider.future);
+      }
+    }
+
+    if (!isVerified) {
+      return;
+    }
+
+    var hasBillDownloadAccess =
+        await ref.read(billDownloadAccessStatusProvider.future);
+
+    if (!entry.isPayment) {
+      final bill = entry.bill;
+      final billNumber = bill?.billNumber ?? entry.subDescription ?? '';
+      if (billNumber.isNotEmpty && !hasBillDownloadAccess) {
+        final activationResult = await showBillDownloadActivationDialog(
+          context,
+          billNumber: billNumber,
+        );
+        if (activationResult == true) {
+          hasBillDownloadAccess =
+              await ref.refresh(billDownloadAccessStatusProvider.future);
+        }
+      }
+      if (!hasBillDownloadAccess) {
+        return;
+      }
+    }
+
     final accountState = ref.read(accountSwitcherProvider);
     final activeAccount = accountState.activeAccount;
     

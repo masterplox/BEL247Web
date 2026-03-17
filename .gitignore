@@ -16,6 +16,7 @@ build/
 
 # Environment variables
 .env
+env_defines.json
 
 # Editor directories and files
 .idea

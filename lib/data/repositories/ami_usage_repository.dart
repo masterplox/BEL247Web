@@ -175,6 +175,27 @@ class AmiUsageRepository {
     }
   }
 
+  /// Fetch interval data for a date range (one API call per day).
+  /// Used for week/month TOU consumption and stacked bar chart.
+  Future<List<IntervalUsageEntryDto>> fetchIntervalsForRange({
+    required int meterId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final results = <IntervalUsageEntryDto>[];
+    var current = DateTime(startDate.year, startDate.month, startDate.day);
+    final end = DateTime(endDate.year, endDate.month, endDate.day);
+    while (!current.isAfter(end)) {
+      final dayIntervals = await fetchDailyIntervals(
+        meterId: meterId,
+        targetDate: current,
+      );
+      results.addAll(dayIntervals);
+      current = current.add(const Duration(days: 1));
+    }
+    return results;
+  }
+
   /// Fetch monthly totals for a year
   /// GET /V1/MeterUsage/MonthlyTotals?meterId={meterId}&year={year}
   /// 

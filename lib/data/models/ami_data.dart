@@ -235,6 +235,50 @@ TimeOfUsePeriod getTimeOfUsePeriod(int hour) {
   return TimeOfUse.midPeak;
 }
 
+/// Result of TOU aggregation (kWh per period)
+class TouConsumption {
+  const TouConsumption({
+    required this.offPeakKwh,
+    required this.peakKwh,
+    required this.midPeakKwh,
+  });
+  final double offPeakKwh;
+  final double peakKwh;
+  final double midPeakKwh;
+}
+
+/// Compute cumulative TOU consumption from hourly data
+TouConsumption computeTouFromHourly(List<HourlyData> hourlyData) {
+  double off = 0, peak = 0, mid = 0;
+  for (final h in hourlyData) {
+    final period = getTimeOfUsePeriod(h.hour);
+    if (period == TimeOfUse.offPeak) off += h.kWh;
+    else if (period == TimeOfUse.peak) peak += h.kWh;
+    else mid += h.kWh;
+  }
+  return TouConsumption(
+    offPeakKwh: off,
+    peakKwh: peak,
+    midPeakKwh: mid,
+  );
+}
+
+/// Compute cumulative TOU from (hour, kWh) pairs (e.g. from interval data)
+TouConsumption computeTouFromHourKwh(List<(int hour, double kwh)> pairs) {
+  double off = 0, peak = 0, mid = 0;
+  for (final p in pairs) {
+    final period = getTimeOfUsePeriod(p.$1);
+    if (period == TimeOfUse.offPeak) off += p.$2;
+    else if (period == TimeOfUse.peak) peak += p.$2;
+    else mid += p.$2;
+  }
+  return TouConsumption(
+    offPeakKwh: off,
+    peakKwh: peak,
+    midPeakKwh: mid,
+  );
+}
+
 /// Calculate statistics for hourly data
 HourlyStats calculateHourlyStats(List<HourlyData> hourlyData) {
   if (hourlyData.isEmpty) {

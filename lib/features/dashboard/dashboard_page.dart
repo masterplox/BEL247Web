@@ -12,6 +12,7 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
 import 'state/ami_dashboard_usage_providers.dart';
 import 'widgets/account_details_widget.dart';
+import 'widgets/account_verification_banner.dart';
 import 'widgets/ami_consumption_chart_widget.dart';
 import 'widgets/ami_usage_stats_widget.dart';
 import 'widgets/balance_card_widget.dart';
@@ -192,7 +193,9 @@ class DashboardPage extends ConsumerWidget {
             children: [
               // Keep the richer, responsive header instead of the simple title
               header,
-              const SizedBox(height: AppTheme.spacing20),
+              const SizedBox(height: AppTheme.spacing12),
+              const AccountVerificationBanner(),
+              const SizedBox(height: AppTheme.spacing8),
               grid,
               const SizedBox(height: AppTheme.spacing24),
             ],

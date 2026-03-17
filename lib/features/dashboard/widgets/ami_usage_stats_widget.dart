@@ -174,7 +174,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         ],
       },
       {
-        'label': 'Peak Month (${stats.peakMonthLabel})',
+        'label': 'Peak Month (Trailing ${stats.peakMonthLabel})',
         'value': stats.peakMonthKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.local_fire_department,
@@ -182,7 +182,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         'bgColor': AppColors.warning,
         'detailTitle': 'Peak Usage Month (AMI)',
         'detailItems': [
-          {'label': 'Month', 'value': stats.peakMonthLabel},
+          {'label': 'Month', 'value': 'Trailing ${stats.peakMonthLabel}'},
           {'label': 'Consumption', 'value': '${stats.peakMonthKwh.toStringAsFixed(2)} kWh'},
           {'label': 'Est. Cost', 'value': r'BZ$' + (stats.peakMonthKwh * ratePerKwh).toStringAsFixed(2)},
         ],

@@ -6,6 +6,7 @@ import '../../../data/models/ami_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
 import '../ami_usage_page.dart';
+import '../state/ami_usage_providers.dart' show DayTou;
 
 class AmiPeriodChart extends StatelessWidget {
   const AmiPeriodChart({
@@ -15,6 +16,8 @@ class AmiPeriodChart extends StatelessWidget {
     this.selectedIndex,
     required this.onSelectIndex,
     required this.viewMode,
+    this.touPerDay,
+    this.showLoading = false,
   });
 
   final List<DailyReading> data;
@@ -22,10 +25,43 @@ class AmiPeriodChart extends StatelessWidget {
   final int? selectedIndex;
   final Function(int?) onSelectIndex;
   final ViewMode viewMode;
+  /// When set (week/month), bars are stacked by TOU: off-peak, peak, mid-peak.
+  final List<DayTou>? touPerDay;
+  /// When true, show a loading spinner instead of the chart (used while TOU data loads).
+  final bool showLoading;
 
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) {
+    if (showLoading) {
+      return const AppCard(
+        child: SizedBox(
+          height: 300,
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Derive effective data for the chart. If we have no daily readings but we
+    // do have per-day TOU data (from intervals), synthesize daily totals from
+    // TOU so we can still render bars instead of showing "No data available".
+    final List<DailyReading> effectiveData;
+    if (data.isEmpty && touPerDay != null && touPerDay!.isNotEmpty) {
+      effectiveData = touPerDay!
+          .map(
+            (d) => DailyReading(
+              meter: '',
+              readDate: '${d.date.toIso8601String().split('T')[0]} 00:00:00.000',
+              kWhUsed: (d.offKwh + d.peakKwh + d.midPeakKwh).toStringAsFixed(3),
+            ),
+          )
+          .toList();
+    } else {
+      effectiveData = data;
+    }
+
+    if (effectiveData.isEmpty) {
       return const AppCard(
         child: Center(
           child: Column(
@@ -80,14 +116,29 @@ class AmiPeriodChart extends StatelessWidget {
       intervalForModulo = intervalForAxis.toInt();
     }
 
-    final maxValue = data.fold<double>(
-      0,
-      (max, reading) {
+    // Map date (yyyy-MM-dd) -> DayTou so we can show stacked bar only for days with TOU data
+    final touByDate = <String, DayTou>{};
+    if (touPerDay != null) {
+      for (final day in touPerDay!) {
+        final k = '${day.date.year}-${day.date.month.toString().padLeft(2, '0')}-${day.date.day.toString().padLeft(2, '0')}';
+        touByDate[k] = day;
+      }
+    }
+
+    double maxValue = 0;
+    for (var i = 0; i < effectiveData.length; i++) {
+      final reading = effectiveData[i];
+      final dateKey = _dateKeyFromReading(reading);
+      final dayTou = dateKey != null ? touByDate[dateKey] : null;
+      if (dayTou != null) {
+        final sum = dayTou.offKwh + dayTou.peakKwh + dayTou.midPeakKwh;
+        if (sum > maxValue) maxValue = sum;
+      } else {
         final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
         final value = viewMode == ViewMode.cost ? kWh * 0.32 : kWh;
-        return value > max ? value : max;
-      },
-    );
+        if (value > maxValue) maxValue = value;
+      }
+    }
     // fl_chart asserts when maxY == minY (common when all values are 0)
     final safeMaxY = maxValue > 0 ? maxValue * 1.1 : 1.0;
 
@@ -111,14 +162,29 @@ class AmiPeriodChart extends StatelessWidget {
                 tooltipMargin: 8,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                   final index = group.x.toInt();
-                  if (index >= 0 && index < data.length) {
-                    final reading = data[index];
-                    final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                    final cost = kWh * 0.32;
+                  if (index >= 0 && index < effectiveData.length) {
+                    final reading = effectiveData[index];
                     try {
                       final date = DateTime.parse(reading.readDate.split(' ')[0]);
                       final dateStr = _formatDate(date);
-                      // Show both kWh and cost with horizontal divider (like dashboard usage trend)
+                      final dateKey = _dateKeyFromReading(reading);
+                      final dayTou = dateKey != null ? touByDate[dateKey] : null;
+                      if (dayTou != null) {
+                        final tooltipText = 'Off-Peak: ${dayTou.offKwh.toStringAsFixed(1)} kWh\n'
+                            'Peak: ${dayTou.peakKwh.toStringAsFixed(1)} kWh\n'
+                            'Mid-Peak: ${dayTou.midPeakKwh.toStringAsFixed(1)} kWh\n'
+                            '───\n$dateStr';
+                        return BarTooltipItem(
+                          tooltipText,
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        );
+                      }
+                      final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
+                      final cost = kWh * 0.32;
                       final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n'
                           '───\n'
                           '\$${cost.toStringAsFixed(2)}\n'
@@ -132,7 +198,8 @@ class AmiPeriodChart extends StatelessWidget {
                         ),
                       );
                     } catch (e) {
-                      final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n───\n\$${cost.toStringAsFixed(2)}';
+                      final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
+                      final tooltipText = '${kWh.toStringAsFixed(1)} kWh';
                       return BarTooltipItem(
                         tooltipText,
                         const TextStyle(
@@ -173,9 +240,9 @@ class AmiPeriodChart extends StatelessWidget {
                   interval: intervalForAxis,
                   getTitlesWidget: (value, meta) {
                     final index = value.toInt();
-                    if (index >= 0 && index < data.length && index % intervalForModulo == 0) {
+                    if (index >= 0 && index < effectiveData.length && index % intervalForModulo == 0) {
                       try {
-                        final reading = data[index];
+                        final reading = effectiveData[index];
                         final date = DateTime.parse(reading.readDate.split(' ')[0]);
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
@@ -225,12 +292,47 @@ class AmiPeriodChart extends StatelessWidget {
                 left: BorderSide(color: AppColors.border),
               ),
             ),
-            barGroups: data.asMap().entries.map((entry) {
+            barGroups: effectiveData.asMap().entries.map((entry) {
               final index = entry.key;
               final reading = entry.value;
+              final isSelected = selectedIndex == index;
+              final dateKey = _dateKeyFromReading(reading);
+              final dayTou = dateKey != null ? touByDate[dateKey] : null;
+              if (dayTou != null) {
+                final off = dayTou.offKwh;
+                final peak = dayTou.peakKwh;
+                final mid = dayTou.midPeakKwh;
+                final total = off + peak + mid;
+                return BarChartGroupData(
+                  x: index,
+                  barRods: [
+                    BarChartRodData(
+                      toY: total,
+                      width: 12,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      rodStackItems: [
+                        BarChartRodStackItem(
+                          0,
+                          off,
+                          AppColors.primary,
+                        ),
+                        BarChartRodStackItem(
+                          off,
+                          off + peak,
+                          AppColors.chart4,
+                        ),
+                        BarChartRodStackItem(
+                          off + peak,
+                          off + peak + mid,
+                          AppColors.chart3,
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }
               final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
               final value = viewMode == ViewMode.cost ? kWh * 0.32 : kWh;
-              final isSelected = selectedIndex == index;
               return BarChartGroupData(
                 x: index,
                 barRods: [
@@ -262,6 +364,18 @@ class AmiPeriodChart extends StatelessWidget {
         return 2; // Show every other month (6 labels)
       default:
         return 1;
+    }
+  }
+
+  /// Parses reading.readDate and returns "yyyy-MM-dd" for TOU lookup, or null.
+  static String? _dateKeyFromReading(DailyReading reading) {
+    try {
+      final part = reading.readDate.trim().split(RegExp(r'[\sT]')).first;
+      final d = DateTime.tryParse(part);
+      if (d == null) return null;
+      return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return null;
     }
   }
 

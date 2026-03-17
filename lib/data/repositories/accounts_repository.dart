@@ -3,9 +3,10 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/logger.dart';
-import '../models/account.dart';
 import '../models/api_response_dtos.dart';
+import '../models/account.dart';
 import '../services/api_client.dart';
+import '../services/token_storage_service.dart';
 
 class AccountsRepository {
   AccountsRepository([ApiClient? apiClient]) : _apiClient = apiClient ?? ApiClient.instance;
@@ -105,6 +106,122 @@ class AccountsRepository {
       serviceArea: (dto.district?.isNotEmpty ?? false) ? dto.district : null,
       nickname: dto.nickName, // Map nickname from DTO
     );
+  }
+
+  /// Request a full access activation code for the given account.
+  ///
+  /// This calls POST /CustomerAccounts/V5/FullAccess/ActivationCode and returns
+  /// a simple status/message response. For activation code requests, the
+  /// activation code itself is returned in the `message` field.
+  Future<BaseApiResponseDto> requestFullAccessActivationCode({
+    required String customerNumber,
+    required String accountNumber,
+    String? mobileNumber,
+    String? email,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'CustomerNumber': customerNumber,
+        'AccountNumber': accountNumber,
+      };
+      if (mobileNumber != null && mobileNumber.isNotEmpty) {
+        body['MobileNumber'] = mobileNumber;
+      }
+      if (email != null && email.isNotEmpty) {
+        body['Email'] = email;
+      }
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.fullAccessActivationCode,
+        data: body,
+        authenticated: true,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return BaseApiResponseDto.fromJson(response.data!);
+      }
+
+      Logger.warning(
+        'Full access activationCode request failed. Status: ${response.statusCode}',
+        tag: 'AccountsRepository',
+      );
+      return BaseApiResponseDto(
+        status: response.statusCode ?? 500,
+        message: 'Failed to send activation code.',
+      );
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error requesting full access activation code',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      return const BaseApiResponseDto(
+        status: 500,
+        message: 'Unexpected error while sending activation code.',
+      );
+    }
+  }
+
+  /// Activate full account access using a verification code.
+  ///
+  /// This calls POST /CustomerAccounts/V5/FullAccess/Activate and returns
+  /// a simple status/message response. For activation, the human-readable
+  /// result is provided in the `message` field.
+  Future<BaseApiResponseDto> activateFullAccess({
+    required String customerNumber,
+    required String accountNumber,
+    required String code,
+    String? mobileNumber,
+    String? email,
+  }) async {
+    try {
+      final session = await TokenStorageService.getUserSession();
+      final userId = session?.userId ?? '';
+
+      final body = <String, dynamic>{
+        'UserId': userId,
+        'Code': code,
+        'CustomerNumber': customerNumber,
+        'AccountNumber': accountNumber,
+      };
+      if (mobileNumber != null && mobileNumber.isNotEmpty) {
+        body['MobileNumber'] = mobileNumber;
+      }
+      if (email != null && email.isNotEmpty) {
+        body['Email'] = email;
+      }
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.fullAccessActivate,
+        data: body,
+        authenticated: true,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return BaseApiResponseDto.fromJson(response.data!);
+      }
+
+      Logger.warning(
+        'Full access activate request failed. Status: ${response.statusCode}',
+        tag: 'AccountsRepository',
+      );
+      return BaseApiResponseDto(
+        status: response.statusCode ?? 500,
+        message: 'Failed to verify activation code.',
+      );
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error activating full access',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      return const BaseApiResponseDto(
+        status: 500,
+        message: 'Unexpected error while verifying activation code.',
+      );
+    }
   }
 
   /// Parse balance string to double

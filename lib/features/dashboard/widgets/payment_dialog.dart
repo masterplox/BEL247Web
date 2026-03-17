@@ -119,6 +119,37 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: AppTheme.spacing16),
+              padding: const EdgeInsets.all(AppTheme.spacing12),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radius8),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: AppTheme.spacing8),
+                  Expanded(
+                    child: Text(
+                      'This payment flow is a demo only and does not process real payments. '
+                      'Use it to preview how paying your bill would look.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             _buildAmountSection(),
             const SizedBox(height: AppTheme.spacing16),
             _buildPaymentMethodSection(),
@@ -384,8 +415,9 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
       actions: [
         ElevatedButton(
           onPressed: () {
-            Navigator.of(context, rootNavigator: true).pop(); // Close success dialog
-            Navigator.of(context, rootNavigator: true).pop(); // Close payment dialog
+            // Close only the success dialog. The underlying payment dialog
+            // is already closed in the onPaymentSuccess callback wiring.
+            Navigator.of(context, rootNavigator: true).pop();
           },
           child: const Text('OK'),
         ),

@@ -10,6 +10,7 @@ import '../widgets/centered_content.dart';
 import '../widgets/notice_banner.dart';
 import '../widgets/sidebar_nav_item.dart';
 import 'navigation_providers.dart';
+import '../providers/meter_data_providers.dart';
 
 /// Responsive navigation widget that shows sidebar on desktop/tablet and bottom nav on mobile
 class ResponsiveNavigation extends ConsumerWidget {
@@ -30,11 +31,21 @@ class ResponsiveNavigation extends ConsumerWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final screenSize = MediaQuery.of(context).size;
       navigationNotifier.updateScreenSize(screenSize);
-      
+
       // Sync navigation state with current route (only updates if route changed)
       final currentLocation = GoRouterState.of(context).matchedLocation;
       final items = ref.read(navigationItemsProvider);
       navigationNotifier.navigateToRoute(currentLocation, items);
+
+      // Ensure route matches current account's meter type.
+      // If user switches between AMI and non-AMI while on a usage route,
+      // automatically swap between `/usage` and `/ami-usage` so the page layout updates.
+      final isAmi = ref.read(isAmiMeterProvider);
+      if (isAmi && currentLocation == '/usage') {
+        context.go('/ami-usage');
+      } else if (!isAmi && currentLocation == '/ami-usage') {
+        context.go('/usage');
+      }
     });
 
     if (navigation.shouldShowSidebar) {

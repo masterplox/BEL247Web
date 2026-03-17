@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/account_verification_providers.dart';
+import '../../../core/widgets/account_access_activation_dialog.dart';
 import '../../../data/models/bill.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -294,6 +296,39 @@ class _BillDownloadWidgetState extends ConsumerState<BillDownloadWidget> {
   }
 
   Future<void> _downloadBill(Bill bill) async {
+    var isVerified =
+        await ref.read(accountVerificationStatusProvider.future);
+
+    if (!isVerified) {
+      final result = await showFullAccessActivationDialog(context);
+      if (result == true) {
+        isVerified =
+            await ref.refresh(accountVerificationStatusProvider.future);
+      }
+    }
+
+    if (!isVerified) {
+      return;
+    }
+
+    var hasBillDownloadAccess =
+        await ref.read(billDownloadAccessStatusProvider.future);
+
+    if (!hasBillDownloadAccess) {
+      final activationResult = await showBillDownloadActivationDialog(
+        context,
+        billNumber: bill.billNumber,
+      );
+      if (activationResult == true) {
+        hasBillDownloadAccess =
+            await ref.refresh(billDownloadAccessStatusProvider.future);
+      }
+    }
+
+    if (!hasBillDownloadAccess) {
+      return;
+    }
+
     setState(() {
       _downloadingBills[bill.id] = true;
     });

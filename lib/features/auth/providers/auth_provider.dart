@@ -651,20 +651,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 /// Provider for authentication repository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final useMockApi = EnvConfig.useMockApi;
   final currentApiUrl = EnvConfig.currentApiUrl;
   
-  if (useMockApi) {
-    Logger.info('🔧 Using MockAuthRepository (no real HTTP calls)', tag: 'AuthProvider');
-    Logger.info('   To use real API: Set USE_MOCK=false', tag: 'AuthProvider');
-    Logger.info('   Mock credentials: user@bel247.com / password123', tag: 'AuthProvider');
-    return MockAuthRepository();
-  } else {
-    Logger.info('🌐 Using LiveAuthRepository with real API', tag: 'AuthProvider');
-    Logger.info('   API URL: $currentApiUrl', tag: 'AuthProvider');
-    Logger.info('   API logging enabled - check console for detailed logs', tag: 'AuthProvider');
-    return LiveAuthRepository(ApiClient.instance);
-  }
+  // Always use the live API now; mock auth is fully disabled.
+  Logger.info('🌐 Using LiveAuthRepository with real API', tag: 'AuthProvider');
+  Logger.info('   API URL: $currentApiUrl', tag: 'AuthProvider');
+  Logger.info('   API logging enabled - check console for detailed logs', tag: 'AuthProvider');
+  return LiveAuthRepository(ApiClient.instance);
 });
 
 /// Provider for authentication state notifier
