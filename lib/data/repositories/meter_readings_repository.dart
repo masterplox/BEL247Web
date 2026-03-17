@@ -115,4 +115,57 @@ class MeterReadingsRepository {
       return [];
     }
   }
+
+  /// Fetch meter readings for the year before last (two years ago)
+  /// GET /CustomerAccounts/V3/Readings/YearTwo?customerNumber={customerNumber}&accountNumber={accountNumber}
+  Future<List<MeterReadingDto>> fetchMeterReadingsYearTwo({
+    required String customerNumber,
+    required String accountNumber,
+  }) async {
+    try {
+      print('[MeterReadings] Repository.fetchMeterReadingsYearTwo start customerNumber=$customerNumber accountNumber=$accountNumber');
+      Logger.info('Fetching meter readings for year -2...', tag: 'MeterReadingsRepository');
+
+      if (EnvConfig.useMockApi) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        print('[MeterReadings] Repository.fetchMeterReadingsYearTwo using mock data');
+        return [];
+      }
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.meterReadingsYearTwo,
+        authenticated: true,
+        queryParameters: {
+          'customerNumber': customerNumber,
+          'accountNumber': accountNumber,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final responseDto = MeterReadingsResponseDto.fromJson(response.data!);
+
+        print('[MeterReadings] ✅ Successfully fetched ${responseDto.readings.length} readings for year -2');
+        Logger.info(
+          'Successfully fetched ${responseDto.readings.length} readings for year -2',
+          tag: 'MeterReadingsRepository',
+        );
+
+        return responseDto.readings;
+      } else {
+        Logger.warning(
+          'Failed to fetch meter readings for year -2. Status: ${response.statusCode}',
+          tag: 'MeterReadingsRepository',
+        );
+        return [];
+      }
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error fetching meter readings for year -2',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'MeterReadingsRepository',
+      );
+      return [];
+    }
+  }
 }

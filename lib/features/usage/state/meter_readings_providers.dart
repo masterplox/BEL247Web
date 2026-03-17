@@ -40,3 +40,20 @@ final meterReadingsLastYearProvider = FutureProvider<List<MeterReadingDto>>((ref
   );
   return readings;
 });
+
+// Meter readings provider for two years ago
+final meterReadingsYearTwoProvider = FutureProvider<List<MeterReadingDto>>((ref) async {
+  final accountState = ref.watch(accountSwitcherProvider);
+  final activeAccount = accountState.activeAccount;
+  
+  if (activeAccount == null) {
+    return [];
+  }
+
+  final repository = ref.watch(meterReadingsRepositoryProvider);
+  final readings = await repository.fetchMeterReadingsYearTwo(
+    customerNumber: activeAccount.customerNumber,
+    accountNumber: activeAccount.accountNumber,
+  );
+  return readings;
+});

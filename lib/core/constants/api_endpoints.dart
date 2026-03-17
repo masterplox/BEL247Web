@@ -166,6 +166,12 @@ class ApiEndpoints {
   /// Query: { customerNumber, accountNumber }
   static String get meterReadingsLastYear => '/CustomerAccounts/V3/Readings/Year';
 
+  /// Get meter readings for the year before last (two years ago)
+  /// GET /CustomerAccounts/V3/Readings/YearTwo
+  /// Auth: Yes (1)
+  /// Query: { customerNumber, accountNumber }
+  static String get meterReadingsYearTwo => '/CustomerAccounts/V3/Readings/YearTwo';
+
   // ============================================================================
   // User Endpoints
   // ============================================================================

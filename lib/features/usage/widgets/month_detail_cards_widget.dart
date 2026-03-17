@@ -22,6 +22,7 @@ class MonthDetailCardsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final thisYearAsync = ref.watch(meterReadingsThisYearProvider);
     final lastYearAsync = ref.watch(meterReadingsLastYearProvider);
+    final yearTwoAsync = ref.watch(meterReadingsYearTwoProvider);
     final isMobile = MediaQuery.of(context).size.width < AppTheme.tabletBreakpoint;
 
     return thisYearAsync.when(
@@ -29,9 +30,14 @@ class MonthDetailCardsWidget extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (thisYearReadings) => lastYearAsync.when(
         loading: () => const SizedBox.shrink(),
-        error: (_, __) => _buildDetailCards(context, thisYearReadings, [], isMobile),
-        data: (lastYearReadings) =>
-            _buildDetailCards(context, thisYearReadings, lastYearReadings, isMobile),
+        error: (_, __) => _buildDetailCards(context, thisYearReadings, [], [], isMobile),
+        data: (lastYearReadings) => yearTwoAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) =>
+              _buildDetailCards(context, thisYearReadings, lastYearReadings, [], isMobile),
+          data: (yearTwoReadings) =>
+              _buildDetailCards(context, thisYearReadings, lastYearReadings, yearTwoReadings, isMobile),
+        ),
       ),
     );
   }
@@ -40,6 +46,7 @@ class MonthDetailCardsWidget extends ConsumerWidget {
     BuildContext context,
     List<MeterReadingDto> thisYearReadings,
     List<MeterReadingDto> lastYearReadings,
+  List<MeterReadingDto> yearTwoReadings,
     bool isMobile,
   ) {
     // Find data for selected month
@@ -69,21 +76,48 @@ class MonthDetailCardsWidget extends ConsumerWidget {
       ),
     );
 
-    // Calculate differences
-    final consumption2024 = double.tryParse(lastYearData.consumption) ?? 0.0;
-    final consumption2025 = double.tryParse(thisYearData.consumption) ?? 0.0;
-    final cost2024 = double.tryParse(lastYearData.amount) ?? 0.0;
-    final cost2025 = double.tryParse(thisYearData.amount) ?? 0.0;
-    final avgUsage2024 = double.tryParse(lastYearData.averageUsage) ?? 0.0;
-    final avgUsage2025 = double.tryParse(thisYearData.averageUsage) ?? 0.0;
+    final yearTwoData = yearTwoReadings.firstWhere(
+      (r) => r.readMonth == selectedMonth,
+      orElse: () => MeterReadingDto(
+        readDate: '',
+        readMonth: selectedMonth,
+        readYear: '',
+        days: '0',
+        consumption: '0',
+        averageUsage: '0',
+        amount: '0',
+      ),
+    );
 
-    final consumptionDiff = consumption2024 - consumption2025;
-    final costDiff = cost2024 - cost2025;
-    final avgUsageDiff = avgUsage2024 - avgUsage2025;
+    // Calculate values for all three years
+    final consumptionYearTwo = double.tryParse(yearTwoData.consumption) ?? 0.0;
+    final consumptionLast = double.tryParse(lastYearData.consumption) ?? 0.0;
+    final consumptionCurrent = double.tryParse(thisYearData.consumption) ?? 0.0;
+    final costYearTwo = double.tryParse(yearTwoData.amount) ?? 0.0;
+    final costLast = double.tryParse(lastYearData.amount) ?? 0.0;
+    final costCurrent = double.tryParse(thisYearData.amount) ?? 0.0;
+    final avgUsageYearTwo = double.tryParse(yearTwoData.averageUsage) ?? 0.0;
+    final avgUsageLast = double.tryParse(lastYearData.averageUsage) ?? 0.0;
+    final avgUsageCurrent = double.tryParse(thisYearData.averageUsage) ?? 0.0;
+
+    // Differences focus on last year vs this year for "saved/more" messaging
+    final consumptionDiff = consumptionLast - consumptionCurrent;
+    final costDiff = costLast - costCurrent;
+    final avgUsageDiff = avgUsageLast - avgUsageCurrent;
 
     final savedEnergy = consumptionDiff > 0;
     final savedCost = costDiff > 0;
     final savedAvg = avgUsageDiff > 0;
+
+    final thisYearLabel = thisYearData.readYear.isNotEmpty
+        ? thisYearData.readYear
+        : DateTime.now().year.toString();
+    final lastYearLabel = lastYearData.readYear.isNotEmpty
+        ? lastYearData.readYear
+        : (int.tryParse(thisYearLabel) ?? DateTime.now().year - 1).toString();
+    final yearTwoLabel = yearTwoData.readYear.isNotEmpty
+        ? yearTwoData.readYear
+        : (int.tryParse(lastYearLabel) ?? DateTime.now().year - 2).toString();
 
     return AppCard(
       padding: EdgeInsets.all(isMobile ? AppTheme.spacing16 : AppTheme.spacing20),
@@ -121,7 +155,7 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                             ),
                       ),
                       Text(
-                        'Comparing ${lastYearData.readYear.isNotEmpty ? lastYearData.readYear : '2024'} vs ${thisYearData.readYear.isNotEmpty ? thisYearData.readYear : '2025'}',
+                        'Comparing $yearTwoLabel, $lastYearLabel and $thisYearLabel',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                               fontSize: 11,
@@ -156,11 +190,18 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       title: 'Consumption',
                       icon: Icons.bolt,
                       iconColor: AppColors.textSecondary,
-                      value2024: consumption2024,
-                      value2025: consumption2025,
+                      yearTwoLabel: yearTwoLabel,
+                      lastYearLabel: lastYearLabel,
+                      thisYearLabel: thisYearLabel,
+                      valueYearTwo: consumptionYearTwo,
+                      valueLast: consumptionLast,
+                      valueCurrent: consumptionCurrent,
                       diff: consumptionDiff,
                       saved: savedEnergy,
                       unit: 'kWh',
+                      comparisonNote: savedEnergy
+                          ? 'Compared to $lastYearLabel — you used less in $thisYearLabel (same month).'
+                          : 'Compared to $lastYearLabel — you used more in $thisYearLabel (same month).',
                     ),
                     const SizedBox(height: AppTheme.spacing12),
                     _buildComparisonCard(
@@ -168,12 +209,19 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       title: 'Cost',
                       icon: Icons.attach_money,
                       iconColor: AppColors.textSecondary,
-                      value2024: cost2024,
-                      value2025: cost2025,
+                      yearTwoLabel: yearTwoLabel,
+                      lastYearLabel: lastYearLabel,
+                      thisYearLabel: thisYearLabel,
+                      valueYearTwo: costYearTwo,
+                      valueLast: costLast,
+                      valueCurrent: costCurrent,
                       diff: costDiff,
                       saved: savedCost,
                       unit: r'$',
                       isCurrency: true,
+                      comparisonNote: savedCost
+                          ? 'Compared to $lastYearLabel — you spent less in $thisYearLabel (same month).'
+                          : 'Compared to $lastYearLabel — you spent more in $thisYearLabel (same month).',
                     ),
                     const SizedBox(height: AppTheme.spacing12),
                     _buildComparisonCard(
@@ -181,11 +229,18 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       title: 'Daily Avg',
                       icon: Icons.access_time,
                       iconColor: AppColors.textSecondary,
-                      value2024: avgUsage2024,
-                      value2025: avgUsage2025,
+                      yearTwoLabel: yearTwoLabel,
+                      lastYearLabel: lastYearLabel,
+                      thisYearLabel: thisYearLabel,
+                      valueYearTwo: avgUsageYearTwo,
+                      valueLast: avgUsageLast,
+                      valueCurrent: avgUsageCurrent,
                       diff: avgUsageDiff,
                       saved: savedAvg,
                       unit: 'kWh/day',
+                      comparisonNote: savedAvg
+                          ? 'Compared to $lastYearLabel — lower daily average in $thisYearLabel (same month).'
+                          : 'Compared to $lastYearLabel — higher daily average in $thisYearLabel (same month).',
                     ),
                   ],
                 );
@@ -199,11 +254,18 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       title: 'Consumption',
                       icon: Icons.bolt,
                       iconColor: AppColors.textSecondary,
-                      value2024: consumption2024,
-                      value2025: consumption2025,
+                      yearTwoLabel: yearTwoLabel,
+                      lastYearLabel: lastYearLabel,
+                      thisYearLabel: thisYearLabel,
+                      valueYearTwo: consumptionYearTwo,
+                      valueLast: consumptionLast,
+                      valueCurrent: consumptionCurrent,
                       diff: consumptionDiff,
                       saved: savedEnergy,
                       unit: 'kWh',
+                      comparisonNote: savedEnergy
+                          ? 'Compared to $lastYearLabel — you used less in $thisYearLabel (same month).'
+                          : 'Compared to $lastYearLabel — you used more in $thisYearLabel (same month).',
                     ),
                   ),
                   const SizedBox(width: AppTheme.spacing12),
@@ -213,12 +275,19 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       title: 'Cost',
                       icon: Icons.attach_money,
                       iconColor: AppColors.textSecondary,
-                      value2024: cost2024,
-                      value2025: cost2025,
+                      yearTwoLabel: yearTwoLabel,
+                      lastYearLabel: lastYearLabel,
+                      thisYearLabel: thisYearLabel,
+                      valueYearTwo: costYearTwo,
+                      valueLast: costLast,
+                      valueCurrent: costCurrent,
                       diff: costDiff,
                       saved: savedCost,
                       unit: r'$',
                       isCurrency: true,
+                      comparisonNote: savedCost
+                          ? 'Compared to $lastYearLabel — you spent less in $thisYearLabel (same month).'
+                          : 'Compared to $lastYearLabel — you spent more in $thisYearLabel (same month).',
                     ),
                   ),
                   const SizedBox(width: AppTheme.spacing12),
@@ -228,11 +297,18 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       title: 'Daily Avg',
                       icon: Icons.access_time,
                       iconColor: AppColors.textSecondary,
-                      value2024: avgUsage2024,
-                      value2025: avgUsage2025,
+                      yearTwoLabel: yearTwoLabel,
+                      lastYearLabel: lastYearLabel,
+                      thisYearLabel: thisYearLabel,
+                      valueYearTwo: avgUsageYearTwo,
+                      valueLast: avgUsageLast,
+                      valueCurrent: avgUsageCurrent,
                       diff: avgUsageDiff,
                       saved: savedAvg,
                       unit: 'kWh/day',
+                      comparisonNote: savedAvg
+                          ? 'Compared to $lastYearLabel — lower daily average in $thisYearLabel (same month).'
+                          : 'Compared to $lastYearLabel — higher daily average in $thisYearLabel (same month).',
                     ),
                   ),
                 ],
@@ -262,7 +338,9 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       _buildDetailRow(
                         context,
                         'Billing Days',
-                        '${lastYearData.readYear.isNotEmpty ? lastYearData.readYear : '2024'}: ${int.tryParse(lastYearData.days) ?? 0} / ${thisYearData.readYear.isNotEmpty ? thisYearData.readYear : '2025'}: ${int.tryParse(thisYearData.days) ?? 0}',
+                        '$yearTwoLabel: ${int.tryParse(yearTwoData.days) ?? 0} / '
+                        '$lastYearLabel: ${int.tryParse(lastYearData.days) ?? 0} / '
+                        '$thisYearLabel: ${int.tryParse(thisYearData.days) ?? 0}',
                       ),
                       const SizedBox(height: AppTheme.spacing8),
                       _buildDetailRow(
@@ -279,7 +357,9 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                       child: _buildDetailRow(
                         context,
                         'Billing Days',
-                        '${lastYearData.readYear.isNotEmpty ? lastYearData.readYear : '2024'}: ${int.tryParse(lastYearData.days) ?? 0} / ${thisYearData.readYear.isNotEmpty ? thisYearData.readYear : '2025'}: ${int.tryParse(thisYearData.days) ?? 0}',
+                        '$yearTwoLabel: ${int.tryParse(yearTwoData.days) ?? 0} / '
+                        '$lastYearLabel: ${int.tryParse(lastYearData.days) ?? 0} / '
+                        '$thisYearLabel: ${int.tryParse(thisYearData.days) ?? 0}',
                       ),
                     ),
                     const SizedBox(width: AppTheme.spacing16),
@@ -302,15 +382,20 @@ class MonthDetailCardsWidget extends ConsumerWidget {
 
   Widget _buildComparisonCard(
     BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Color iconColor,
-    required double value2024,
-    required double value2025,
-    required double diff,
-    required bool saved,
-    required String unit,
-    bool isCurrency = false,
+      required String title,
+      required IconData icon,
+      required Color iconColor,
+      required String yearTwoLabel,
+      required String lastYearLabel,
+      required String thisYearLabel,
+      required double valueYearTwo,
+      required double valueLast,
+      required double valueCurrent,
+      required double diff,
+      required bool saved,
+      required String unit,
+      required String comparisonNote,
+      bool isCurrency = false,
   }) => Container(
       padding: const EdgeInsets.all(AppTheme.spacing12),
       decoration: BoxDecoration(
@@ -336,24 +421,24 @@ class MonthDetailCardsWidget extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppTheme.spacing12),
-          // 2024 value
+          // Year -2 value
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '2024',
+                yearTwoLabel,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 11,
                     ),
               ),
               Text(
-                value2024 > 0
+                valueYearTwo > 0
                     ? (isCurrency
-                        ? FormattingUtils.formatCurrency(value2024)
-                        : '${value2024.toStringAsFixed(0)} $unit')
+                        ? FormattingUtils.formatCurrency(valueYearTwo)
+                        : '${valueYearTwo.toStringAsFixed(0)} $unit')
                     : '—',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondary.withValues(alpha: 0.7),
@@ -363,24 +448,51 @@ class MonthDetailCardsWidget extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppTheme.spacing8),
-          // 2025 value
+          // Last year value
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '2025',
+                lastYearLabel,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 11,
                     ),
               ),
               Text(
-                value2025 > 0
+                valueLast > 0
                     ? (isCurrency
-                        ? FormattingUtils.formatCurrency(value2025)
-                        : '${value2025.toStringAsFixed(0)} $unit')
+                        ? FormattingUtils.formatCurrency(valueLast)
+                        : '${valueLast.toStringAsFixed(0)} $unit')
+                    : '—',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary.withValues(alpha: 0.7),
+                      fontSize: 13,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacing8),
+          // This year value (highlighted)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                thisYearLabel,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+              ),
+              Text(
+                valueCurrent > 0
+                    ? (isCurrency
+                        ? FormattingUtils.formatCurrency(valueCurrent)
+                        : '${valueCurrent.toStringAsFixed(0)} $unit')
                     : '—',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -424,7 +536,7 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppTheme.spacing4),
                 Text(
-                  '${saved ? 'saved' : isCurrency ? 'spent more' : 'more'} ${isCurrency ? '' : 'this month'}',
+                  comparisonNote,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 11,

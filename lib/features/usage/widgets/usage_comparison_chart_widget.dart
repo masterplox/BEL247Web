@@ -31,6 +31,7 @@ class _UsageComparisonChartWidgetState
   Widget build(BuildContext context) {
     final thisYearAsync = ref.watch(meterReadingsThisYearProvider);
     final lastYearAsync = ref.watch(meterReadingsLastYearProvider);
+    final yearTwoAsync = ref.watch(meterReadingsYearTwoProvider);
     final isMobile = MediaQuery.of(context).size.width < AppTheme.tabletBreakpoint;
 
     return thisYearAsync.when(
@@ -44,9 +45,16 @@ class _UsageComparisonChartWidgetState
           padding: EdgeInsets.all(AppTheme.spacing24),
           child: Center(child: CircularProgressIndicator()),
         ),
-        error: (_, __) => _buildChart(context, thisYearReadings, [], isMobile),
-        data: (lastYearReadings) =>
-            _buildChart(context, thisYearReadings, lastYearReadings, isMobile),
+        error: (_, __) => _buildChart(context, thisYearReadings, [], [], isMobile),
+        data: (lastYearReadings) => yearTwoAsync.when(
+          loading: () => const AppCard(
+            padding: EdgeInsets.all(AppTheme.spacing24),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, __) => _buildChart(context, thisYearReadings, lastYearReadings, [], isMobile),
+          data: (yearTwoReadings) =>
+              _buildChart(context, thisYearReadings, lastYearReadings, yearTwoReadings, isMobile),
+        ),
       ),
     );
   }
@@ -55,6 +63,7 @@ class _UsageComparisonChartWidgetState
     BuildContext context,
     List<MeterReadingDto> thisYearReadings,
     List<MeterReadingDto> lastYearReadings,
+  List<MeterReadingDto> yearTwoReadings,
     bool isMobile,
   ) {
     // Get year labels
@@ -64,15 +73,18 @@ class _UsageComparisonChartWidgetState
     final lastYearLabel = lastYearReadings.isNotEmpty
         ? lastYearReadings.first.readYear
         : (int.tryParse(thisYearLabel) ?? DateTime.now().year - 1).toString();
+    final yearTwoLabel = yearTwoReadings.isNotEmpty
+        ? yearTwoReadings.first.readYear
+        : (int.tryParse(lastYearLabel) ?? DateTime.now().year - 2).toString();
 
     // Process data for comparison
-    final comparisonData = _buildComparisonData(thisYearReadings, lastYearReadings);
+    final comparisonData = _buildComparisonData(thisYearReadings, lastYearReadings, yearTwoReadings);
 
     // Prepare chart data based on current view
     final chartData = comparisonData.map((data) {
       final value = _view == 'cost'
-          ? (data['costValue2025'] as double)
-          : (data['value2025'] as double);
+          ? (data['costValueCurrent'] as double)
+          : (data['valueCurrent'] as double);
       return FlSpot(
         data['index'] as double,
         value,
@@ -81,8 +93,18 @@ class _UsageComparisonChartWidgetState
 
     final lastYearChartData = comparisonData.map((data) {
       final value = _view == 'cost'
-          ? (data['costValue2024'] as double)
-          : (data['value2024'] as double);
+          ? (data['costValueLast'] as double)
+          : (data['valueLast'] as double);
+      return FlSpot(
+        data['index'] as double,
+        value,
+      );
+    }).toList();
+
+    final yearTwoChartData = comparisonData.map((data) {
+      final value = _view == 'cost'
+          ? (data['costValueYearTwo'] as double)
+          : (data['valueYearTwo'] as double);
       return FlSpot(
         data['index'] as double,
         value,
@@ -93,6 +115,7 @@ class _UsageComparisonChartWidgetState
     final maxValue = [
       ...chartData.map((e) => e.y),
       ...lastYearChartData.map((e) => e.y),
+      ...yearTwoChartData.map((e) => e.y),
     ].fold<double>(0, (max, val) => val > max ? val : max);
 
     final hasNoData = maxValue == 0;
@@ -101,8 +124,11 @@ class _UsageComparisonChartWidgetState
       return _buildEmptyChartCard(context, thisYearLabel, lastYearLabel, isMobile);
     }
 
-    const color2024 = AppColors.chart3; // Gray for previous year
-    final color2025 = _view == 'cost' ? AppColors.info : AppColors.success; // Blue for cost, Green for consumption
+    const colorYearTwo = AppColors.chartYearOlder; // Oldest year — subdued vs amber/green
+    const colorLastYear = AppColors.chart3; // Previous year
+    final colorThisYear = _view == 'cost'
+        ? const Color(0xFF1D4ED8) // Slightly deeper blue for cost
+        : AppColors.chartThisYearConsumption;
 
     return AppCard(
       padding: EdgeInsets.all(isMobile ? AppTheme.spacing16 : AppTheme.spacing20),
@@ -127,7 +153,7 @@ class _UsageComparisonChartWidgetState
                         ),
                         const SizedBox(height: AppTheme.spacing4),
                         Text(
-                          '$lastYearLabel vs $thisYearLabel ${_view == 'cost' ? 'costs' : 'consumption'}',
+                          '$yearTwoLabel · $lastYearLabel · $thisYearLabel on chart. ',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondary,
                                 fontSize: 11,
@@ -152,7 +178,7 @@ class _UsageComparisonChartWidgetState
                             ),
                             const SizedBox(height: AppTheme.spacing4),
                             Text(
-                              '$lastYearLabel vs $thisYearLabel ${_view == 'cost' ? 'costs' : 'consumption'}',
+                              '$yearTwoLabel · $lastYearLabel · $thisYearLabel on chart. ',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontSize: 11,
@@ -249,29 +275,39 @@ class _UsageComparisonChartWidgetState
                 minY: 0,
                 maxY: maxValue > 0 ? maxValue * 1.1 : 100,
                 lineBarsData: [
+                  // Two years ago line
+                  LineChartBarData(
+                    spots: yearTwoChartData,
+                    isCurved: true,
+                    color: colorYearTwo,
+                    barWidth: 1.75,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(show: false),
+                  ),
                   // Last year line
                   LineChartBarData(
                     spots: lastYearChartData,
                     isCurved: true,
-                    color: color2024,
+                    color: colorLastYear,
                     barWidth: 2,
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
                           radius: 4,
-                          color: color2024,
+                          color: colorLastYear,
                           strokeWidth: 0,
                         ),
                     ),
                     belowBarData: BarAreaData(show: false),
                   ),
-                  // This year line
+                  // This year line (emphasized)
                   LineChartBarData(
                     spots: chartData,
                     isCurved: true,
-                    color: color2025,
-                    barWidth: 2.5,
+                    color: colorThisYear,
+                    barWidth: 3.25,
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: true,
@@ -279,9 +315,9 @@ class _UsageComparisonChartWidgetState
                         final isSelected = widget.selectedMonth != null &&
                             comparisonData[index]['month'] == widget.selectedMonth;
                         return FlDotCirclePainter(
-                          radius: isSelected ? 6 : 4,
-                          color: color2025,
-                          strokeWidth: isSelected ? 2 : 0,
+                          radius: isSelected ? 6.5 : 4.5,
+                          color: colorThisYear,
+                          strokeWidth: isSelected ? 2.5 : 1,
                           strokeColor: Colors.white,
                         );
                       },
@@ -319,9 +355,11 @@ class _UsageComparisonChartWidgetState
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegendItem(context, lastYearLabel, color2024),
+              _buildLegendItem(context, yearTwoLabel, colorYearTwo),
               const SizedBox(width: AppTheme.spacing16),
-              _buildLegendItem(context, thisYearLabel, color2025),
+              _buildLegendItem(context, lastYearLabel, colorLastYear),
+              const SizedBox(width: AppTheme.spacing16),
+              _buildLegendItem(context, thisYearLabel, colorThisYear),
             ],
           ),
 
@@ -553,6 +591,7 @@ class _UsageComparisonChartWidgetState
   List<Map<String, dynamic>> _buildComparisonData(
     List<MeterReadingDto> thisYearReadings,
     List<MeterReadingDto> lastYearReadings,
+  List<MeterReadingDto> yearTwoReadings,
   ) {
     final monthNames = [
       'Jan',
@@ -600,21 +639,40 @@ class _UsageComparisonChartWidgetState
         ),
       );
 
+      final yearTwoData = yearTwoReadings.firstWhere(
+        (r) => r.readMonth == month,
+        orElse: () => MeterReadingDto(
+          readDate: '',
+          readMonth: month,
+          readYear: '',
+          days: '0',
+          consumption: '0',
+          averageUsage: '0',
+          amount: '0',
+        ),
+      );
+
       return {
         'index': index.toDouble(),
         'month': month,
-        'consumption2024': double.tryParse(lastYearData.consumption) ?? 0.0,
-        'consumption2025': double.tryParse(thisYearData.consumption) ?? 0.0,
-        'cost2024': double.tryParse(lastYearData.amount) ?? 0.0,
-        'cost2025': double.tryParse(thisYearData.amount) ?? 0.0,
-        'days2024': int.tryParse(lastYearData.days) ?? 0,
-        'days2025': int.tryParse(thisYearData.days) ?? 0,
-        'avgUsage2024': double.tryParse(lastYearData.averageUsage) ?? 0.0,
-        'avgUsage2025': double.tryParse(thisYearData.averageUsage) ?? 0.0,
-        'value2024': double.tryParse(lastYearData.consumption) ?? 0.0,
-        'value2025': double.tryParse(thisYearData.consumption) ?? 0.0,
-        'costValue2024': double.tryParse(lastYearData.amount) ?? 0.0,
-        'costValue2025': double.tryParse(thisYearData.amount) ?? 0.0,
+        'consumptionYearTwo': double.tryParse(yearTwoData.consumption) ?? 0.0,
+        'consumptionLast': double.tryParse(lastYearData.consumption) ?? 0.0,
+        'consumptionCurrent': double.tryParse(thisYearData.consumption) ?? 0.0,
+        'costYearTwo': double.tryParse(yearTwoData.amount) ?? 0.0,
+        'costLast': double.tryParse(lastYearData.amount) ?? 0.0,
+        'costCurrent': double.tryParse(thisYearData.amount) ?? 0.0,
+        'daysYearTwo': int.tryParse(yearTwoData.days) ?? 0,
+        'daysLast': int.tryParse(lastYearData.days) ?? 0,
+        'daysCurrent': int.tryParse(thisYearData.days) ?? 0,
+        'avgUsageYearTwo': double.tryParse(yearTwoData.averageUsage) ?? 0.0,
+        'avgUsageLast': double.tryParse(lastYearData.averageUsage) ?? 0.0,
+        'avgUsageCurrent': double.tryParse(thisYearData.averageUsage) ?? 0.0,
+        'valueYearTwo': double.tryParse(yearTwoData.consumption) ?? 0.0,
+        'valueLast': double.tryParse(lastYearData.consumption) ?? 0.0,
+        'valueCurrent': double.tryParse(thisYearData.consumption) ?? 0.0,
+        'costValueYearTwo': double.tryParse(yearTwoData.amount) ?? 0.0,
+        'costValueLast': double.tryParse(lastYearData.amount) ?? 0.0,
+        'costValueCurrent': double.tryParse(thisYearData.amount) ?? 0.0,
       };
     }).toList();
   }

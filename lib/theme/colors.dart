@@ -72,6 +72,10 @@ class AppColors {
   // Specific chart colors for AMI usage
   static const Color chart2 = Color(0xFFF59E0B); // Amber/Orange for cost
   static const Color chart3 = Color(0xFFFBBF24); // Light amber for mid-peak
+  /// Muted slate for “older” year line (contrasts yellow/green without dominating)
+  static const Color chartYearOlder = Color(0xFF64748B);
+  /// Darker green for emphasis on current-year consumption line
+  static const Color chartThisYearConsumption = Color(0xFF047857);
   static const Color chart4 = Color(0xFFEF4444); // Red for peak
   
   // Payment Status Colors
