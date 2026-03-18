@@ -216,28 +216,19 @@ class _UsageComparisonChartWidgetState
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
-                      interval: 2, // Show every other month for cleaner axis (like dashboard)
+                      // Render ticks at every index, then hide every other label manually.
+                      // This avoids fl_chart sometimes starting the "interval" ticks at x=1,
+                      // which causes the visible labels to look shifted (e.g. Apr..Mar).
+                      interval: 1,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index >= 0 && index < 12) {
-                          final monthNames = [
-                            'Jan',
-                            'Feb',
-                            'Mar',
-                            'Apr',
-                            'May',
-                            'Jun',
-                            'Jul',
-                            'Aug',
-                            'Sep',
-                            'Oct',
-                            'Nov',
-                            'Dec'
-                          ];
+                        if (index >= 0 && index < comparisonData.length) {
+                          if (index.isOdd) return const Text('');
+                          final month = comparisonData[index]['month'] as String?;
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              monthNames[index],
+                              month ?? '',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontSize: 11,
@@ -271,7 +262,7 @@ class _UsageComparisonChartWidgetState
                   border: Border.all(color: AppColors.border),
                 ),
                 minX: 0,
-                maxX: 11,
+                maxX: (comparisonData.length - 1).toDouble(),
                 minY: 0,
                 maxY: maxValue > 0 ? maxValue * 1.1 : 100,
                 lineBarsData: [
@@ -593,7 +584,7 @@ class _UsageComparisonChartWidgetState
     List<MeterReadingDto> lastYearReadings,
   List<MeterReadingDto> yearTwoReadings,
   ) {
-    final monthNames = [
+    const defaultMonthNames = [
       'Jan',
       'Feb',
       'Mar',
@@ -605,52 +596,82 @@ class _UsageComparisonChartWidgetState
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
-    return monthNames.asMap().entries.map((entry) {
+    const monthAbbrevs = defaultMonthNames;
+
+    String monthLabelForReading(MeterReadingDto r) {
+      final monthFromField = r.readMonth.trim();
+      if (monthFromField.isNotEmpty) return monthFromField;
+
+      // Infer month from `readDate` if `readMonth` is missing/empty.
+      // Example API format: "3/1/2024 12:00:00 AM" (M/D/YYYY ...).
+      final raw = r.readDate.trim();
+      if (raw.isEmpty) return '';
+
+      final match = RegExp(r'^\s*(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})').firstMatch(raw);
+      if (match == null) return '';
+
+      final monthNumber = int.tryParse(match.group(1) ?? '');
+      if (monthNumber == null || monthNumber < 1 || monthNumber > 12) return '';
+      return monthAbbrevs[monthNumber - 1];
+    }
+
+    MeterReadingDto emptyForMonth(String month) => MeterReadingDto(
+          readDate: '',
+          readMonth: month,
+          readYear: '',
+          days: '0',
+          consumption: '0',
+          averageUsage: '0',
+          amount: '0.00',
+        );
+
+    // Preserve incoming ordering from "this year" readings (e.g. Mar -> ... -> Feb),
+    // then align last-year and year-two values to the same index sequence.
+    final seen = <String>{};
+    final monthNamesInOrder = <String>[];
+    for (final r in thisYearReadings) {
+      final month = monthLabelForReading(r);
+      if (month.isEmpty) continue;
+      if (seen.add(month)) monthNamesInOrder.add(month);
+    }
+    if (monthNamesInOrder.isEmpty) {
+      // Extremely defensive fallback: if we can't infer any month labels from the API,
+      // use the standard Jan..Dec order.
+      monthNamesInOrder.addAll(defaultMonthNames);
+    }
+
+    // Build lookup maps using the same month-labeling logic.
+    final thisYearByMonth = <String, MeterReadingDto>{};
+    for (final r in thisYearReadings) {
+      final month = monthLabelForReading(r);
+      if (month.isEmpty) continue;
+      thisYearByMonth.putIfAbsent(month, () => r);
+    }
+
+    final lastYearByMonth = <String, MeterReadingDto>{};
+    for (final r in lastYearReadings) {
+      final month = monthLabelForReading(r);
+      if (month.isEmpty) continue;
+      lastYearByMonth.putIfAbsent(month, () => r);
+    }
+
+    final yearTwoByMonth = <String, MeterReadingDto>{};
+    for (final r in yearTwoReadings) {
+      final month = monthLabelForReading(r);
+      if (month.isEmpty) continue;
+      yearTwoByMonth.putIfAbsent(month, () => r);
+    }
+
+    return monthNamesInOrder.asMap().entries.map((entry) {
       final index = entry.key;
       final month = entry.value;
 
-      // Find data for this month in each year
-      final thisYearData = thisYearReadings.firstWhere(
-        (r) => r.readMonth == month,
-        orElse: () => MeterReadingDto(
-          readDate: '',
-          readMonth: month,
-          readYear: '',
-          days: '0',
-          consumption: '0',
-          averageUsage: '0',
-          amount: '0',
-        ),
-      );
-
-      final lastYearData = lastYearReadings.firstWhere(
-        (r) => r.readMonth == month,
-        orElse: () => MeterReadingDto(
-          readDate: '',
-          readMonth: month,
-          readYear: '',
-          days: '0',
-          consumption: '0',
-          averageUsage: '0',
-          amount: '0',
-        ),
-      );
-
-      final yearTwoData = yearTwoReadings.firstWhere(
-        (r) => r.readMonth == month,
-        orElse: () => MeterReadingDto(
-          readDate: '',
-          readMonth: month,
-          readYear: '',
-          days: '0',
-          consumption: '0',
-          averageUsage: '0',
-          amount: '0',
-        ),
-      );
+      final thisYearData = thisYearByMonth[month] ?? emptyForMonth(month);
+      final lastYearData = lastYearByMonth[month] ?? emptyForMonth(month);
+      final yearTwoData = yearTwoByMonth[month] ?? emptyForMonth(month);
 
       return {
         'index': index.toDouble(),
