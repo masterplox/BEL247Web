@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/account_verification_providers.dart';
+import '../../../core/widgets/account_access_activation_dialog.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
-import '../../../core/widgets/account_access_activation_dialog.dart';
-import '../../../core/providers/account_verification_providers.dart';
 import '../../../data/models/api_response_dtos.dart';
 import '../../../features/bills/state/bills_providers.dart';
 import '../../../theme/app_theme.dart';
@@ -218,7 +218,7 @@ class AccountDetailsWidget extends ConsumerWidget {
 
     if (!isVerified) {
       final result = await showFullAccessActivationDialog(context);
-      if (result == true) {
+      if (result ?? false) {
         // Re-check verification status after the flow completes.
         isVerified =
             await ref.refresh(accountVerificationStatusProvider.future);
@@ -233,6 +233,15 @@ class AccountDetailsWidget extends ConsumerWidget {
   }
 
   void _showFullDetailsDialog(BuildContext context, EditableCustomerAccountDto accountDetails) {
+    final phone =
+        (accountDetails.cell?.trim().isNotEmpty ?? false)
+            ? accountDetails.cell!.trim()
+            : 'None registered';
+    final email =
+        (accountDetails.emailAddress?.trim().isNotEmpty ?? false)
+            ? accountDetails.emailAddress!.trim()
+            : 'None registered';
+
     AppDialog.showCenter(
       context: context,
       title: 'Account Details',
@@ -242,8 +251,8 @@ class AccountDetailsWidget extends ConsumerWidget {
         children: [
           _buildSectionTitle(context, 'Personal Information'),
           _buildDetailRow(context, 'Name', accountDetails.name ?? ''),
-          _buildDetailRow(context, 'Phone', accountDetails.cell ?? ''),
-          _buildDetailRow(context, 'Email', accountDetails.emailAddress ?? ''),
+          _buildDetailRow(context, 'Phone', phone),
+          _buildDetailRow(context, 'Email', email),
           const SizedBox(height: AppTheme.spacing16),
           _buildSectionTitle(context, 'Service Address'),
           _buildDetailRow(context, 'Street', accountDetails.street ?? ''),
