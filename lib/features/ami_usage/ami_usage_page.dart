@@ -140,7 +140,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           child: AppEmptyState(
             title: 'No Meter Information',
             message:
-                'Your account does not have meter information. Please contact support.',
+                'Your account does not have meter information. Please contact appsupport@bel.com.bz',
             icon: Icons.electric_meter_outlined,
           ),
         ),
@@ -155,7 +155,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           child: AppEmptyState(
             title: 'Invalid Meter Number',
             message:
-                'Your account has an invalid meter number. Please contact support.',
+                'Your account has an invalid meter number. Please contact appsupport@bel.com.bz',
             icon: Icons.electric_meter_outlined,
           ),
         ),

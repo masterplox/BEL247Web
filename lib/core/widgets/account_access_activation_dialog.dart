@@ -134,7 +134,7 @@ class _FullAccessActivationFlowState
             const SizedBox(height: AppTheme.spacing16),
             if (!hasPhone && !hasEmail)
               Text(
-                'We do not have a phone number or email address on file for this account. Please contact support.',
+                'We do not have a phone number or email address on file for this account. Please contact appsupport@bel.com.bz',
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -525,7 +525,7 @@ class _BillDownloadActivationFlowState
             const SizedBox(height: AppTheme.spacing16),
             if (!hasPhone && !hasEmail)
               Text(
-                'We do not have a phone number or email address on file for this account. Please contact support.',
+                'We do not have a phone number or email address on file for this account. Please contact appsupport@bel.com.bz',
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
