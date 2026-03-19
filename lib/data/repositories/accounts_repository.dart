@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/logger.dart';
-import '../models/api_response_dtos.dart';
 import '../models/account.dart';
+import '../models/api_response_dtos.dart';
 import '../services/api_client.dart';
 import '../services/token_storage_service.dart';
 
@@ -376,7 +376,17 @@ class AccountsRepository {
             (dto.accountNumber ?? '') == accountNumber,
           orElse: () => throw StateError('Account not found'),
         );
-        
+
+        // Frontend-only override for dev/testing:
+        // mimic the API returning these flags as `true`.
+        // (Keeping this gated to development so we don't accidentally grant access in prod.)
+        // if (EnvConfig.isDevelopment) {
+        //   return matchingDto.copyWith(
+        //     fullAccess: true,
+        //     billDownloadAccess: false,
+        //   );
+        // }
+
         return matchingDto;
       }
       return null;

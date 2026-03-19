@@ -983,25 +983,29 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     var isVerified =
         await ref.read(accountVerificationStatusProvider.future);
 
-    if (!isVerified) {
+    // Receipts always require full access.
+    if (entry.isPayment && !isVerified) {
       final result = await showFullAccessActivationDialog(context);
       if (result == true) {
         isVerified =
             await ref.refresh(accountVerificationStatusProvider.future);
       }
     }
-
-    if (!isVerified) {
+    if (entry.isPayment && !isVerified) {
       return;
     }
 
-    var hasBillDownloadAccess =
-        await ref.read(billDownloadAccessStatusProvider.future);
-
+    // Bills can be downloaded if the user has either:
+    // - fullAccess, OR
+    // - billDownloadAccess
     if (!entry.isPayment) {
+      var hasBillDownloadAccess =
+          await ref.read(billDownloadAccessStatusProvider.future);
+
       final bill = entry.bill;
       final billNumber = bill?.billNumber ?? entry.subDescription ?? '';
-      if (billNumber.isNotEmpty && !hasBillDownloadAccess) {
+
+      if (billNumber.isNotEmpty && !isVerified && !hasBillDownloadAccess) {
         final activationResult = await showBillDownloadActivationDialog(
           context,
           billNumber: billNumber,
@@ -1011,7 +1015,8 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
               await ref.refresh(billDownloadAccessStatusProvider.future);
         }
       }
-      if (!hasBillDownloadAccess) {
+
+      if (!isVerified && !hasBillDownloadAccess) {
         return;
       }
     }
