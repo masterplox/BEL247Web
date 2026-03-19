@@ -863,6 +863,14 @@ class _AccountCard extends StatelessWidget {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           Text(
+                            '${account.customerNumber}:${account.accountNumber}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                          ),
+                          const SizedBox(height: AppTheme.spacing4),
+                          Text(
                             account.address,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: AppColors.textSecondary,
