@@ -5,7 +5,6 @@ import '../../../core/widgets/app_card.dart';
 import '../../../data/models/ami_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import '../ami_usage_page.dart';
 
 class AmiDayChart extends StatelessWidget {
   const AmiDayChart({
@@ -13,13 +12,11 @@ class AmiDayChart extends StatelessWidget {
     required this.data,
     this.selectedHour,
     required this.onSelectHour,
-    required this.viewMode,
   });
 
   final List<HourlyData> data;
   final int? selectedHour;
   final Function(int?) onSelectHour;
-  final ViewMode viewMode;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +27,7 @@ class AmiDayChart extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.query_stats_outlined,
+                Icons.insights_outlined,
                 size: 44,
                 color: AppColors.textSecondary,
               ),
@@ -57,8 +54,7 @@ class AmiDayChart extends StatelessWidget {
     }
 
     final chartData = data.map((hour) {
-      final value = viewMode == ViewMode.cost ? hour.kWh * 0.32 : hour.kWh;
-      return FlSpot(hour.hour.toDouble(), value);
+      return FlSpot(hour.hour.toDouble(), hour.kWh);
     }).toList();
 
     final maxValue = chartData.fold<double>(0, (max, spot) => spot.y > max ? spot.y : max);
@@ -84,12 +80,7 @@ class AmiDayChart extends StatelessWidget {
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                   final hour = data[group.x.toInt()];
                   final kWh = hour.kWh;
-                  final cost = kWh * 0.32;
-                  // Show both kWh and cost with horizontal divider (like dashboard usage trend)
-                  final tooltipText = '${kWh.toStringAsFixed(2)} kWh\n'
-                      '───\n'
-                      '\$${cost.toStringAsFixed(2)}\n'
-                      '${hour.time}';
+                  final tooltipText = '${kWh.toStringAsFixed(2)} kWh\n${hour.time}';
                   return BarTooltipItem(
                     tooltipText,
                     const TextStyle(
@@ -146,7 +137,7 @@ class AmiDayChart extends StatelessWidget {
                   showTitles: true,
                   reservedSize: 50,
                   getTitlesWidget: (value, meta) => Text(
-                      value.toStringAsFixed(viewMode == ViewMode.cost ? 1 : 0),
+                      '${value.toStringAsFixed(0)} kWh',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 10,
@@ -179,7 +170,7 @@ class AmiDayChart extends StatelessWidget {
               final period = getTimeOfUsePeriod(hour.hour);
               Color barColor;
               if (period == TimeOfUse.peak) {
-                barColor = AppColors.chart4;
+                barColor = AppColors.info;
               } else if (period == TimeOfUse.midPeak) {
                 barColor = AppColors.chart3;
               } else {

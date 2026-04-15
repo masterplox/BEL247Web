@@ -15,7 +15,6 @@ class AmiPeriodChart extends StatelessWidget {
     required this.filterType,
     this.selectedIndex,
     required this.onSelectIndex,
-    required this.viewMode,
     this.touPerDay,
     this.showLoading = false,
   });
@@ -24,7 +23,6 @@ class AmiPeriodChart extends StatelessWidget {
   final FilterType filterType;
   final int? selectedIndex;
   final Function(int?) onSelectIndex;
-  final ViewMode viewMode;
   /// When set (week/month), bars are stacked by TOU: off-peak, peak, mid-peak.
   final List<DayTou>? touPerDay;
   /// When true, show a loading spinner instead of the chart (used while TOU data loads).
@@ -68,7 +66,7 @@ class AmiPeriodChart extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.query_stats_outlined,
+                Icons.insights_outlined,
                 size: 44,
                 color: AppColors.textSecondary,
               ),
@@ -135,14 +133,13 @@ class AmiPeriodChart extends StatelessWidget {
         if (sum > maxValue) maxValue = sum;
       } else {
         final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-        final value = viewMode == ViewMode.cost ? kWh * 0.32 : kWh;
-        if (value > maxValue) maxValue = value;
+        if (kWh > maxValue) maxValue = kWh;
       }
     }
     // fl_chart asserts when maxY == minY (common when all values are 0)
     final safeMaxY = maxValue > 0 ? maxValue * 1.1 : 1.0;
 
-    final barColor = viewMode == ViewMode.cost ? AppColors.chart2 : AppColors.primary;
+    final barColor = AppColors.primary;
 
     return AppCard(
       clipBehavior: Clip.none,
@@ -184,11 +181,7 @@ class AmiPeriodChart extends StatelessWidget {
                         );
                       }
                       final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                      final cost = kWh * 0.32;
-                      final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n'
-                          '───\n'
-                          '\$${cost.toStringAsFixed(2)}\n'
-                          '$dateStr';
+                      final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n$dateStr';
                       return BarTooltipItem(
                         tooltipText,
                         const TextStyle(
@@ -267,7 +260,7 @@ class AmiPeriodChart extends StatelessWidget {
                   showTitles: true,
                   reservedSize: 50,
                   getTitlesWidget: (value, meta) => Text(
-                      value.toStringAsFixed(viewMode == ViewMode.cost ? 1 : 0),
+                      '${value.toStringAsFixed(0)} kWh',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 10,
@@ -319,7 +312,7 @@ class AmiPeriodChart extends StatelessWidget {
                         BarChartRodStackItem(
                           off,
                           off + peak,
-                          AppColors.chart4,
+                          AppColors.info,
                         ),
                         BarChartRodStackItem(
                           off + peak,
@@ -332,12 +325,11 @@ class AmiPeriodChart extends StatelessWidget {
                 );
               }
               final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-              final value = viewMode == ViewMode.cost ? kWh * 0.32 : kWh;
               return BarChartGroupData(
                 x: index,
                 barRods: [
                   BarChartRodData(
-                    toY: value,
+                    toY: kWh,
                     color: isSelected ? barColor : barColor.withOpacity(0.7),
                     width: 12,
                     borderRadius: const BorderRadius.vertical(

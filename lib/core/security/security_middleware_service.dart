@@ -49,7 +49,6 @@ class SecurityMiddlewareService {
   void _setMetaHeader(String name, String value) {
     // This would be implemented with conditional imports for web platforms
     if (kDebugMode) {
-      print('Setting meta header: $name = $value');
     }
   }
 
@@ -57,19 +56,16 @@ class SecurityMiddlewareService {
   void _setupCSPReporting() {
     // Add CSP reporting endpoint (web-specific implementation would go here)
     if (kDebugMode) {
-      print('Setting up CSP reporting to: ${CSPConfig.getReportEndpoint()}');
     }
 
     // Set up CSP violation handler (web-specific implementation would go here)
     if (kDebugMode) {
-      print('Setting up CSP violation handler');
     }
   }
 
   /// Handle CSP violations
   void _handleCSPViolation(Map<String, dynamic> violationData) {
     if (kDebugMode) {
-      print('CSP Violation: $violationData');
     }
 
     // Send violation report to server
@@ -82,15 +78,12 @@ class SecurityMiddlewareService {
       final reportEndpoint = CSPConfig.getReportEndpoint();
       
       if (kDebugMode) {
-        print('Sending CSP violation report to: $reportEndpoint');
-        print('Violation data: $violationData');
       }
       
       // In a real implementation, this would send an HTTP request
       // For now, just log it
     } catch (e) {
       if (kDebugMode) {
-        print('Failed to send CSP violation report: $e');
       }
     }
   }
@@ -102,7 +95,6 @@ class SecurityMiddlewareService {
     
     // Monitor for security issues (web-specific implementation would go here)
     if (kDebugMode) {
-      print('Starting security monitoring');
     }
   }
 
@@ -111,13 +103,11 @@ class SecurityMiddlewareService {
     // Check for mixed content
     final mixedContentIssues = _httpsService.checkMixedContent();
     if (mixedContentIssues.isNotEmpty && kDebugMode) {
-      print('Mixed content issues detected: $mixedContentIssues');
     }
 
     // Check security headers
     final headersValidation = _headersService.validateHeaders(_headersService.getAllSecurityHeaders());
     if (!headersValidation['hasAllRequiredHeaders'] && kDebugMode) {
-      print('Missing security headers: ${headersValidation['missingHeaders']}');
     }
   }
 
@@ -128,17 +118,7 @@ class SecurityMiddlewareService {
     final cspValidation = CSPConfig.validateCSPConfiguration();
 
     if (kDebugMode) {
-      print('Security Configuration Validation:');
-      print('HTTPS: ${httpsValidation['securityScore']}/100');
-      print('Headers: ${headersValidation['hasAllRequiredHeaders'] ? 'Valid' : 'Invalid'}');
-      print('CSP Valid: ${cspValidation['isValid']}');
       
-      if (httpsValidation['issues'].isNotEmpty) {
-        print('HTTPS Issues: ${httpsValidation['issues']}');
-      }
-      if (httpsValidation['warnings'].isNotEmpty) {
-        print('HTTPS Warnings: ${httpsValidation['warnings']}');
-      }
     }
   }
 
@@ -206,7 +186,6 @@ class SecurityMiddlewareService {
         break;
       default:
         if (kDebugMode) {
-          print('Unknown security event: $eventType');
         }
     }
   }
@@ -214,7 +193,6 @@ class SecurityMiddlewareService {
   /// Handle CSP violation event
   void _handleCSPViolationEvent(Map<String, dynamic> eventData) {
     if (kDebugMode) {
-      print('CSP Violation Event: $eventData');
     }
     _sendViolationReport(eventData);
   }
@@ -222,21 +200,18 @@ class SecurityMiddlewareService {
   /// Handle mixed content event
   void _handleMixedContentEvent(Map<String, dynamic> eventData) {
     if (kDebugMode) {
-      print('Mixed Content Event: $eventData');
     }
     
     // Log mixed content issues
     final issues = _httpsService.checkMixedContent();
     if (issues.isNotEmpty) {
-      print('Current mixed content issues: $issues');
     }
   }
 
   /// Handle insecure request event
   void _handleInsecureRequestEvent(Map<String, dynamic> eventData) {
     if (kDebugMode) {
-      print('Insecure Request Event: $eventData');
-    }
+      }
     
     // Force HTTPS redirect if needed
     if (!_httpsService.isSecureConnection && !kDebugMode) {

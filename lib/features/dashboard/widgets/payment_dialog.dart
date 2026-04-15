@@ -59,7 +59,7 @@ class PaymentDialogWidget extends ConsumerStatefulWidget {
       content: PaymentDialogWidget(
         accountBalance: accountBalance,
         onPaymentSuccess: (amount, method) {
-          Navigator.of(context, rootNavigator: true).pop();
+          Navigator.of(context).pop();
           onPaymentSuccess?.call(amount, method);
         },
         onPaymentError: (error) {
@@ -67,6 +67,10 @@ class PaymentDialogWidget extends ConsumerStatefulWidget {
         },
       ),
       actions: [],
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing12,
+        vertical: AppTheme.spacing8,
+      ),
     );
   }
 
@@ -113,7 +117,11 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
         ),
       );
 
-  Widget _buildPaymentForm() => Form(
+  Widget _buildPaymentForm() {
+    final tight = MediaQuery.sizeOf(context).width < AppTheme.tabletBreakpoint;
+    final sectionPadding =
+        tight ? AppTheme.spacing12 : AppTheme.spacing16;
+    return Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -121,7 +129,7 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
           children: [
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: AppTheme.spacing16),
+              margin: EdgeInsets.only(bottom: sectionPadding),
               padding: const EdgeInsets.all(AppTheme.spacing12),
               decoration: BoxDecoration(
                 color: AppColors.warning.withValues(alpha: 0.1),
@@ -150,17 +158,18 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
                 ],
               ),
             ),
-            _buildAmountSection(),
-            const SizedBox(height: AppTheme.spacing16),
-            _buildPaymentMethodSection(),
-            const SizedBox(height: AppTheme.spacing24),
+            _buildAmountSection(sectionPadding),
+            SizedBox(height: sectionPadding),
+            _buildPaymentMethodSection(sectionPadding),
+            SizedBox(height: tight ? AppTheme.spacing16 : AppTheme.spacing24),
             _buildActionButtons(),
           ],
         ),
       );
+  }
 
-  Widget _buildAmountSection() => Container(
-        padding: const EdgeInsets.all(AppTheme.spacing16),
+  Widget _buildAmountSection(double padding) => Container(
+        padding: EdgeInsets.all(padding),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
@@ -220,8 +229,8 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
         ),
       );
 
-  Widget _buildPaymentMethodSection() => Container(
-        padding: const EdgeInsets.all(AppTheme.spacing16),
+  Widget _buildPaymentMethodSection(double padding) => Container(
+        padding: EdgeInsets.all(padding),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
@@ -389,39 +398,48 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
   }
 
   void _showSuccessDialog(double amount, String method) {
-    dialog.AppDialog.showCenter(
+    // Use [showDialog] + builder context for dismiss: after [onPaymentSuccess]
+    // runs, the payment route is popped and this [State]'s [context] is
+    // deactivated, so actions must not call [Navigator.pop] with that context.
+    showDialog<void>(
       context: context,
-      title: 'Payment Successful',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      barrierDismissible: true,
+      useRootNavigator: true,
+      builder: (dialogContext) {
+        final textTheme = Theme.of(dialogContext).textTheme;
+        return dialog.AppDialog(
+          title: 'Payment Successful',
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.check_circle, color: AppColors.success),
-              const SizedBox(width: AppTheme.spacing8),
-              Text(
-                'Your payment has been processed successfully.',
-                style: Theme.of(context).textTheme.bodyMedium,
+              Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppColors.success),
+                  const SizedBox(width: AppTheme.spacing8),
+                  Text(
+                    'Your payment has been processed successfully.',
+                    style: textTheme.bodyMedium,
+                  ),
+                ],
               ),
+              const SizedBox(height: AppTheme.spacing16),
+              Text('Amount: \$${amount.toStringAsFixed(2)}'),
+              Text('Method: $method'),
+              Text('Transaction ID: TXN-${DateTime.now().millisecondsSinceEpoch}'),
             ],
           ),
-          const SizedBox(height: AppTheme.spacing16),
-          Text('Amount: \$${amount.toStringAsFixed(2)}'),
-          Text('Method: $method'),
-          Text('Transaction ID: TXN-${DateTime.now().millisecondsSinceEpoch}'),
-        ],
-      ),
-      actions: [
-        ElevatedButton(
-          onPressed: () {
-            // Close only the success dialog. The underlying payment dialog
-            // is already closed in the onPaymentSuccess callback wiring.
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-          child: const Text('OK'),
-        ),
-      ],
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+          mode: dialog.DialogMode.center,
+          maxWidth: 500,
+          onClose: () => Navigator.of(dialogContext).pop(),
+        );
+      },
     );
   }
 

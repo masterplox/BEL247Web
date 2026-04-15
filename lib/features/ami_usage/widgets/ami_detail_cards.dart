@@ -89,8 +89,6 @@ class _HourlyDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cost = detail.kWh * 0.32;
-
     return AppCard(
       padding: const EdgeInsets.all(AppTheme.spacing16),
       child: Row(
@@ -117,13 +115,6 @@ class _HourlyDetailCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
-                              ),
-                        ),
-                        const SizedBox(height: AppTheme.spacing4),
-                        Text(
-                          '\$${cost.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
                               ),
                         ),
                       ],
@@ -155,7 +146,6 @@ class _DayDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cost = detail.kWh * 0.32;
     final dateStr = _formatDate(detail.date);
 
     return AppCard(
@@ -184,13 +174,6 @@ class _DayDetailCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
-                              ),
-                        ),
-                        const SizedBox(height: AppTheme.spacing4),
-                        Text(
-                          '\$${cost.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
                               ),
                         ),
                       ],
@@ -228,8 +211,6 @@ class _MonthDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cost = detail.kWh * 0.32;
-
     return AppCard(
       padding: const EdgeInsets.all(AppTheme.spacing16),
       child: Row(
@@ -256,13 +237,6 @@ class _MonthDetailCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
-                              ),
-                        ),
-                        const SizedBox(height: AppTheme.spacing4),
-                        Text(
-                          '\$${cost.toStringAsFixed(2)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
                               ),
                         ),
                       ],

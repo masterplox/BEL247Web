@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../analytics/app_page_names.dart';
+import '../providers/engagement_providers.dart';
 import '../../data/repositories/accounts_repository.dart';
 import '../../features/bills/state/bills_providers.dart' as bills;
 import '../../features/dashboard/state/dashboard_providers.dart' as dashboard;
@@ -18,8 +21,16 @@ Future<void> showConnectAccountDialogAndRefresh(
   BuildContext context,
   WidgetRef ref,
 ) async {
+  final page = AppPageNames.navigationSubtypeForRoute(
+    GoRouterState.of(context).matchedLocation,
+  );
+  ref.read(deviceEventsRepositoryProvider).logInteractionDialogOpen(
+        currentPageName: page,
+        dialogDetails: AppPageNames.connectCustomerAccount,
+      );
   await showDialog(
     context: context,
+    barrierDismissible: true,
     builder: (context) => _ConnectAccountFormDialog(
       onSuccess: () async {
         // Refresh accounts after successful connection
@@ -68,7 +79,7 @@ class _ConnectAccountFormDialog extends ConsumerStatefulWidget {
     required this.onSuccess,
   });
 
-  final VoidCallback onSuccess;
+  final Future<void> Function() onSuccess;
 
   @override
   ConsumerState<_ConnectAccountFormDialog> createState() => _ConnectAccountFormDialogState();
@@ -81,6 +92,8 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
   final _nicknameController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  String? _successMessage;
+  bool _isSuccess = false;
 
   @override
   void dispose() {
@@ -98,28 +111,31 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _successMessage = null;
     });
 
     try {
       final accountsRepo = ref.read(accountsRepositoryProvider);
-      await accountsRepo.connectAccount(
+      final response = await accountsRepo.connectAccount(
         customerNumber: _customerNumberController.text.trim(),
         accountNumberHint: _accountNumberHintController.text.trim(),
         nickName: _nicknameController.text.trim(),
       );
 
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        widget.onSuccess();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account connected successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+      if (response.status == 0) {
+        setState(() {
+          _isLoading = false;
+          _isSuccess = true;
+          _successMessage = response.message ?? 'Account connected successfully!';
+        });
+        return;
       }
-    } catch (e) {
-      print('_submitForm connect account error: $e');
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = response.message ?? 'Failed to connect account.';
+      });
+    } catch (e) { 
       setState(() {
         _isLoading = false;
         // _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -129,7 +145,6 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
   }
 
   String _extractConnectAccountErrorMessage(Object error) {
-    print('_extractConnectAccountErrorMessage: $error');
     // Prefer backend-provided `message` when available.
     if (error is DioException) {
       final data = error.response?.data;
@@ -164,6 +179,12 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
 
     // Generic fallback: strip "Exception: " prefix if present.
     return error.toString().replaceAll('Exception: ', '').trim();
+  }
+
+  Future<void> _handleSuccessOkay() async {
+    await widget.onSuccess();
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   @override
@@ -202,6 +223,43 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                   ],
                 ),
                 const SizedBox(height: AppTheme.spacing24),
+                if (_isSuccess) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppTheme.spacing12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppTheme.radius8),
+                      border: Border.all(color: AppColors.success),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline, color: AppColors.success),
+                        const SizedBox(width: AppTheme.spacing8),
+                        Expanded(
+                          child: Text(
+                            _successMessage ?? 'Account connected successfully!',
+                            style: const TextStyle(color: AppColors.success),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _handleSuccessOkay,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.white,
+                        ),
+                        child: const Text('Okay'),
+                      ),
+                    ],
+                  ),
+                ] else ...[
                 // Customer Number
                 TextFormField(
                   controller: _customerNumberController,
@@ -224,20 +282,20 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 TextFormField(
                   controller: _accountNumberHintController,
                   decoration: const InputDecoration(
-                    labelText: 'Account Number (Last 5 digits)',
-                    hintText: 'Enter up to 5 characters',
+                    labelText: 'Account number (Last 5 digits)',
+                    hintText: 'Enter last 5 digits',
                     prefixIcon: Icon(Icons.numbers),
                     border: OutlineInputBorder(),
-                    helperText: 'Maximum 5 characters',
+                    helperText: 'Maximum 5 digits',
                   ),
                   keyboardType: TextInputType.number,
                   maxLength: 5,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Account number hint is required';
+                      return 'Last 5 digits are required';
                     }
                     if (value.trim().length > 5) {
-                      return 'Maximum 5 characters allowed';
+                      return 'Maximum 5 digits allowed';
                     }
                     return null;
                   },
@@ -312,6 +370,7 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                     ),
                   ],
                 ),
+                ],
               ],
             ),
           ),

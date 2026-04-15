@@ -18,7 +18,6 @@ class BillsRepository {
   static final _apiClient = ApiClient.instance;
 
   Future<List<Bill>> fetchBills(String accountId) async {
-    print('[Bills] Repository.fetchBills start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
     
     // Always use mock repository to load from JSON file
@@ -27,17 +26,13 @@ class BillsRepository {
     final result = await repo.getBills(accountId);
     
     if (result.success && result.data != null) {
-      print('[Bills] Repository.fetchBills success ${result.data!.bills.length} bills accountId=$accountId');
       return result.data!.bills;
     } else {
-      print('[Bills] Repository.fetchBills [ERROR] No bills found for accountId=$accountId, returning empty list');
-      print('[Bills] Repository.fetchBills error: ${result.error}');
       return [];
     }
   }
 
   Future<AccountBalance> fetchAccountBalance(String accountId) async {
-    print('[Bills] Repository.fetchAccountBalance start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate network delay
     // Always use mock service for now (similar to fetchBills)
     // TODO: Add live API call when implemented
@@ -50,30 +45,23 @@ class BillsRepository {
       paymentMethod: 'Unknown',
     );
     if (bal == null) {
-      print('[Bills] Repository.fetchAccountBalance [ERROR] No balance found for accountId=$accountId, returning default');
     } else {
-      print('[Bills] Repository.fetchAccountBalance success balance=\$${result.currentBalance.toStringAsFixed(2)} accountId=$accountId');
     }
     return result;
   }
 
   Future<List<MonthlyConsumption>> fetchYearlyConsumption(String accountId, int year) async {
-    print('[Bills] Repository.fetchYearlyConsumption useMockApi=${EnvConfig.useMockApi}');
-    print('[Bills] Repository.fetchYearlyConsumption start accountId=$accountId year=$year');
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final repo = MockBillRepository(); // In a real app, this would be determined by EnvConfig
     final result = await repo.getYearlyConsumption(accountId, year);
     if (result.success && result.data != null) {
-      print('[Bills] Repository.fetchYearlyConsumption success count=${result.data!.length} accountId=$accountId');
       return result.data!;
     } else {
-      print('[Bills] Repository.fetchYearlyConsumption [ERROR] No data found for accountId=$accountId, returning empty list');
       return [];
     }
   }
 
   Future<UsageSummary> fetchUsageSummary(String accountId) async {
-    print('[Bills] Repository.fetchUsageSummary start accountId=$accountId');
     await Future.delayed(const Duration(milliseconds: 300)); // Simulate network delay
     // Always use mock service for now (similar to fetchBills)
     // TODO: Add live API call when implemented
@@ -84,9 +72,7 @@ class BillsRepository {
       yearToDate: UsagePeriod(kwh: 0, cost: 0, averageDaily: 0),
     );
     if (usage == null) {
-      print('[Bills] Repository.fetchUsageSummary [ERROR] No usage summary found for accountId=$accountId, returning default');
     } else {
-      print('[Bills] Repository.fetchUsageSummary success currentMonth=${usage.currentMonth.kwh.toStringAsFixed(2)}kwh cost=\$${usage.currentMonth.cost.toStringAsFixed(2)} accountId=$accountId');
     }
     return result;
   }
@@ -119,13 +105,11 @@ class BillsRepository {
     required String accountNumber,
   }) async {
     try {
-      print('[Bills] Repository.fetchTransactionHistory start customerNumber=$customerNumber accountNumber=$accountNumber');
       Logger.info('Fetching transaction history...', tag: 'BillsRepository');
 
       if (EnvConfig.useMockApi) {
         // Use mock data for now
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[Bills] Repository.fetchTransactionHistory using mock data');
         return [];
       }
 
@@ -141,7 +125,6 @@ class BillsRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = TransactionHistoryResponseDto.fromJson(response.data!);
         
-        print('[Bills] ✅ Successfully fetched ${responseDto.paymentTransactions.length} transactions');
         Logger.info(
           'Successfully fetched ${responseDto.paymentTransactions.length} transactions',
           tag: 'BillsRepository',
@@ -152,7 +135,6 @@ class BillsRepository {
             .map(_mapTransactionDtoToPaymentHistory)
             .toList();
 
-        print('[Bills] ✅ Mapped ${transactions.length} payment history records');
         return transactions;
       } else {
         Logger.warning(
@@ -256,8 +238,6 @@ class BillsRepository {
   /// GET /Bills/V3/Detail/{billNumber}
   Future<BillDetailDataDto?> fetchBillDetail(String billNumber) async {
     try {
-      print('[Bills] Repository.fetchBillDetail start billNumber=$billNumber');
-      
       if (EnvConfig.useMockApi) {
         // Simulate API delay
         await Future.delayed(const Duration(milliseconds: 500));
@@ -300,7 +280,6 @@ class BillsRepository {
         final responseDto = BillDetailResponseDto.fromJson(response.data!);
         
         if (responseDto.status == 200) {
-          print('[Bills] ✅ Successfully fetched bill detail for billNumber=$billNumber');
           Logger.info('Successfully fetched bill detail', tag: 'BillsRepository');
           return responseDto.bill;
         } else {

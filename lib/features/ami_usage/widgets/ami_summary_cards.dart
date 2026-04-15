@@ -9,7 +9,6 @@ class AmiSummaryCards extends StatelessWidget {
   const AmiSummaryCards({
     super.key,
     required this.totalKWh,
-    required this.estimatedCost,
     required this.peakKWh,
     required this.peakTime,
     required this.avgKWh,
@@ -17,7 +16,6 @@ class AmiSummaryCards extends StatelessWidget {
   });
 
   final double totalKWh;
-  final double estimatedCost;
   final double peakKWh;
   final String peakTime;
   final double avgKWh;
@@ -33,15 +31,6 @@ class AmiSummaryCards extends StatelessWidget {
         'icon': Icons.bolt_outlined,
         'color': AppColors.primary,
         'bgColor': AppColors.primary,
-      },
-      {
-        'label': 'Est. Cost',
-        'value': estimatedCost.toStringAsFixed(2),
-        'unit': r'$',
-        'prefix': true,
-        'icon': Icons.attach_money_outlined,
-        'color': AppColors.info,
-        'bgColor': AppColors.info,
       },
       {
         'label': 'Peak Usage',

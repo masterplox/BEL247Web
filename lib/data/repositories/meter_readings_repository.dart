@@ -17,12 +17,10 @@ class MeterReadingsRepository {
     required String accountNumber,
   }) async {
     try {
-      print('[MeterReadings] Repository.fetchMeterReadingsThisYear start customerNumber=$customerNumber accountNumber=$accountNumber');
       Logger.info('Fetching meter readings for this year...', tag: 'MeterReadingsRepository');
 
       if (EnvConfig.useMockApi) {
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[MeterReadings] Repository.fetchMeterReadingsThisYear using mock data');
         return [];
       }
 
@@ -38,7 +36,6 @@ class MeterReadingsRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = MeterReadingsResponseDto.fromJson(response.data!);
         
-        print('[MeterReadings] ✅ Successfully fetched ${responseDto.readings.length} readings for this year');
         Logger.info(
           'Successfully fetched ${responseDto.readings.length} readings for this year',
           tag: 'MeterReadingsRepository',
@@ -70,12 +67,10 @@ class MeterReadingsRepository {
     required String accountNumber,
   }) async {
     try {
-      print('[MeterReadings] Repository.fetchMeterReadingsLastYear start customerNumber=$customerNumber accountNumber=$accountNumber');
       Logger.info('Fetching meter readings for last year...', tag: 'MeterReadingsRepository');
 
       if (EnvConfig.useMockApi) {
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[MeterReadings] Repository.fetchMeterReadingsLastYear using mock data');
         return [];
       }
 
@@ -91,7 +86,6 @@ class MeterReadingsRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = MeterReadingsResponseDto.fromJson(response.data!);
         
-        print('[MeterReadings] ✅ Successfully fetched ${responseDto.readings.length} readings for last year');
         Logger.info(
           'Successfully fetched ${responseDto.readings.length} readings for last year',
           tag: 'MeterReadingsRepository',
@@ -123,12 +117,10 @@ class MeterReadingsRepository {
     required String accountNumber,
   }) async {
     try {
-      print('[MeterReadings] Repository.fetchMeterReadingsYearTwo start customerNumber=$customerNumber accountNumber=$accountNumber');
       Logger.info('Fetching meter readings for year -2...', tag: 'MeterReadingsRepository');
 
       if (EnvConfig.useMockApi) {
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[MeterReadings] Repository.fetchMeterReadingsYearTwo using mock data');
         return [];
       }
 
@@ -144,7 +136,6 @@ class MeterReadingsRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = MeterReadingsResponseDto.fromJson(response.data!);
 
-        print('[MeterReadings] ✅ Successfully fetched ${responseDto.readings.length} readings for year -2');
         Logger.info(
           'Successfully fetched ${responseDto.readings.length} readings for year -2',
           tag: 'MeterReadingsRepository',

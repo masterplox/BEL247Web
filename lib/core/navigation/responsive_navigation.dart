@@ -5,8 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
+import '../analytics/app_page_names.dart';
+import '../providers/engagement_providers.dart';
 import '../widgets/account_switcher.dart';
+import '../widgets/app_support_dialog.dart';
 import '../widgets/centered_content.dart';
+import '../widgets/connectivity_banner.dart';
 import '../widgets/notice_banner.dart';
 import '../widgets/sidebar_nav_item.dart';
 import 'navigation_providers.dart';
@@ -48,21 +52,78 @@ class ResponsiveNavigation extends ConsumerWidget {
       }
     });
 
-    if (navigation.shouldShowSidebar) {
-      return _SidebarLayout(
-        navigation: navigation,
-        navigationNotifier: navigationNotifier,
-        child: child,
-      );
-    } else {
-      // Fallback for smaller screens (mobile)
-      return _BottomNavLayout(
-        navigation: navigation,
-        navigationNotifier: navigationNotifier,
-        child: child,
-      );
-    }
+    final shell = navigation.shouldShowSidebar
+        ? _SidebarLayout(
+            navigation: navigation,
+            navigationNotifier: navigationNotifier,
+            child: child,
+          )
+        : _BottomNavLayout(
+            navigation: navigation,
+            navigationNotifier: navigationNotifier,
+            child: child,
+          );
+
+    return _ShellRouteAnalytics(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          shell,
+          Positioned(
+            right: 16,
+            bottom: navigation.shouldShowBottomNav ? 80 : 16,
+            child: const _FeedbackFab(),
+          ),
+        ],
+      ),
+    );
   }
+}
+
+/// Logs Navigation device events when the shell route changes (authenticated shell only).
+class _ShellRouteAnalytics extends ConsumerStatefulWidget {
+  const _ShellRouteAnalytics({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_ShellRouteAnalytics> createState() => _ShellRouteAnalyticsState();
+}
+
+class _ShellRouteAnalyticsState extends ConsumerState<_ShellRouteAnalytics> {
+  String? _lastLogged;
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(authNotifierProvider, (previous, next) {
+      if (!next.isAuthenticated) {
+        _lastLogged = null;
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final auth = ref.read(authNotifierProvider);
+      if (!auth.isAuthenticated) return;
+      final loc = GoRouterState.of(context).matchedLocation;
+      if (loc == _lastLogged) return;
+      _lastLogged = loc;
+      ref.read(deviceEventsRepositoryProvider).logNavigationForLocation(loc);
+    });
+
+    return widget.child;
+  }
+}
+
+class _FeedbackFab extends ConsumerWidget {
+  const _FeedbackFab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => FloatingActionButton.small(
+        tooltip: 'Send feedback',
+        onPressed: () => showAppSupportDialog(context, ref),
+        child: const Icon(Icons.feedback_outlined),
+      );
 }
 
 /// Sidebar layout for desktop and tablet
@@ -81,6 +142,7 @@ class _SidebarLayout extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
       body: Column(
         children: [
+          const ConnectivityBanner(),
           const NoticeBanner(),
           Expanded(
             child: Row(
@@ -116,6 +178,7 @@ class _BottomNavLayout extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
       body: Column(
         children: [
+          const ConnectivityBanner(),
           const NoticeBanner(),
           Expanded(
             child: CenteredContent(child: child),
@@ -195,10 +258,14 @@ class _SidebarHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.flash_on,
-            color: AppColors.primary,
-            size: isExpanded ? 32 : 20,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.asset(
+              'assets/bel_logo.png',
+              width: isExpanded ? 36 : 24,
+              height: isExpanded ? 36 : 24,
+              fit: BoxFit.cover,
+            ),
           ),
           if (isExpanded) ...[
             const SizedBox(width: AppTheme.spacing12),
@@ -261,6 +328,16 @@ class _SidebarMenu extends ConsumerWidget {
           isSelected: isSelected,
           isExpanded: navigation.isSidebarOpen,
           onTap: () {
+            final from = AppPageNames.navigationSubtypeForRoute(
+              GoRouterState.of(context).matchedLocation,
+            );
+            final to = AppPageNames.navigationSubtypeForRoute(item.route);
+            if (from != to) {
+              ref.read(deviceEventsRepositoryProvider).logInteractionOpen(
+                    destinationPageName: to,
+                    sourcePageName: from,
+                  );
+            }
             navigationNotifier.setSelectedIndex(index);
             context.go(item.route);
           },
@@ -427,6 +504,16 @@ class _BottomNavigationBar extends ConsumerWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
+                      final from = AppPageNames.navigationSubtypeForRoute(
+                        GoRouterState.of(context).matchedLocation,
+                      );
+                      final to = AppPageNames.navigationSubtypeForRoute(item.route);
+                      if (from != to) {
+                        ref.read(deviceEventsRepositoryProvider).logInteractionOpen(
+                              destinationPageName: to,
+                              sourcePageName: from,
+                            );
+                      }
                       navigationNotifier.setSelectedIndex(index);
                       context.go(item.route);
                     },

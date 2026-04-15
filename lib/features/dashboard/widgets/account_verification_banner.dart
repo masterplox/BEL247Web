@@ -22,6 +22,9 @@ class AccountVerificationBanner extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
+        final isMobile =
+            MediaQuery.sizeOf(context).width < AppTheme.tabletBreakpoint;
+
         return Container(
           margin: const EdgeInsets.only(bottom: AppTheme.spacing16),
           padding: const EdgeInsets.all(AppTheme.spacing12),
@@ -32,46 +35,121 @@ class AccountVerificationBanner extends ConsumerWidget {
               color: AppColors.warning.withValues(alpha: 0.5),
             ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.info_outline, color: AppColors.warning),
-              const SizedBox(width: AppTheme.spacing12),
-              Expanded(
-                child: Column(
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, color: AppColors.warning),
+                        const SizedBox(width: AppTheme.spacing12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Verification required',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                              ),
+                              const SizedBox(height: AppTheme.spacing4),
+                              Text(
+                                'To protect your information, you need to verify that you are the account holder before viewing full personal details or downloading bills.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppTheme.spacing12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final result =
+                            await showFullAccessActivationDialog(context);
+                        if (result == true) {
+                          ref.invalidate(accountVerificationStatusProvider);
+                        }
+                      },
+                      icon: const Icon(Icons.lock, size: 16),
+                      label: const Text('Upgrade to premium level'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Verification required',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                    const Icon(Icons.info_outline, color: AppColors.warning),
+                    const SizedBox(width: AppTheme.spacing12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Verification required',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
-                    ),
-                    const SizedBox(height: AppTheme.spacing4),
-                    Text(
-                      'To protect your information, you need to verify that you are the account holder before viewing full personal details or downloading bills.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                          const SizedBox(height: AppTheme.spacing4),
+                          Text(
+                            'To protect your information, you need to verify that you are the account holder before viewing full personal details or downloading bills.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
                           ),
+                          const SizedBox(height: AppTheme.spacing12),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final result =
+                                    await showFullAccessActivationDialog(context);
+                                if (result == true) {
+                                  ref.invalidate(accountVerificationStatusProvider);
+                                }
+                              },
+                              icon: const Icon(Icons.lock, size: 16),
+                              label: const Text('Upgrade to premium level'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: AppTheme.spacing12),
-              TextButton(
-                onPressed: () async {
-                  final result =
-                      await showFullAccessActivationDialog(context);
-                  if (result == true) {
-                    // Refresh verification status so the banner can disappear.
-                    ref.invalidate(accountVerificationStatusProvider);
-                  }
-                },
-                child: const Text('Verify now'),
-              ),
-            ],
-          ),
         );
       },
     );

@@ -59,7 +59,6 @@ class DebugProviderObserver extends ProviderObserver {
   ) {
     // Log provider updates in debug mode
     if (provider.name != null) {
-      print('Provider ${provider.name} updated: $previousValue -> $newValue');
     }
   }
 
@@ -70,7 +69,6 @@ class DebugProviderObserver extends ProviderObserver {
   ) {
     // Log provider disposal in debug mode
     if (provider.name != null) {
-      print('Provider ${provider.name} disposed');
     }
   }
 }
@@ -155,7 +153,6 @@ class ProviderContainerUtils {
       container.dispose();
     } catch (e) {
       // Log error but don't throw
-      print('Error disposing provider container: $e');
     }
   }
 }

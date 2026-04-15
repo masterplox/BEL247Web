@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/providers/feature_providers.dart';
 import '../../../core/providers/account_verification_providers.dart';
+import '../../../core/providers/feature_providers.dart';
 import '../../../core/services/download_service.dart';
-import '../../../core/widgets/account_access_activation_dialog.dart';
 import '../../../core/utils/formatting_utils.dart';
 import '../../../core/utils/widget_builder_utils.dart';
+import '../../../core/widgets/account_access_activation_dialog.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../data/models/bill.dart';
 import '../../../theme/app_theme.dart';
@@ -232,19 +232,11 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         final transactionAmount = transaction.metadata?['transactionAmount'] as double?;
         final accountBalanceFromApi = transaction.metadata?['accountBalance'] as double?;
         
-        print('[AccountLedgerWidget] Building entry for transaction: ${transaction.id}');
-        print('[AccountLedgerWidget]   - transactionAmount from metadata: $transactionAmount');
-        print('[AccountLedgerWidget]   - accountBalance from metadata: $accountBalanceFromApi');
-        print('[AccountLedgerWidget]   - transaction.amount: ${transaction.amount}');
-        print('[AccountLedgerWidget]   - calculated runningBalance: $runningBalance');
-        print('[AccountLedgerWidget]   - bill number: ${transaction.referenceNumber}');
         
         // Use values from API if available, otherwise fallback to calculated values
         final displayAmount = transactionAmount ?? (isPayment ? -transaction.amount : transaction.amount);
         final displayBalance = accountBalanceFromApi ?? runningBalance;
         
-        print('[AccountLedgerWidget]   - Final displayAmount: $displayAmount');
-        print('[AccountLedgerWidget]   - Final displayBalance: $displayBalance');
         
         // Update running balance for fallback calculation (only if API values not available)
         if (transactionAmount == null || accountBalanceFromApi == null) {
@@ -482,6 +474,7 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     );
 
   Widget _buildYearFilter(BuildContext context, List<int> availableYears) => DropdownButtonFormField<int?>(
+      isExpanded: true,
       initialValue: _selectedYear,
       decoration: InputDecoration(
         labelText: 'Year',
@@ -515,6 +508,7 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     final monthNames = DateFormat('MMMM').dateSymbols.MONTHS;
     
     return DropdownButtonFormField<int?>(
+      isExpanded: true,
       initialValue: _selectedMonth,
       decoration: InputDecoration(
         labelText: 'Month',
@@ -846,8 +840,6 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
       return const SizedBox.shrink();
     }
 
-    print('[AccountLedgerWidget] Building bill details for billNumber: $billNumber from $entry');
-
     // Fetch bill detail using provider (cached)
     final billDetailAsync = ref.watch(billDetailProvider(billNumber));
 
@@ -922,7 +914,6 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
             ),
             const SizedBox(height: AppTheme.spacing16),
             // Bill Information
-            _buildDetailRow(context, 'Bill Number', billDetail.billNumber),
             _buildDetailRow(context, 'Reading Date', billDetail.readingDate),
             _buildDetailRow(context, 'Billing Date', billDetail.billingDate),
             _buildDetailRow(context, 'Payment Due Date', billDetail.paymentDueDate),
@@ -972,13 +963,6 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
 
   /// Handle download for bills or receipts
   Future<void> _handleDownload(BuildContext context, LedgerEntry entry) async {
-    print('[AccountLedgerWidget] ========================================');
-    print('[AccountLedgerWidget] DOWNLOAD BUTTON CLICKED');
-    print('[AccountLedgerWidget] Entry ID: ${entry.id}');
-    print('[AccountLedgerWidget] Entry Date: ${entry.date}');
-    print('[AccountLedgerWidget] Entry Description: ${entry.description}');
-    print('[AccountLedgerWidget] Is Payment: ${entry.isPayment}');
-    print('[AccountLedgerWidget] ========================================');
     
     var isVerified =
         await ref.read(accountVerificationStatusProvider.future);
@@ -986,7 +970,7 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     // Receipts always require full access.
     if (entry.isPayment && !isVerified) {
       final result = await showFullAccessActivationDialog(context);
-      if (result == true) {
+      if (result ?? false) {
         isVerified =
             await ref.refresh(accountVerificationStatusProvider.future);
       }
@@ -1010,7 +994,7 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
           context,
           billNumber: billNumber,
         );
-        if (activationResult == true) {
+        if (activationResult ?? false) {
           hasBillDownloadAccess =
               await ref.refresh(billDownloadAccessStatusProvider.future);
         }
@@ -1024,10 +1008,8 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     final accountState = ref.read(accountSwitcherProvider);
     final activeAccount = accountState.activeAccount;
     
-    print('[AccountLedgerWidget] Active Account: ${activeAccount?.accountNumber}');
     
     if (activeAccount == null) {
-      print('[AccountLedgerWidget] ❌ No active account selected');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No active account selected'),
@@ -1040,16 +1022,11 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
     final customerNumber = activeAccount.customerNumber;
     final accountNumber = activeAccount.accountNumber;
     
-    print('[AccountLedgerWidget] Customer Number: $customerNumber');
-    print('[AccountLedgerWidget] Account Number: $accountNumber');
-
     if (entry.isPayment) {
-      print('[AccountLedgerWidget] Processing RECEIPT download...');
       
       // Download receipt
       final payment = entry.payment;
       if (payment == null) {
-        print('[AccountLedgerWidget] ❌ Payment information is null');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment information not available'),
@@ -1059,33 +1036,23 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         return;
       }
 
-      print('[AccountLedgerWidget] Payment details:');
-      print('[AccountLedgerWidget]   - ID: ${payment.id}');
-      print('[AccountLedgerWidget]   - Transaction ID: ${payment.transactionId}');
-      print('[AccountLedgerWidget]   - Reference Number: ${payment.referenceNumber}');
-      print('[AccountLedgerWidget]   - Metadata: ${payment.metadata}');
-
       // Get receipt number from referenceNumber, transactionId, or metadata
       // The receipt number might be in referenceNumber, transactionId, or metadata
       String? receiptNumber = payment.referenceNumber;
-      print('[AccountLedgerWidget] Initial receipt number (from referenceNumber): $receiptNumber');
       
       // If referenceNumber is not available, try to extract from metadata
       if (receiptNumber == null || receiptNumber.isEmpty) {
         if (payment.metadata != null && payment.metadata!.containsKey('receiptNumber')) {
           receiptNumber = payment.metadata!['receiptNumber'] as String?;
-          print('[AccountLedgerWidget] Receipt number from metadata: $receiptNumber');
         }
       }
       
       // Fallback to transactionId if still not available
       if (receiptNumber == null || receiptNumber.isEmpty) {
         receiptNumber = payment.transactionId;
-        print('[AccountLedgerWidget] Receipt number from transactionId: $receiptNumber');
       }
       
       if (receiptNumber.isEmpty) {
-        print('[AccountLedgerWidget] ❌ Receipt number not available after all attempts');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Receipt number not available'),
@@ -1095,8 +1062,6 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         return;
       }
 
-      print('[AccountLedgerWidget] ✅ Final receipt number: $receiptNumber');
-      print('[AccountLedgerWidget] Calling DownloadService.downloadReceipt...');
 
       await DownloadService.downloadReceipt(
         context: context,
@@ -1106,40 +1071,26 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         receiptDisplayName: 'Receipt #$receiptNumber',
       );
     } else {
-      print('[AccountLedgerWidget] Processing BILL download...');
       
       // Download bill
       final bill = entry.bill;
       String? billNumber;
       
       if (bill != null) {
-        print('[AccountLedgerWidget] Bill object found:');
-        print('[AccountLedgerWidget]   - ID: ${bill.id}');
-        print('[AccountLedgerWidget]   - Bill Number: ${bill.billNumber}');
-        print('[AccountLedgerWidget]   - Account Number: ${bill.accountNumber}');
-        billNumber = bill.billNumber;
+          billNumber = bill.billNumber;
       } else {
-        print('[AccountLedgerWidget] ⚠️ Bill object is null, trying to extract bill number from entry...');
-        print('[AccountLedgerWidget] Entry details:');
-        print('[AccountLedgerWidget]   - ID: ${entry.id}');
-        print('[AccountLedgerWidget]   - Description: ${entry.description}');
-        print('[AccountLedgerWidget]   - Sub Description: ${entry.subDescription}');
         
         // Try to extract bill number from subDescription (which contains referenceNumber for bills)
         if (entry.subDescription != null && entry.subDescription!.isNotEmpty) {
           billNumber = entry.subDescription;
-          print('[AccountLedgerWidget] ✅ Extracted bill number from subDescription: $billNumber');
         } else {
           // Try to extract from entry ID if it contains bill number
           if (entry.id.startsWith('bill_')) {
             // For fallback bills, ID is 'bill_${bill.id}', but we need billNumber
             // This won't work, so we need another approach
-            print('[AccountLedgerWidget] Entry ID format: ${entry.id}');
           }
           
           // Last resort: try to find bill in widget.bills by matching date or amount
-          print('[AccountLedgerWidget] Attempting to find bill in widget.bills list...');
-          print('[AccountLedgerWidget] Available bills count: ${widget.bills.length}');
           
           try {
             final matchingBill = widget.bills.firstWhere(
@@ -1148,20 +1099,12 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
                      (b.amounts.totalAmount - entry.amount).abs() < 0.01,
             );
             billNumber = matchingBill.billNumber;
-            print('[AccountLedgerWidget] ✅ Found matching bill by date/amount: $billNumber');
           } catch (e) {
-            print('[AccountLedgerWidget] ❌ Could not find matching bill: $e');
           }
         }
       }
 
       if (billNumber == null || billNumber.isEmpty) {
-        print('[AccountLedgerWidget] ❌ Bill number not available after all attempts');
-        print('[AccountLedgerWidget] Entry ID: ${entry.id}');
-        print('[AccountLedgerWidget] Entry Date: ${entry.date}');
-        print('[AccountLedgerWidget] Entry Amount: ${entry.amount}');
-        print('[AccountLedgerWidget] Entry Description: ${entry.description}');
-        print('[AccountLedgerWidget] Entry Sub Description: ${entry.subDescription}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Bill information not available'),
@@ -1171,8 +1114,6 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         return;
       }
 
-      print('[AccountLedgerWidget] ✅ Final bill number: $billNumber');
-      print('[AccountLedgerWidget] Calling DownloadService.downloadBill...');
 
       await DownloadService.downloadBill(
         context: context,
@@ -1183,9 +1124,6 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
       );
     }
     
-    print('[AccountLedgerWidget] ========================================');
-    print('[AccountLedgerWidget] DOWNLOAD HANDLER COMPLETED');
-    print('[AccountLedgerWidget] ========================================');
   }
 }
 

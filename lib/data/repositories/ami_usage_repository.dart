@@ -55,11 +55,9 @@ class AmiUsageRepository {
   }) async {
     try {
       final targetDateStr = targetDate.toIso8601String().split('T')[0];
-      print('[AmiUsage] Repository.fetchDailyIntervals start meterId=$meterId targetDate=$targetDateStr');
 
       if (EnvConfig.useMockAmiUsage) {
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[AmiUsage] Repository.fetchDailyIntervals using mock data');
         
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiIntervalUsage,
@@ -70,7 +68,6 @@ class AmiUsageRepository {
             // Live API no longer includes meterId; ensure DTO always has it.
             'meterId': (row['meterId'] ?? meterId).toString(),
           })).toList();
-        print('[AmiUsage] ✅ Successfully fetched ${entries.length} interval entries for daily view');
         return entries;
       }
 
@@ -90,14 +87,11 @@ class AmiUsageRepository {
             // Live API no longer includes meterId; ensure DTO always has it.
             'meterId': (row['meterId'] ?? meterId).toString(),
           })).toList();
-        print('[AmiUsage] ✅ Successfully fetched ${entries.length} interval entries for daily view');
         return entries;
       } else {
-        print('[AmiUsage] Repository.fetchDailyIntervals [ERROR] Failed to fetch. Status: ${response.statusCode}');
         return [];
       }
     } catch (e, stackTrace) {
-      print('[AmiUsage] Repository.fetchDailyIntervals [ERROR] $e');
       Logger.error(
         'Error fetching daily intervals',
         error: e,
@@ -120,11 +114,9 @@ class AmiUsageRepository {
     try {
       final startDateStr = startDate.toIso8601String().split('T')[0];
       final endDateStr = endDate.toIso8601String().split('T')[0];
-      print('[AmiUsage] Repository.fetchDailyRange start meterId=$meterId startDate=$startDateStr endDate=$endDateStr');
 
       if (EnvConfig.useMockAmiUsage) {
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[AmiUsage] Repository.fetchDailyRange using mock data');
         
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiDailyUsage,
@@ -140,7 +132,6 @@ class AmiUsageRepository {
           final entryDay = DateTime(d.year, d.month, d.day);
           return !entryDay.isBefore(startDay) && !entryDay.isAfter(endDay);
         }).toList();
-        print('[AmiUsage] ✅ Successfully fetched ${filteredData.length} daily entries for range view');
         return filteredData;
       }
 
@@ -157,14 +148,11 @@ class AmiUsageRepository {
       if (response.statusCode == 200 && response.data != null) {
         final rows = _extractList(response.data);
         final entries = rows.map(DailyUsageEntryDto.fromJson).toList();
-        print('[AmiUsage] ✅ Successfully fetched ${entries.length} daily entries for range view');
         return entries;
       } else {
-        print('[AmiUsage] Repository.fetchDailyRange [ERROR] Failed to fetch. Status: ${response.statusCode}');
         return [];
       }
     } catch (e, stackTrace) {
-      print('[AmiUsage] Repository.fetchDailyRange [ERROR] $e');
       Logger.error(
         'Error fetching daily range',
         error: e,
@@ -205,18 +193,15 @@ class AmiUsageRepository {
     required int year,
   }) async {
     try {
-      print('[AmiUsage] Repository.fetchMonthlyTotals start meterId=$meterId year=$year');
 
       if (EnvConfig.useMockAmiUsage) {
         await Future.delayed(const Duration(milliseconds: 300));
-        print('[AmiUsage] Repository.fetchMonthlyTotals using mock data');
         
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiMonthlyUsage,
         );
         final rows = _extractList(jsonData);
         final entries = rows.map(MonthlyUsageEntryDto.fromJson).toList();
-        print('[AmiUsage] ✅ Successfully fetched ${entries.length} monthly totals for year view');
         return entries;
       }
 
@@ -232,14 +217,11 @@ class AmiUsageRepository {
       if (response.statusCode == 200 && response.data != null) {
         final rows = _extractList(response.data);
         final entries = rows.map(MonthlyUsageEntryDto.fromJson).toList();
-        print('[AmiUsage] ✅ Successfully fetched ${entries.length} monthly totals for year view');
         return entries;
       } else {
-        print('[AmiUsage] Repository.fetchMonthlyTotals [ERROR] Failed to fetch. Status: ${response.statusCode}');
         return [];
       }
     } catch (e, stackTrace) {
-      print('[AmiUsage] Repository.fetchMonthlyTotals [ERROR] $e');
       Logger.error(
         'Error fetching monthly totals',
         error: e,

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/utils/formatting_utils.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../data/models/api_response_dtos.dart';
 import '../../../features/usage/state/meter_readings_providers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -24,11 +22,6 @@ class GamificationCardWidget extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        final comparison = _getMonthComparison(readings);
-        final savedMoney = comparison['savedMoney'] as bool;
-        final amountDiff = comparison['amountDiff'] as double;
-        final consumptionDiff = comparison['consumptionDiff'] as double;
-
         return AppCard(
           padding: const EdgeInsets.all(AppTheme.spacing20),
           showBorder: true,
@@ -36,67 +29,6 @@ class GamificationCardWidget extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Achievement Banner
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spacing12),
-                decoration: BoxDecoration(
-                  color: savedMoney
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radius8),
-                  border: Border.all(
-                    color: savedMoney
-                        ? AppColors.primary.withValues(alpha: 0.2)
-                        : AppColors.warning.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: savedMoney
-                            ? AppColors.primary.withValues(alpha: 0.2)
-                            : AppColors.warning.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        savedMoney ? Icons.trending_down : Icons.trending_up,
-                        color: savedMoney ? AppColors.primary : AppColors.warning,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: AppTheme.spacing12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            savedMoney
-                                ? 'You saved ${FormattingUtils.formatCurrency(amountDiff.abs())} this month!'
-                                : 'Usage up ${FormattingUtils.formatCurrency(amountDiff.abs())} this month',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                          ),
-                          const SizedBox(height: AppTheme.spacing4),
-                          Text(
-                            '${consumptionDiff.abs().toStringAsFixed(0)} kWh ${savedMoney ? 'less' : 'more'} than last month',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacing16),
-
               // Energy Saving Tips
               Text(
                 'QUICK SAVINGS TIPS',
@@ -129,9 +61,9 @@ class GamificationCardWidget extends ConsumerWidget {
 
   List<Widget> _buildTips(BuildContext context) {
     final tips = [
-      {'icon': Icons.bolt, 'text': 'Turn off AC when away', 'savings': '\$15/mo'},
-      {'icon': Icons.lightbulb_outline, 'text': 'Use LED bulbs', 'savings': '\$8/mo'},
-      {'icon': Icons.local_laundry_service, 'text': 'Wash clothes cold', 'savings': '\$5/mo'},
+      {'icon': Icons.bolt, 'text': 'Turn off AC when away'},
+      {'icon': Icons.lightbulb_outline, 'text': 'Use LED bulbs'},
+      {'icon': Icons.local_laundry_service, 'text': 'Wash clothes cold'},
     ];
 
     return tips.map((tip) {
@@ -143,30 +75,17 @@ class GamificationCardWidget extends ConsumerWidget {
           borderRadius: BorderRadius.circular(AppTheme.radius8),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(
-                  tip['icon'] as IconData,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: AppTheme.spacing8),
-                Text(
-                  tip['text'] as String,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 14,
-                      ),
-                ),
-              ],
+            Icon(
+              tip['icon'] as IconData,
+              size: 16,
+              color: AppColors.primary,
             ),
+            const SizedBox(width: AppTheme.spacing8),
             Text(
-              tip['savings'] as String,
+              tip['text'] as String,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
             ),
           ],
@@ -175,53 +94,4 @@ class GamificationCardWidget extends ConsumerWidget {
     }).toList();
   }
 
-  Map<String, dynamic> _getMonthComparison(List<MeterReadingDto> readings) {
-    if (readings.length < 2) {
-      return {
-        'current': null,
-        'previous': null,
-        'consumptionDiff': 0.0,
-        'amountDiff': 0.0,
-        'savedMoney': false,
-        'savedEnergy': false,
-      };
-    }
-
-    // Sort by year and month
-    final sorted = List<MeterReadingDto>.from(readings);
-    sorted.sort((a, b) {
-      final yearA = int.tryParse(a.readYear) ?? 0;
-      final yearB = int.tryParse(b.readYear) ?? 0;
-      if (yearA != yearB) return yearA.compareTo(yearB);
-      
-      final monthA = _getMonthIndex(a.readMonth);
-      final monthB = _getMonthIndex(b.readMonth);
-      return monthA.compareTo(monthB);
-    });
-
-    final current = sorted.last;
-    final previous = sorted[sorted.length - 2];
-
-    final currentConsumption = double.tryParse(current.consumption) ?? 0.0;
-    final previousConsumption = double.tryParse(previous.consumption) ?? 0.0;
-    final currentAmount = double.tryParse(current.amount) ?? 0.0;
-    final previousAmount = double.tryParse(previous.amount) ?? 0.0;
-
-    final consumptionDiff = previousConsumption - currentConsumption;
-    final amountDiff = previousAmount - currentAmount;
-
-    return {
-      'current': current,
-      'previous': previous,
-      'consumptionDiff': consumptionDiff,
-      'amountDiff': amountDiff,
-      'savedMoney': amountDiff > 0,
-      'savedEnergy': consumptionDiff > 0,
-    };
-  }
-
-  int _getMonthIndex(String month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months.indexOf(month);
-  }
 }

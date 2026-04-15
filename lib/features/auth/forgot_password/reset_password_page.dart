@@ -518,7 +518,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   void _showSuccessDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
@@ -548,6 +548,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         title: const Row(
           children: [

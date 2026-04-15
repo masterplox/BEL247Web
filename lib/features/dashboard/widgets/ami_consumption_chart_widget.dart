@@ -1,9 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
-import '../../../data/models/ami_data.dart' show ratePerKwh;
 import '../../../data/models/api_response_dtos.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -22,7 +22,7 @@ class AmiConsumptionChartWidget extends ConsumerStatefulWidget {
 enum _AmiTrendRange { month, year }
 
 class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartWidget> {
-  final bool _showConsumption = true; // true for kWh, false for cost
+  static final DateFormat _rangeFormat = DateFormat('MMM d');
   _AmiTrendRange _range = _AmiTrendRange.month;
 
   static const _monthNames = <String>[
@@ -43,15 +43,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
       loading: () => _buildLoadingCard(context),
       error: (_, __) => const SizedBox.shrink(),
       data: (chartData) {
-        if (chartData.isEmpty ||
-            chartData.every((p) => (p['consumption'] as double) == 0)) {
-          return const SizedBox.shrink();
-        }
-
-        final subtitle = _range == _AmiTrendRange.month
-            ? 'Current month'
-            : 'Current year';
-
+        final hasData = !_isChartDataEffectivelyEmpty(chartData);
         return AppCard(
           padding: const EdgeInsets.all(AppTheme.spacing20),
           showBorder: true,
@@ -74,7 +66,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
                       ),
                       const SizedBox(height: AppTheme.spacing4),
                       Text(
-                        subtitle,
+                        _currentRangeLabel(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                               fontSize: 12,
@@ -88,37 +80,9 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
               const SizedBox(height: AppTheme.spacing16),
               SizedBox(
                 height: 160,
-                child: LineChart(_buildLineChartData(chartData)),
-              ),
-              const SizedBox(height: AppTheme.spacing12),
-              const Divider(height: 1),
-              const SizedBox(height: AppTheme.spacing12),
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: _showConsumption
-                            ? AppColors.success
-                            : AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: AppTheme.spacing8),
-                    Text(
-                      _showConsumption
-                          ? 'Energy Usage (kWh)'
-                          : r'Estimated Cost ($)',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                    ),
-                  ],
-                ),
+                child: hasData
+                    ? LineChart(_buildLineChartData(chartData))
+                    : _buildEmptyChartArea(context),
               ),
               const SizedBox(height: AppTheme.spacing16),
             ],
@@ -127,6 +91,57 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
       },
     );
   }
+
+  String _currentRangeLabel() {
+    final now = DateTime.now();
+    if (_range == _AmiTrendRange.month) {
+      final start = DateTime(now.year, now.month, 1);
+      final end = DateTime(now.year, now.month, now.day);
+      return '${_rangeFormat.format(start)} - ${_rangeFormat.format(end)}';
+    }
+    final start = DateTime(now.year, 1, 1);
+    final end = DateTime(now.year, 12, 31);
+    return '${_rangeFormat.format(start)} - ${_rangeFormat.format(end)}';
+  }
+
+  bool _isChartDataEffectivelyEmpty(List<Map<String, dynamic>> chartData) =>
+      chartData.isEmpty ||
+      chartData.every((p) => (p['consumption'] as double) == 0);
+
+  /// Replaces only the line-chart area when there is nothing to plot.
+  Widget _buildEmptyChartArea(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.insights_outlined,
+                size: 44,
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: AppTheme.spacing12),
+              Text(
+                'No usage data for this period yet',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: AppTheme.spacing8),
+              Text(
+                'Your usage trend will show here when data is available.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary.withValues(alpha: 0.85),
+                      fontSize: 11,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   Widget _buildLoadingCard(BuildContext context) => const AppCard(
         padding: EdgeInsets.all(AppTheme.spacing20),
@@ -206,11 +221,9 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
     return List.generate(12, (i) {
       final monthIndex = i + 1;
       final kwh = monthToKwh[monthIndex] ?? 0.0;
-      final cost = kwh * ratePerKwh;
       return {
         'label': _monthNames[i],
         'consumption': kwh,
-        'cost': cost,
       };
     });
   }
@@ -235,11 +248,9 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
     return days
         .map((d) {
           final kwh = byDay[d] ?? 0.0;
-          final cost = kwh * ratePerKwh;
           return {
             'label': d.day.toString(),
             'consumption': kwh,
-            'cost': cost,
           };
         })
         .toList();
@@ -248,9 +259,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
   LineChartData _buildLineChartData(List<Map<String, dynamic>> chartData) {
     final spots = chartData.asMap().entries.map((entry) {
       final index = entry.key.toDouble();
-      final value = _showConsumption
-          ? (entry.value['consumption'] as double)
-          : (entry.value['cost'] as double);
+      final value = entry.value['consumption'] as double;
       return FlSpot(index, value);
     }).toList();
 
@@ -276,7 +285,9 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    chartData[index]['label'] as String,
+                    _range == _AmiTrendRange.month
+                        ? _formatOrdinalDay(chartData[index]['label'] as String)
+                        : chartData[index]['label'] as String,
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 10,
@@ -293,7 +304,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
             showTitles: true,
             reservedSize: 40,
             getTitlesWidget: (value, meta) => Text(
-              _showConsumption ? value.toInt().toString() : '\$${value.toInt()}',
+              '${value.toInt()} kWh',
               style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 10,
@@ -311,14 +322,13 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
         LineChartBarData(
           spots: spots,
           isCurved: true,
-          color: _showConsumption ? AppColors.success : AppColors.primary,
+          color: AppColors.success,
           barWidth: 2,
           isStrokeCapRound: true,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
-            color: (_showConsumption ? AppColors.success : AppColors.primary)
-                .withValues(alpha: 0.1),
+            color: AppColors.success.withValues(alpha: 0.1),
           ),
         ),
       ],
@@ -330,10 +340,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
             final index = barSpot.x.toInt();
             if (index >= 0 && index < chartData.length) {
               final consumption = chartData[index]['consumption'] as double;
-              final cost = chartData[index]['cost'] as double;
-              final tooltipText = '${consumption.toStringAsFixed(1)} kWh\n'
-                  '───\n'
-                  '\$${cost.toStringAsFixed(2)}';
+              final tooltipText = '${consumption.toStringAsFixed(1)} kWh';
               return LineTooltipItem(
                 tooltipText,
                 const TextStyle(color: Colors.white, fontSize: 12),
@@ -344,6 +351,22 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
         ),
       ),
     );
+  }
+
+  String _formatOrdinalDay(String dayText) {
+    final day = int.tryParse(dayText);
+    if (day == null) return dayText;
+    if (day >= 11 && day <= 13) return '${day}th';
+    switch (day % 10) {
+      case 1:
+        return '${day}st';
+      case 2:
+        return '${day}nd';
+      case 3:
+        return '${day}rd';
+      default:
+        return '${day}th';
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html' as html;
+
 import 'package:flutter/foundation.dart';
 
 import 'web_operations.dart';
@@ -261,7 +262,6 @@ class WebWebOperations implements WebOperations {
     if (kIsWeb) {
       Timer.periodic(const Duration(seconds: 30), (timer) {
         if (!isSecureConnection && !kDebugMode) {
-          print('Warning: Application is not running on HTTPS');
         }
       });
     }

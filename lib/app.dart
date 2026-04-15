@@ -5,6 +5,7 @@ import 'core/router/app_router.dart';
 import 'core/widgets/data_preloader.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'theme/app_theme.dart';
+import 'theme/colors.dart';
 
 class BEL247App extends ConsumerWidget {
   const BEL247App({super.key});
@@ -12,40 +13,68 @@ class BEL247App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
-    
-    // Debug: Show auth state in console
-    print('BEL247App build - isInitialized: ${authState.isInitialized}, isAuthenticated: ${authState.isAuthenticated}, isLoading: ${authState.isLoading}');
-    
-    // Show loading screen while auth is initializing
+
+    // Show a branded splash while auth initialises
     if (!authState.isInitialized) {
       return MaterialApp(
-        title: 'BEL247 WebApp',
+        title: 'BEL247',
         theme: AppTheme.lightTheme,
-        home: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                const Text('Initializing...'),
-                const SizedBox(height: 8),
-                Text('isInitialized: ${authState.isInitialized}'),
-                Text('isAuthenticated: ${authState.isAuthenticated}'),
-                Text('isLoading: ${authState.isLoading}'),
-              ],
-            ),
-          ),
-        ),
+        debugShowCheckedModeBanner: false,
+        home: const _SplashScreen(),
       );
     }
-    
+
     return DataPreloader(
       child: MaterialApp.router(
-        title: 'BEL247 WebApp',
+        title: 'BEL247',
         theme: AppTheme.lightTheme,
+        debugShowCheckedModeBanner: false,
         routerConfig: AppRouter.router,
       ),
     );
   }
+}
+
+/// Branded loading screen shown while [AuthNotifier] initialises on cold start.
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.asset(
+                  'assets/bel_logo.png',
+                  width: 96,
+                  height: 96,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'BEL247',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+              ),
+              const SizedBox(height: 40),
+              const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }

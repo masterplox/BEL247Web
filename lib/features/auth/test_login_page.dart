@@ -75,17 +75,10 @@ class _TestLoginPageState extends ConsumerState<TestLoginPage> {
       ),
       const SizedBox(height: 16),
       Text(
-        'BEL247',
+        'BEL247 Portal',
         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        'Energy Management Portal',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: AppColors.textSecondary,
         ),
       ),
     ],

@@ -18,6 +18,7 @@ import '../../features/usage/usage_page.dart';
 import '../navigation/responsive_navigation.dart';
 import '../services/url_encryption_service.dart';
 import '../utils/logger.dart';
+import '../widgets/app_error_page.dart';
 
 /// Router configuration with encrypted URL parameters
 class AppRouter {
@@ -108,11 +109,12 @@ class AppRouter {
             builder: (context, state) {
               final args = state.extra as Map<String, String>?;
               if (args == null || !args.containsKey('email') || !args.containsKey('password')) {
-                // Handle error case, maybe redirect to login
-                return const Scaffold(
-                  body: Center(
-                    child: Text('Error: Missing credentials.'),
-                  ),
+                return AppErrorPage(
+                  type: ErrorPageType.notFound,
+                  title: "This link has expired",
+                  message: "Looks like this link is no longer valid. Head back to sign up or log in.",
+                  primaryActionLabel: "Go to Login",
+                  onPrimaryAction: () => context.go('/login'),
                 );
               }
               return SignupSuccessPage(
@@ -222,31 +224,10 @@ class AppRouter {
       ),
     ],
     
-    // Error handling
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: 16),
-            Text(
-              'Page not found',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'The page you are looking for does not exist.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.go('/dashboard'),
-              child: const Text('Go to Dashboard'),
-            ),
-          ],
-        ),
-      ),
+    // Error handling — shows a friendly page instead of a raw error screen
+    errorBuilder: (context, state) => AppErrorPage(
+      type: ErrorPageType.notFound,
+      onPrimaryAction: () => context.go('/dashboard'),
     ),
   );
 

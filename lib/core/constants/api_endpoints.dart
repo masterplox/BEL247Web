@@ -220,6 +220,21 @@ class ApiEndpoints {
   /// Query: { smsCode, requestId }
   static String get digiwalletValidate => '/Digiwallet/V1/Code/Validate';
 
+  // ============================================================================
+  // Analytics & support
+  // ============================================================================
+
+  /// Log client/device events (navigation, interaction, lifecycle)
+  /// POST /ApiEvent/V1/Event
+  /// Auth: Yes
+  /// Body: { PageEvent, EventType, EventSubtype, EventDetails }
+  static String get deviceEvent => '/ApiEvent/V1/Event';
+
+  /// Submit general support / feedback request
+  /// POST /General/V5/AppSupportRequestGen
+  /// Auth: Yes
+  static String get appSupportRequest => '/General/V5/AppSupportRequestGen';
+
   /// Build full URL from endpoint path
   /// 
   /// Example: buildUrl('/DeviceSession/V3/Login') -> 'https://m.bel.com.bz/MobileApisTest/DeviceSession/V3/Login'

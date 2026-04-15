@@ -13,10 +13,10 @@ import 'app_dialog.dart';
 /// Returns `true` if the flow completed successfully.
 Future<bool?> showFullAccessActivationDialog(BuildContext context) => AppDialog.showCenter<bool>(
     context: context,
+    barrierDismissible: true,
     title: 'Verify your account',
     subtitle:
         'To protect your privacy, we need to verify that you are the account holder before showing full account details.',
-    barrierDismissible: false,
     content: const _FullAccessActivationFlow(),
     actions: const [],
     maxWidth: 480,
@@ -31,10 +31,10 @@ Future<bool?> showBillDownloadActivationDialog(
   required String billNumber,
 }) => AppDialog.showCenter<bool>(
     context: context,
+    barrierDismissible: true,
     title: 'Activate bill downloads',
     subtitle:
         'For your security, we need to verify this account before allowing bill downloads.',
-    barrierDismissible: false,
     content: _BillDownloadActivationFlow(billNumber: billNumber),
     actions: const [],
     maxWidth: 480,
@@ -127,6 +127,33 @@ class _FullAccessActivationFlowState
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppTheme.spacing12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(AppTheme.radius8),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'What you get after verification',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing8),
+                  _benefitRow(context, 'Unrestricted Bill Download'),
+                  _benefitRow(context, 'View account details'),
+                  _benefitRow(context, 'Deeper usage insights'),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacing12),
             Text(
               'Choose where to send your verification code.',
               style: Theme.of(context).textTheme.bodyMedium,
@@ -201,6 +228,22 @@ class _FullAccessActivationFlowState
       },
     );
   }
+
+  Widget _benefitRow(BuildContext context, String benefit) => Padding(
+        padding: const EdgeInsets.only(bottom: AppTheme.spacing4),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle, size: 14, color: AppColors.primary),
+            const SizedBox(width: AppTheme.spacing8),
+            Expanded(
+              child: Text(
+                benefit,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildCodeEntry(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,

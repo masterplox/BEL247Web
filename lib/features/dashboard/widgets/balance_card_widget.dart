@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/account_verification_providers.dart';
 import '../../../core/providers/feature_providers.dart';
 import '../../../core/utils/formatting_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../data/models/account.dart';
 import '../../../data/models/api_response_dtos.dart';
-import '../../../data/models/user.dart' as user_models;
 import '../../../features/bills/state/bills_providers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import 'payment_dialog.dart';
 
 /// Balance card widget matching the React version design
 class BalanceCardWidget extends ConsumerStatefulWidget {
@@ -29,6 +28,11 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
     final accountDetailsAsync = ref.watch(accountDetailsProvider);
     final accountState = ref.watch(accountSwitcherProvider);
     final activeAccount = accountState.activeAccount;
+    final verificationAsync = ref.watch(accountVerificationStatusProvider);
+    final isVerified = verificationAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => false,
+    );
 
     return accountDetailsAsync.when(
       loading: () => _buildLoadingCard(context),
@@ -62,57 +66,60 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Balance Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your balance',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                        ),
-                        const SizedBox(height: AppTheme.spacing4),
-                        Row(
-                          children: [
-                            Text(
+              // Balance Section (stack chip below on narrow widths to avoid overflow)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final balanceColumn = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your balance',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                      ),
+                      const SizedBox(height: AppTheme.spacing4),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
                               _showBalance ? _formatBalance(balance) : '••••••',
                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 32,
                                   ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: AppTheme.spacing8),
-                            IconButton(
-                              icon: Icon(
-                                _showBalance ? Icons.visibility_off : Icons.visibility,
-                                size: 16,
-                              ),
-                              onPressed: () => setState(() => _showBalance = !_showBalance),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: AppTheme.spacing8),
+                          IconButton(
+                            icon: Icon(
+                              _showBalance ? Icons.visibility_off : Icons.visibility,
+                              size: 16,
                             ),
-                          ],
-                        ),
+                            onPressed: () => setState(() => _showBalance = !_showBalance),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                      if (isVerified &&
+                          (accountDetails.collectionStatus ?? '').isNotEmpty) ...[
                         const SizedBox(height: AppTheme.spacing4),
                         Text(
-                          accountDetails.collectionStatus ?? '',
+                          accountDetails.collectionStatus!,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondary,
                                 fontSize: 12,
                               ),
                         ),
                       ],
-                    ),
-                  ),
-                  Container(
+                    ],
+                  );
+
+                  final statusChip = Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppTheme.spacing8,
                       vertical: AppTheme.spacing4,
@@ -140,11 +147,34 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  );
+
+                  final narrow = constraints.maxWidth < 420;
+                  if (narrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        balanceColumn,
+                        const SizedBox(height: AppTheme.spacing12),
+                        statusChip,
+                      ],
+                    );
+                  }
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: balanceColumn),
+                      const SizedBox(width: AppTheme.spacing8),
+                      statusChip,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AppTheme.spacing16),
               const Divider(height: 1),
@@ -164,7 +194,11 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                           'Electricity bill this month',
                           FormattingUtils.formatCurrency(lastBillAmount),
                           Icons.description,
-                          () => _showBillDetailsDialog(context, accountDetails),
+                          () => _showBillDetailsDialog(
+                            context,
+                            accountDetails,
+                            isVerified: isVerified,
+                          ),
                           dueLabel: 'Due:',
                           dueValue: dueDate,
                         ),
@@ -197,7 +231,11 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                               'Electricity bill this month',
                               FormattingUtils.formatCurrency(lastBillAmount),
                               Icons.description,
-                              () => _showBillDetailsDialog(context, accountDetails),
+                              () => _showBillDetailsDialog(
+                                context,
+                                accountDetails,
+                                isVerified: isVerified,
+                              ),
                               dueLabel: 'Due:',
                               dueValue: dueDate,
                             ),
@@ -239,67 +277,24 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    final accountBalance = user_models.AccountBalance(
-                      currentBalance: balance,
-                      lastPaymentDate: accountDetails.lastPaymentDate != null
-                          ? DateTime.tryParse(accountDetails.lastPaymentDate!) ?? DateTime.now()
-                          : DateTime.now(),
-                      lastPaymentAmount: lastPaymentAmount,
-                      nextDueDate: accountDetails.dueDate != null
-                          ? DateTime.tryParse(accountDetails.dueDate!) ?? DateTime.now()
-                          : DateTime.now(),
-                      paymentMethod: 'Unknown',
+                    // Kept intentionally for upcoming rollout:
+                    // final accountBalance = user_models.AccountBalance(...);
+                    // PaymentDialogWidget.showBottom/showCenter(...);
+                    AppDialog.showCenter(
+                      context: context,
+                      title: 'Coming soon',
+                      subtitle: 'Online dashboard payments are being finalized.',
+                      content: const Text(
+                        'This feature will be available in a future update.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(context, rootNavigator: true).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ],
                     );
-                    
-                    // Show payment dialog as bottom sheet on mobile, center on desktop
-                    final isMobile = MediaQuery.of(context).size.width < AppTheme.tabletBreakpoint;
-                    if (isMobile) {
-                      PaymentDialogWidget.showBottom(
-                        context: context,
-                        accountBalance: accountBalance,
-                        onPaymentSuccess: (amount, method) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Payment of \$${amount.toStringAsFixed(2)} successful!'),
-                              backgroundColor: AppColors.success,
-                            ),
-                          );
-                          // Refresh account details
-                          ref.invalidate(accountDetailsProvider);
-                        },
-                        onPaymentError: (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Payment failed: $error'),
-                              backgroundColor: AppColors.error,
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      PaymentDialogWidget.showCenter(
-                        context: context,
-                        accountBalance: accountBalance,
-                        onPaymentSuccess: (amount, method) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Payment of \$${amount.toStringAsFixed(2)} successful!'),
-                              backgroundColor: AppColors.success,
-                            ),
-                          );
-                          // Refresh account details
-                          ref.invalidate(accountDetailsProvider);
-                        },
-                        onPaymentError: (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Payment failed: $error'),
-                              backgroundColor: AppColors.error,
-                            ),
-                          );
-                        },
-                      );
-                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -448,7 +443,11 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
     return FormattingUtils.formatCurrency(amount);
   }
 
-  void _showBillDetailsDialog(BuildContext context, EditableCustomerAccountDto accountDetails) {
+  void _showBillDetailsDialog(
+    BuildContext context,
+    EditableCustomerAccountDto accountDetails, {
+    required bool isVerified,
+  }) {
     final lastBillAmount = _parseBalance(accountDetails.lastBillAmount);
     final pastDue = _parseBalance(accountDetails.pastDue);
     final deposit = _parseBalance(accountDetails.deposit);
@@ -470,7 +469,12 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
             color: pastDue > 0 ? AppColors.error : null,
           ),
           const Divider(),
-          _buildDetailRow('Deposit on Account', FormattingUtils.formatCurrency(deposit.abs())),
+          if (isVerified) ...[
+            _buildDetailRow(
+              'Deposit on Account',
+              FormattingUtils.formatCurrency(deposit.abs()),
+            ),
+          ],
         ],
       ),
       actions: [

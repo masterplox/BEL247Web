@@ -18,9 +18,6 @@ class AccountsRepository {
   /// Automatically authenticated (uses Bearer token)
   Future<List<Account>> fetchConnectedAccounts() async {
     try {
-      print('[AccountsRepository] ===== Fetching connected accounts... =====');
-      Logger.info('Fetching connected accounts...', tag: 'AccountsRepository');
-      
       // Just pass the endpoint path - base URL and auth are handled automatically
       final response = await _apiClient.get<Map<String, dynamic>>(
         ApiEndpoints.connectedAccounts,
@@ -30,19 +27,12 @@ class AccountsRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = ConnectedAccountsResponseDto.fromJson(response.data!);
         
-        print('[AccountsRepository] ✅ Successfully fetched ${responseDto.editableCustomerAccounts.length} connected accounts from API');
-        Logger.info(
-          'Successfully fetched ${responseDto.editableCustomerAccounts.length} connected accounts',
-          tag: 'AccountsRepository',
-        );
-
         // Map DTOs to Account models
         final accounts = responseDto.editableCustomerAccounts
             .map(_mapDtoToAccount)
             .where((account) => account.isActive) // Only include active accounts
             .toList();
 
-        print('[AccountsRepository] ✅ Mapped ${accounts.length} active accounts (filtered from ${responseDto.editableCustomerAccounts.length} total)');
         Logger.info('Mapped ${accounts.length} active accounts', tag: 'AccountsRepository');
         return accounts;
       } else {
@@ -411,7 +401,6 @@ class AccountsRepository {
     required String nickName,
   }) async {
     try {
-      print('[AccountsRepository] ===== Connecting account... =====');
       Logger.info(
         'Connecting account: CustomerNumber=$customerNumber, AccountNumberHint=$accountNumberHint, NickName=$nickName',
         tag: 'AccountsRepository',
@@ -430,7 +419,6 @@ class AccountsRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = ConnectCustomerAccountResponseDto.fromJson(response.data!);
         
-        print('[AccountsRepository] ✅ Successfully connected account');
         Logger.info(
           'Successfully connected account: ${responseDto.message ?? "No message"}',
           tag: 'AccountsRepository',

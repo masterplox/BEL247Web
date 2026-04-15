@@ -9,11 +9,9 @@ class MockAppDataService {
   static const String _energyPricesPath = MockAssetPaths.energyPrices;
 
   static Future<Map<String, dynamic>?> _getAccountJson(String accountId) async {
-    print('[MockAppDataService] _getAccountJson path=$_path accountId=$accountId');
     final data = await DataLoader.loadJsonFromAssets(_path);
     final accounts = data['accounts'] as List<dynamic>?;
     if (accounts == null) {
-      print('[MockAppDataService] accounts key missing in json path=$_path');
       return null;
     }
     final result = accounts.cast<Map<String, dynamic>?>().firstWhere(
@@ -21,47 +19,27 @@ class MockAppDataService {
       orElse: () => null,
     );
     if (result == null) {
-      print('[MockAppDataService] no account match for accountId=$accountId in path=$_path');
     }
     return result;
   }
 
   static Future<List<EnergyPricePoint>?> getEnergyPrices() async {
-    print('[MockAppDataService] ===== getEnergyPrices CALLED =====');
-    print('[MockAppDataService] Energy prices path: "$_energyPricesPath"');
-    print('[MockAppDataService] MockAssetPaths.energyPrices: "${MockAssetPaths.energyPrices}"');
     try {
-      print('[MockAppDataService] Calling DataLoader.loadJsonFromAssets("$_energyPricesPath")...');
       final data = await DataLoader.loadJsonFromAssets(_energyPricesPath);
-      print('[MockAppDataService] ✓ DataLoader returned data');
-      print('[MockAppDataService] Data keys: ${data.keys.toList()}');
       
       final prices = data['energyPrices'] as List<dynamic>?;
       if (prices == null) {
-        print('[MockAppDataService][WARNING] energyPrices key missing in json');
-        print('[MockAppDataService] Available keys: ${data.keys.toList()}');
-        print('[MockAppDataService] Path used: $_energyPricesPath');
         return null;
       }
-      print('[MockAppDataService] Found ${prices.length} price entries');
       
       final result = prices
           .cast<Map<String, dynamic>?>()
           .where((p) => p != null)
           .map((p) => EnergyPricePoint.fromJson(p!))
           .toList();
-      print('[MockAppDataService] ✓ getEnergyPrices SUCCESS - count=${result.length}');
-      print('[MockAppDataService] ===== getEnergyPrices COMPLETE =====');
       return result;
     } catch (e, st) {
       Logger.error('MockAppDataService.getEnergyPrices failed', error: e, stackTrace: st);
-      print('[MockAppDataService] ===== getEnergyPrices ERROR =====');
-      print('[MockAppDataService][ERROR] Exception type: ${e.runtimeType}');
-      print('[MockAppDataService][ERROR] Error message: $e');
-      print('[MockAppDataService][ERROR] Path attempted: $_energyPricesPath');
-      print('[MockAppDataService][ERROR] Stack trace:');
-      print(st);
-      print('[MockAppDataService] ===== END ERROR =====');
       return null;
     }
   }
@@ -70,15 +48,12 @@ class MockAppDataService {
     try {
       final data = await DataLoader.loadJsonFromAssets(_path);
       if (data['dashboard'] == null) {
-        print('[MockAppDataService] dashboard key missing in json path=$_path');
         return null;
       }
       final dashboardData = DashboardData.fromJson(data['dashboard'] as Map<String, dynamic>);
-      print('[MockAppDataService] getDashboardData ok for accountId=$accountId');
       return dashboardData;
     } catch (e, st) {
       Logger.error('MockAppDataService.getDashboardData failed', error: e, stackTrace: st);
-      print('[MockAppDataService][ERROR] getDashboardData accountId=$accountId error=$e');
       return null;
     }
   }
@@ -89,7 +64,6 @@ class MockAppDataService {
       if (account == null) return null;
       final bal = account['accountBalance'] as Map<String, dynamic>?;
       if (bal == null) {
-        print('[MockAppDataService] accountBalance missing for accountId=$accountId');
         return null;
       }
       final balance = AccountBalance(
@@ -99,11 +73,9 @@ class MockAppDataService {
         nextDueDate: DateTime.parse(bal['nextDueDate'] as String),
         paymentMethod: bal['paymentMethod'] as String,
       );
-      print('[MockAppDataService] getAccountBalance ok balance=\$${balance.currentBalance.toStringAsFixed(2)} accountId=$accountId');
       return balance;
     } catch (e, st) {
       Logger.error('MockAppDataService.getAccountBalance failed', error: e, stackTrace: st);
-      print('[MockAppDataService][ERROR] getAccountBalance accountId=$accountId error=$e');
       return null;
     }
   }
@@ -114,7 +86,6 @@ class MockAppDataService {
       if (account == null) return null;
       final usage = account['usageSummary'] as Map<String, dynamic>?;
       if (usage == null) {
-        print('[MockAppDataService] usageSummary missing for accountId=$accountId');
         return null;
       }
       UsagePeriod p(Map<String, dynamic> j) => UsagePeriod(
@@ -127,11 +98,9 @@ class MockAppDataService {
         lastMonth: p(usage['lastMonth'] as Map<String, dynamic>),
         yearToDate: p(usage['yearToDate'] as Map<String, dynamic>),
       );
-      print('[MockAppDataService] getUsageSummary ok currentMonth=${summary.currentMonth.kwh}kwh cost=\$${summary.currentMonth.cost} accountId=$accountId');
       return summary;
     } catch (e, st) {
       Logger.error('MockAppDataService.getUsageSummary failed', error: e, stackTrace: st);
-      print('[MockAppDataService][ERROR] getUsageSummary accountId=$accountId error=$e');
       return null;
     }
   }

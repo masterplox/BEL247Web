@@ -97,11 +97,16 @@ class AmiFilterControls extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        dateLabel,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
+                      Flexible(
+                        child: Text(
+                          dateLabel,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                       const SizedBox(width: AppTheme.spacing8),
                       const Icon(Icons.calendar_today, size: 16),
@@ -244,6 +249,7 @@ class AmiFilterControls extends StatelessWidget {
 
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Select year'),
@@ -294,6 +300,7 @@ class AmiFilterControls extends StatelessWidget {
 
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           final allowedMonths = selectedYear < maxYear

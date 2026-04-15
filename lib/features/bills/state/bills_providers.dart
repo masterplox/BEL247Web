@@ -16,10 +16,8 @@ final billsRepositoryProvider = Provider<BillsRepository>((ref) => const BillsRe
 final billsProvider = FutureProvider<List<Bill>>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
-  print('[Bills] billsProvider fetching for accountId=$activeAccountId');
   final repository = ref.watch(billsRepositoryProvider);
   final bills = await repository.fetchBills(activeAccountId);
-  print('[Bills] billsProvider loaded ${bills.length} bills accountId=$activeAccountId');
   return bills;
 });
 
@@ -57,10 +55,8 @@ final accountBalanceProvider = Provider.autoDispose<AccountBalance>((ref) {
 final usageSummaryProvider = FutureProvider<UsageSummary>((ref) async {
   // Depend on active account so this refetches when user switches accounts
   final activeAccountId = ref.watch(accountSwitcherProvider).activeAccountId;
-  print('[Bills] usageSummaryProvider fetching for accountId=$activeAccountId');
   final repository = ref.watch(billsRepositoryProvider);
   final usage = await repository.fetchUsageSummary(activeAccountId);
-  print('[Bills] usageSummaryProvider loaded currentMonth=${usage.currentMonth.kwh.toStringAsFixed(2)}kwh cost=\$${usage.currentMonth.cost.toStringAsFixed(2)} accountId=$activeAccountId');
   return usage;
 });
 
@@ -283,17 +279,14 @@ final transactionHistoryProvider = FutureProvider<List<PaymentHistory>>((ref) as
   final activeAccount = accountState.activeAccount;
   
   if (activeAccount == null) {
-    print('[Bills] transactionHistoryProvider - no active account, returning empty list');
     return [];
   }
 
-  print('[Bills] transactionHistoryProvider fetching for customerNumber=${activeAccount.customerNumber} accountNumber=${activeAccount.accountNumber}');
   final repository = ref.watch(billsRepositoryProvider);
   final transactions = await repository.fetchTransactionHistory(
     customerNumber: activeAccount.customerNumber,
     accountNumber: activeAccount.accountNumber,
   );
-  print('[Bills] transactionHistoryProvider loaded ${transactions.length} transactions');
   return transactions;
 });
 
@@ -314,9 +307,7 @@ final accountDetailsProvider = FutureProvider<EditableCustomerAccountDto?>((ref)
 /// Bill detail provider - caches bill details by bill number
 /// Uses FutureProvider.family to cache by bill number
 final billDetailProvider = FutureProvider.family<BillDetailDataDto?, String>((ref, billNumber) async {
-  print('[Bills] billDetailProvider fetching for billNumber=$billNumber');
   final repository = ref.watch(billsRepositoryProvider);
   final billDetail = await repository.fetchBillDetail(billNumber);
-  print('[Bills] billDetailProvider loaded billNumber=$billNumber');
   return billDetail;
 });

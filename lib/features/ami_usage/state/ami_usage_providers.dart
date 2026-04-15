@@ -11,7 +11,6 @@ final amiUsageRepositoryProvider = Provider<AmiUsageRepository>((ref) => const A
 /// Used for daily filter view
 final amiDailyIntervalsProvider = FutureProvider.family<List<IntervalUsageEntryDto>, ({int meterId, DateTime targetDate})>((ref, params) async {
   final targetDateStr = params.targetDate.toIso8601String().split('T')[0];
-  print('[AmiUsage] amiDailyIntervalsProvider fetching for meterId=${params.meterId} targetDate=$targetDateStr');
   
   final repository = ref.watch(amiUsageRepositoryProvider);
   final result = await repository.fetchDailyIntervals(
@@ -19,7 +18,6 @@ final amiDailyIntervalsProvider = FutureProvider.family<List<IntervalUsageEntryD
     targetDate: params.targetDate,
   );
   
-  print('[AmiUsage] amiDailyIntervalsProvider loaded ${result.length} interval entries');
   return result;
 });
 
@@ -28,7 +26,6 @@ final amiDailyIntervalsProvider = FutureProvider.family<List<IntervalUsageEntryD
 final amiDailyRangeProvider = FutureProvider.family<List<DailyUsageEntryDto>, ({int meterId, DateTime startDate, DateTime endDate})>((ref, params) async {
   final startDateStr = params.startDate.toIso8601String().split('T')[0];
   final endDateStr = params.endDate.toIso8601String().split('T')[0];
-  print('[AmiUsage] amiDailyRangeProvider fetching for meterId=${params.meterId} startDate=$startDateStr endDate=$endDateStr');
   
   final repository = ref.watch(amiUsageRepositoryProvider);
   final result = await repository.fetchDailyRange(
@@ -37,14 +34,12 @@ final amiDailyRangeProvider = FutureProvider.family<List<DailyUsageEntryDto>, ({
     endDate: params.endDate,
   );
   
-  print('[AmiUsage] amiDailyRangeProvider loaded ${result.length} daily entries');
   return result;
 });
 
 /// Monthly totals provider - fetches monthly totals for a year
 /// Used for year filter view
 final amiMonthlyTotalsProvider = FutureProvider.family<List<MonthlyUsageEntryDto>, ({int meterId, int year})>((ref, params) async {
-  print('[AmiUsage] amiMonthlyTotalsProvider fetching for meterId=${params.meterId} year=${params.year}');
   
   final repository = ref.watch(amiUsageRepositoryProvider);
   final result = await repository.fetchMonthlyTotals(
@@ -52,7 +47,6 @@ final amiMonthlyTotalsProvider = FutureProvider.family<List<MonthlyUsageEntryDto
     year: params.year,
   );
   
-  print('[AmiUsage] amiMonthlyTotalsProvider loaded ${result.length} monthly entries');
   return result;
 });
 

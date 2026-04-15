@@ -22,6 +22,7 @@ class AppDialog extends StatelessWidget {
     this.maxWidth,
     this.showCloseButton = true,
     this.onClose,
+    this.contentPadding,
   });
 
   final String title;
@@ -33,7 +34,12 @@ class AppDialog extends StatelessWidget {
   final bool showCloseButton;
   final VoidCallback? onClose;
 
-  /// Show the dialog in center mode
+  /// Padding around [content] in bottom-sheet mode (scroll area).
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// Show the dialog in center mode.
+  ///
+  /// [barrierDismissible] defaults to `true` so tapping the scrim closes the dialog.
   static Future<T?> showCenter<T>({
     required BuildContext context,
     required String title,
@@ -59,7 +65,9 @@ class AppDialog extends StatelessWidget {
     );
   }
 
-  /// Show the dialog in bottom slide-up mode
+  /// Show the dialog in bottom slide-up mode.
+  ///
+  /// [isDismissible] defaults to `true` (tap outside / drag down dismisses).
   static Future<T?> showBottom<T>({
     required BuildContext context,
     required String title,
@@ -70,6 +78,7 @@ class AppDialog extends StatelessWidget {
     bool showCloseButton = true,
     bool isDismissible = true,
     bool enableDrag = true,
+    EdgeInsetsGeometry? contentPadding,
   }) {
     return showModalBottomSheet<T>(
       context: context,
@@ -77,7 +86,7 @@ class AppDialog extends StatelessWidget {
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       backgroundColor: Colors.transparent,
-      builder: (context) => AppDialog(
+      builder: (sheetContext) => AppDialog(
         title: title,
         subtitle: subtitle,
         content: content,
@@ -85,7 +94,9 @@ class AppDialog extends StatelessWidget {
         mode: DialogMode.bottom,
         maxWidth: maxWidth,
         showCloseButton: showCloseButton,
-        onClose: () => Navigator.of(context, rootNavigator: true).pop(),
+        // Pop the modal route only — rootNavigator would pop the wrong route in nested navigator setups.
+        onClose: () => Navigator.of(sheetContext).pop(),
+        contentPadding: contentPadding,
       ),
     );
   }
@@ -133,6 +144,11 @@ class AppDialog extends StatelessWidget {
   }
 
   Widget _buildBottomSheet(BuildContext context) {
+    final scrollPadding = contentPadding ??
+        const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing16,
+          vertical: AppTheme.spacing8,
+        );
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.9,
@@ -146,7 +162,7 @@ class AppDialog extends StatelessWidget {
       ),
       child: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Drag handle
@@ -163,22 +179,20 @@ class AppDialog extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spacing24,
+                horizontal: AppTheme.spacing16,
                 vertical: AppTheme.spacing8,
               ),
               child: _buildHeader(context),
             ),
-            Flexible(
+            Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing24,
-                ),
+                padding: scrollPadding,
                 child: content,
               ),
             ),
             if (actions != null && actions!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.all(AppTheme.spacing24),
+                padding: const EdgeInsets.all(AppTheme.spacing16),
                 child: _buildActions(context),
               ),
           ],

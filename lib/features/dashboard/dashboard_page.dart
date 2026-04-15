@@ -62,13 +62,14 @@ class DashboardPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppTheme.spacing4),
                   Text(
-                    "Here's your energy overview",
+                    'Track usage, view balances, and manage your account all in one place',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontSize: 13,
                         ),
                   ),
-                  const SizedBox(height: AppTheme.spacing12),
+                  const SizedBox(height: AppTheme.spacing8),
+                  
                   const AccountSwitcherCard(
                     isExpanded: true,
                   ),
@@ -92,7 +93,7 @@ class DashboardPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppTheme.spacing4),
                     Text(
-                      "Here's your energy overview",
+                      'Track usage, view balances, and manage your account all in one place',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontSize: 13,

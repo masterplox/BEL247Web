@@ -300,65 +300,62 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
   void _showSignupSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Cannot dismiss by tapping outside
-      builder: (BuildContext dialogContext) => WillPopScope(
-        onWillPop: () async => false, // Prevent back button from dismissing
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: AppColors.primary,
-                size: 28,
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Sign Up Successful!',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: AppColors.primary,
+              size: 28,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Sign Up Successful!',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'Your account has been created successfully. Please sign in with your new credentials to continue.',
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                // Reset all signup state FIRST to prevent any navigation triggers
-                ref.read(authNotifierProvider.notifier).resetSignupState();
-                // Close the dialog
-                Navigator.of(dialogContext, rootNavigator: true).pop();
-                // Wait for dialog to close and state to update
-                await Future.delayed(const Duration(milliseconds: 50));
-                // Navigate to login page
-                if (mounted && context.mounted) {
-                  context.go('/login');
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Go to Login',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
+        content: const Text(
+          'Your account has been created successfully. Please sign in with your new credentials to continue.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              // Reset all signup state FIRST to prevent any navigation triggers
+              ref.read(authNotifierProvider.notifier).resetSignupState();
+              // Close the dialog
+              Navigator.of(dialogContext, rootNavigator: true).pop();
+              // Wait for dialog to close and state to update
+              await Future.delayed(const Duration(milliseconds: 50));
+              // Navigate to login page
+              if (mounted && context.mounted) {
+                context.go('/login');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Go to Login',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }

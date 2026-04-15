@@ -49,10 +49,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
         // Fetch and initialize connected accounts after session validation
         // For session validation, we read token from storage (it should already be there)
-        print('[AuthProvider] Valid session found, fetching connected accounts...');
         Logger.info('[_initializeAuth] Valid session found, fetching connected accounts...', tag: 'AuthProvider');
         await _fetchAndInitializeAccounts(); // No token parameter - read from storage
-        print('[AuthProvider] Account fetch completed after session validation');
         Logger.info('[_initializeAuth] Account fetch completed', tag: 'AuthProvider');
       } else {
         Logger.info('Invalid session found, clearing credentials');
@@ -79,28 +77,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Note: the login/validateSession flows ensure tokens are stored,
   /// so here we just do a lightweight availability check and then fetch.
   Future<void> _fetchAndInitializeAccounts() async {
-    print('[AuthProvider] ===== _fetchAndInitializeAccounts STARTING =====');
     Logger.info('[_fetchAndInitializeAccounts] Starting to fetch connected accounts...', tag: 'AuthProvider');
     try {
       // Lightweight check – don't fail auth flow if this is briefly null,
       // the ApiClient / interceptor will handle refresh if needed.
       final tokenAvailable = await TokenStorageService.getAccessToken();
       if (tokenAvailable == null || tokenAvailable.isEmpty) {
-        print('[AuthProvider] ⚠️ Access token not available yet when fetching accounts (will rely on interceptor/refresh).');
         Logger.warning(
           '[_fetchAndInitializeAccounts] Access token not available at fetch time; proceeding anyway',
           tag: 'AuthProvider',
         );
       } else {
-        print('[AuthProvider] ✅ Access token present when fetching accounts');
       }
 
       final accountsRepo = _ref.read(accountsRepositoryProvider);
-      print('[AuthProvider] Repository obtained, calling fetchConnectedAccounts...');
       Logger.info('[_fetchAndInitializeAccounts] Repository obtained, calling fetchConnectedAccounts...', tag: 'AuthProvider');
       final accounts = await accountsRepo.fetchConnectedAccounts();
       
-      print('[AuthProvider] Received ${accounts.length} accounts from API');
       Logger.info(
         '[_fetchAndInitializeAccounts] Received ${accounts.length} accounts from API',
         tag: 'AuthProvider',
@@ -111,18 +104,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.read(accountSwitcherProvider.notifier).initializeAccounts(accounts);
       
       if (accounts.isNotEmpty) {
-        print('[AuthProvider] ===== Successfully initialized ${accounts.length} connected accounts =====');
         Logger.info(
           '[_fetchAndInitializeAccounts] Successfully initialized ${accounts.length} connected accounts',
           tag: 'AuthProvider',
         );
       } else {
-        print('[AuthProvider] ⚠️ No connected accounts found - marked as initialized with empty list');
         Logger.warning('[_fetchAndInitializeAccounts] No connected accounts found - marked as initialized with empty list', tag: 'AuthProvider');
       }
     } catch (e, stackTrace) {
-      print('[AuthProvider] ❌ ERROR: Failed to fetch connected accounts auth_provider  : $e');
-      print('[AuthProvider] Stack trace: $stackTrace');
       Logger.error(
         '[_fetchAndInitializeAccounts] Failed to fetch connected accounts',
         error: e,
@@ -161,10 +150,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
         // Fetch and initialize connected accounts after successful login.
         // Any transient token issues are handled by ApiClient/interceptors.
-        print('[AuthProvider] Login successful, fetching connected accounts...');
         Logger.info('[login] Login successful, fetching connected accounts...', tag: 'AuthProvider');
         await _fetchAndInitializeAccounts();
-        print('[AuthProvider] Account fetch completed after login');
         Logger.info('[login] Account fetch completed', tag: 'AuthProvider');
       } else {
         Logger.warning('Login failed: ${response.error}');

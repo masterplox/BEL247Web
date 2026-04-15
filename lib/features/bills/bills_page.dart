@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/error_messages.dart';
 import '../../core/widgets/account_aware_scaffold.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/app_error_state.dart';
 import '../../core/widgets/app_page_header.dart';
 import '../../core/widgets/app_page_scaffold.dart';
 import '../../core/widgets/app_responsive_layout.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/models/user.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
@@ -211,21 +214,16 @@ class PaymentCard extends ConsumerWidget {
     return PaymentWidget(
       accountBalance: accountBalance,
       onPaymentSuccess: (amount, method) {
-          // Refresh data after successful payment
           ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment of \$${amount.toStringAsFixed(2)} successful!'),
-              backgroundColor: AppColors.success,
-            ),
+          AppToast.success(
+            context,
+            'Payment of \$${amount.toStringAsFixed(2)} submitted successfully!',
           );
         },
         onPaymentError: (error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment failed: $error'),
-              backgroundColor: AppColors.error,
-            ),
+          AppToast.error(
+            context,
+            "Payment didn't go through. Please try again or use a different method.",
           );
         },
       
@@ -250,8 +248,11 @@ class AccountLedgerCard extends ConsumerWidget {
             bills: [],
             isLoading: true,
           ),
-          error: (e, st) => const AccountLedgerWidget(
-            bills: [],
+          error: (e, st) => AppErrorState(
+            message: ErrorMessages.billLoadFailed,
+            title: "Couldn't load bills",
+            icon: Icons.receipt_long_outlined,
+            onRetry: () => ref.invalidate(bills_state.billsProvider),
           ),
           data: (bills) => transactionHistoryAsync.when(
             loading: () => AccountLedgerWidget(

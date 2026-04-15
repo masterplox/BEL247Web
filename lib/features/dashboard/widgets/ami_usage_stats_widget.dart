@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
-import '../../../data/models/ami_data.dart' show ratePerKwh;
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
 import '../state/ami_dashboard_usage_providers.dart';
@@ -14,6 +14,8 @@ import '../state/ami_dashboard_usage_providers.dart';
 /// (amiDailyRange + amiMonthlyTotals) instead of legacy monthly meter readings.
 class AmiUsageStatsWidget extends ConsumerWidget {
   const AmiUsageStatsWidget({super.key});
+  static final DateFormat _shortRangeDateFormat = DateFormat('MMM d');
+  static final DateFormat _monthYearFormat = DateFormat('MMMM yyyy');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -140,25 +142,36 @@ class AmiUsageStatsWidget extends ConsumerWidget {
     final lastMonthKwh = stats.lastMonthKwh;
     final diff = stats.diffVsLastMonthKwh;
     final savedEnergy = stats.savedEnergy;
-    print('ami stats: $stats');
+    final now = DateTime.now();
+    final currentStart = DateTime(now.year, now.month, 1);
+    final currentEnd = DateTime(now.year, now.month, now.day);
+    final previousStart = DateTime(now.year, now.month - 1, 1);
+    final previousEnd = DateTime(now.year, now.month, 0);
+    final currentRange = _formatDateRange(currentStart, currentEnd);
+    final previousRange = _formatDateRange(previousStart, previousEnd);
+    final trailingYearLabel = now.year.toString();
+    final averageScope = 'Jan ${now.year} - ${_monthYearFormat.format(now)}';
+
     return [
       {
-        'label': 'This Month',
+        'label': 'This Billing Period',
+        'subLabel': currentRange,
         'value': thisMonthKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.bolt,
         'color': AppColors.primary,
         'bgColor': AppColors.primary,
-        'detailTitle': 'Current Month Usage (AMI)',
+        'detailTitle': 'Current Billing Period Usage (AMI)',
+        'detailSubtitle': 'Usage shown reflects your billing period',
         'detailItems': [
+          {'label': 'Billing Period', 'value': currentRange},
           {'label': 'Consumption', 'value': '${thisMonthKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Est. Cost', 'value': r'BZ$' + stats.thisMonthEstimatedCost.toStringAsFixed(2)},
-          {'label': 'Rate', 'value': r'BZ$' + ratePerKwh.toStringAsFixed(2) + '/kWh'},
           {'label': 'Days with data', 'value': '${stats.thisMonthDaysWithData} days'},
         ],
       },
       {
-        'label': 'vs Last Month',
+        'label': 'vs Previous Billing Period',
+        'subLabel': '$currentRange vs $previousRange',
         'value': savedEnergy
             ? '-${diff.abs().toStringAsFixed(0)}'
             : '+${diff.abs().toStringAsFixed(0)}',
@@ -166,38 +179,49 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         'icon': Icons.trending_up,
         'color': savedEnergy ? AppColors.success : AppColors.error,
         'bgColor': savedEnergy ? AppColors.success : AppColors.error,
-        'detailTitle': 'Month Comparison (AMI)',
+        'detailTitle': 'Billing Period Comparison (AMI)',
+        'detailSubtitle':
+            'Compares your energy usage for your current and previous billing periods',
         'detailItems': [
-          {'label': 'Last Month', 'value': '${lastMonthKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'This Month', 'value': '${thisMonthKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Difference', 'value': '${diff.toStringAsFixed(2)} kWh'},
+          {'label': 'Current Period', 'value': '$currentRange • ${thisMonthKwh.toStringAsFixed(2)} kWh'},
+          {'label': 'Previous Period', 'value': '$previousRange • ${lastMonthKwh.toStringAsFixed(2)} kWh'},
+          {
+            'label': 'Difference',
+            'value': '${diff.toStringAsFixed(2)} kWh',
+            'icon': diff < 0 ? Icons.arrow_upward : Icons.arrow_downward,
+            'valueColor': diff < 0 ? AppColors.error : AppColors.success,
+          },
         ],
       },
       {
-        'label': 'Peak Month (Trailing ${stats.peakMonthLabel})',
+        'label': 'Peak Billing Period',
+        'subLabel': '${stats.peakMonthLabel} $trailingYearLabel',
         'value': stats.peakMonthKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.local_fire_department,
         'color': AppColors.warning,
         'bgColor': AppColors.warning,
-        'detailTitle': 'Peak Usage Month (AMI)',
+        'detailTitle': 'Peak Usage Period',
+        'detailSubtitle': 'Highest electricity usage this year',
         'detailItems': [
-          {'label': 'Month', 'value': 'Trailing ${stats.peakMonthLabel}'},
+          {'label': 'Billing Period', 'value': '${stats.peakMonthLabel} $trailingYearLabel'},
           {'label': 'Consumption', 'value': '${stats.peakMonthKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Est. Cost', 'value': r'BZ$' + (stats.peakMonthKwh * ratePerKwh).toStringAsFixed(2)},
         ],
       },
       {
-        'label': 'Avg Monthly',
+        'label': 'Average Billing Period',
+        'subLabel': averageScope,
         'value': stats.avgMonthlyKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.bar_chart,
         'color': const Color(0xFF8B5CF6),
         'bgColor': const Color(0xFF8B5CF6),
         'detailTitle': 'Average Statistics (AMI)',
+        'detailSubtitle': 'Average usage based on your billed periods this year',
         'detailItems': [
+          {'label': 'Date Scope', 'value': averageScope},
           {'label': 'Avg. Monthly Usage', 'value': '${stats.avgMonthlyKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Yearly Total', 'value': r'BZ$' + stats.yearlyEstimatedCost.toStringAsFixed(2)},
+          {'label': 'Yearly Total Usage', 'value': '${stats.yearlyTotalKwh.toStringAsFixed(2)} kWh'},
           {'label': 'Months Analyzed', 'value': '${stats.monthsAnalyzed}'},
           {'label': 'Total kWh', 'value': stats.yearlyTotalKwh.toStringAsFixed(0)},
         ],
@@ -302,10 +326,11 @@ class AmiUsageStatsWidget extends ConsumerWidget {
     AppDialog.showCenter(
       context: context,
       title: stat['detailTitle'] as String,
+      subtitle: stat['detailSubtitle'] as String?,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: (stat['detailItems'] as List<Map<String, String>>)
+        children: (stat['detailItems'] as List<Map<String, dynamic>>)
             .map(
               (item) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
@@ -318,11 +343,25 @@ class AmiUsageStatsWidget extends ConsumerWidget {
                             color: AppColors.textSecondary,
                           ),
                     ),
-                    Text(
-                      item['value']!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (item['icon'] != null) ...[
+                          Icon(
+                            item['icon'] as IconData,
+                            size: 14,
+                            color: item['valueColor'] as Color? ?? AppColors.textPrimary,
                           ),
+                          const SizedBox(width: AppTheme.spacing4),
+                        ],
+                        Text(
+                          item['value']!,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: item['valueColor'] as Color?,
+                              ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -338,5 +377,8 @@ class AmiUsageStatsWidget extends ConsumerWidget {
       ],
     );
   }
+
+  String _formatDateRange(DateTime start, DateTime end) =>
+      '${_shortRangeDateFormat.format(start)} - ${_shortRangeDateFormat.format(end)}';
 }
 

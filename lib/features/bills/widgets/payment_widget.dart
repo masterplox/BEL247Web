@@ -332,6 +332,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
   void _showSuccessDialog(double amount, String method) {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
@@ -367,6 +368,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
   void _showErrorDialog(String error) {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         title: Row(
           children: [

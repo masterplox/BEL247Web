@@ -17,8 +17,6 @@ class ConsumptionChartWidget extends ConsumerStatefulWidget {
 }
 
 class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget> {
-  bool _showConsumption = true; // true for kWh, false for cost
-
   @override
   Widget build(BuildContext context) {
     final meterReadingsAsync = ref.watch(meterReadingsThisYearProvider);
@@ -47,7 +45,7 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Usage Trend (kWh)',
+                        'Usage Trend',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -87,33 +85,6 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
                   _buildLineChartData(chartData),
                 ),
               ),
-              const SizedBox(height: AppTheme.spacing12),
-              const Divider(height: 1),
-              const SizedBox(height: AppTheme.spacing12),
-              // Legend
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: _showConsumption ? AppColors.success : AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: AppTheme.spacing8),
-                    Text(
-                      _showConsumption ? 'Energy Usage (kWh)' : r'Monthly Cost ($)',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: AppTheme.spacing16),
             ],
           ),
@@ -128,33 +99,6 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
       borderWidth: 1,
       child: Center(
         child: CircularProgressIndicator(),
-      ),
-    );
-
-  Widget _buildToggleButton(BuildContext context, String label, bool isSelected) => InkWell(
-      onTap: () {
-        setState(() {
-          _showConsumption = label == 'kWh';
-        });
-      },
-      borderRadius: BorderRadius.circular(AppTheme.radius8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing8,
-          vertical: AppTheme.spacing8,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radius8),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-        ),
       ),
     );
 
@@ -174,16 +118,13 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
     return sorted.map((reading) => {
         'month': reading.readMonth,
         'consumption': double.tryParse(reading.consumption) ?? 0.0,
-        'cost': double.tryParse(reading.amount) ?? 0.0,
       }).toList();
   }
 
   LineChartData _buildLineChartData(List<Map<String, dynamic>> chartData) {
     final spots = chartData.asMap().entries.map((entry) {
       final index = entry.key.toDouble();
-      final value = _showConsumption
-          ? (entry.value['consumption'] as double)
-          : (entry.value['cost'] as double);
+      final value = entry.value['consumption'] as double;
       return FlSpot(index, value);
     }).toList();
 
@@ -230,23 +171,13 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
             showTitles: true,
             reservedSize: 40,
             getTitlesWidget: (value, meta) {
-              if (_showConsumption) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 10,
-                  ),
-                );
-              } else {
-                return Text(
-                  '\$${value.toInt()}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 10,
-                  ),
-                );
-              }
+              return Text(
+                '${value.toInt()} kWh',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 10,
+                ),
+              );
             },
           ),
         ),
@@ -262,14 +193,13 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
         LineChartBarData(
           spots: spots,
           isCurved: true,
-          color: _showConsumption ? AppColors.success : AppColors.primary,
+          color: AppColors.success,
           barWidth: 2,
           isStrokeCapRound: true,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
-            color: (_showConsumption ? AppColors.success : AppColors.primary)
-                .withValues(alpha: 0.1),
+            color: AppColors.success.withValues(alpha: 0.1),
           ),
         ),
       ],
@@ -281,12 +211,7 @@ class _ConsumptionChartWidgetState extends ConsumerState<ConsumptionChartWidget>
               final index = barSpot.x.toInt();
               if (index >= 0 && index < chartData.length) {
                 final consumption = chartData[index]['consumption'] as double;
-                final cost = chartData[index]['cost'] as double;
-                
-                // Show both kWh and cost with a horizontal divider
-                final tooltipText = '${consumption.toStringAsFixed(0)} kWh\n'
-                    '───\n'
-                    '\$${cost.toStringAsFixed(2)}';
+                final tooltipText = '${consumption.toStringAsFixed(0)} kWh';
                 
                 return LineTooltipItem(
                   tooltipText,

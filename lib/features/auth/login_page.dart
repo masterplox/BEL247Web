@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/services/storage_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
-import '../../core/widgets/app_error_state.dart';
 import '../../core/widgets/app_text.dart';
 import '../../data/models/auth.dart';
 import '../../theme/colors.dart';
@@ -19,6 +19,9 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  static const String _rememberMeKey = 'login_remember_me';
+  static const String _rememberedUsernameKey = 'login_remembered_username';
+
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -30,6 +33,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.initState();
     _usernameController.text = '';
     _passwordController.text = '';
+    _loadRememberedLogin();
   }
 
   @override
@@ -102,11 +106,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   
                   const SizedBox(height: 24),
                   
-                  // Error Display
-                  if (authState.error != null) _buildErrorDisplay(authState.error!),
-                  
-                  const SizedBox(height: 24),
-                  
                   // Additional Options
                   _buildAdditionalOptions(),
                 ],
@@ -120,32 +119,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Widget _buildHeader() => Column(
       children: [
-        // BEL247 Logo placeholder
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(
-            Icons.flash_on,
-            color: Colors.white,
-            size: 40,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            'assets/bel_logo.png',
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
           ),
         ),
         const SizedBox(height: 16),
         const AppText(
-          'BEL247',
+          'BEL247 Portal',
           style: AppTextStyle.title,
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
-        ),
-        const SizedBox(height: 8),
-        const AppText(
-          'Energy Management Portal',
-          style: AppTextStyle.body,
-          color: AppColors.textSecondary,
         ),
       ],
     );
@@ -240,22 +228,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 return null;
               },
             ),
+            if (authState.error != null) ...[
+              const SizedBox(height: 12),
+              _buildLoginErrorSection(authState.error!),
+            ],
             const SizedBox(height: 16),
             
-            // Remember Me Checkbox
-            Row(
-              children: [
-                Checkbox(
-                  value: _rememberMe,
-                  onChanged: (value) {
-                    setState(() {
-                      _rememberMe = value ?? false;
-                    });
-                  },
-                  activeColor: AppColors.primary,
+            // Remember Me Checkbox (pointer cursor on web/desktop)
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _toggleRememberMe(!_rememberMe),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: _rememberMe,
+                      onChanged: (value) => _toggleRememberMe(value ?? false),
+                      activeColor: AppColors.primary,
+                    ),
+                    const AppText('Remember me'),
+                  ],
                 ),
-                const AppText('Remember me'),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
             
@@ -270,13 +265,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
 
-  Widget _buildErrorDisplay(String error) => AppErrorState(
-        message: error,
-        icon: Icons.error_outline,
-        onRetry: () {
-          ref.read(authNotifierProvider.notifier).clearError();
-        },
-        padding: const EdgeInsets.all(16),
+  /// Inline error below the password field (info-style section card).
+  Widget _buildLoginErrorSection(String error) => AppCard(
+        elevation: 0,
+        color: const Color(0xFFEFF6FF),
+        borderColor: AppColors.info.withValues(alpha: 0.45),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.info, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: AppText(
+                error,
+                style: AppTextStyle.body,
+                color: const Color(0xFF1E40AF),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, size: 18, color: AppColors.info.withValues(alpha: 0.85)),
+              onPressed: () {
+                ref.read(authNotifierProvider.notifier).clearError();
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              tooltip: 'Dismiss',
+            ),
+          ],
+        ),
       );
 
   Widget _buildAdditionalOptions() => Column(
@@ -290,8 +307,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         //   buttonType: AppButtonType.text,
         // ),
         // const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          alignment: WrapAlignment.center,
+          spacing: 4,
+          runSpacing: 4,
           children: [
             const AppText("Don't have an account? "),
             AppButton(
@@ -311,6 +331,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (_formKey.currentState!.validate()) {
       final username = _usernameController.text.trim();
       final password = _passwordController.text;
+
+      if (_rememberMe) {
+        _saveRememberedLogin(username);
+      } else {
+        _clearRememberedLogin();
+      }
       
       Logger.info('Attempting login for: $username');
       ref.read(authNotifierProvider.notifier).login(
@@ -318,6 +344,51 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         password,
         rememberMe: _rememberMe,
       );
+    }
+  }
+
+  Future<void> _loadRememberedLogin() async {
+    try {
+      final savedRememberMe = await StorageService.getBool(_rememberMeKey) ?? false;
+      final savedUsername = await StorageService.getString(_rememberedUsernameKey) ?? '';
+
+      if (!mounted) return;
+      setState(() {
+        _rememberMe = savedRememberMe;
+        _usernameController.text = savedRememberMe ? savedUsername : '';
+      });
+    } catch (e, stackTrace) {
+      Logger.error('Failed to load remembered login', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _saveRememberedLogin(String username) async {
+    try {
+      await StorageService.storeBool(_rememberMeKey, true);
+      await StorageService.storeString(_rememberedUsernameKey, username);
+    } catch (e, stackTrace) {
+      Logger.error('Failed to save remembered login', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _clearRememberedLogin() async {
+    try {
+      await StorageService.storeBool(_rememberMeKey, false);
+      await StorageService.remove(_rememberedUsernameKey);
+    } catch (e, stackTrace) {
+      Logger.error('Failed to clear remembered login', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  void _toggleRememberMe(bool value) {
+    setState(() {
+      _rememberMe = value;
+    });
+
+    if (_rememberMe) {
+      _saveRememberedLogin(_usernameController.text.trim());
+    } else {
+      _clearRememberedLogin();
     }
   }
 }

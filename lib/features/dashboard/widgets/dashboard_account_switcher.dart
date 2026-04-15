@@ -86,6 +86,7 @@ class DashboardAccountSwitcher extends ConsumerWidget {
 
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Switch Account'),
         content: SizedBox(

@@ -3,11 +3,14 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../data/repositories/accounts_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
+import '../analytics/app_page_names.dart';
+import '../providers/engagement_providers.dart';
 import '../providers/feature_providers.dart';
 import '../providers/meter_data_providers.dart';
 import '../utils/logger.dart';
@@ -50,100 +53,57 @@ class AccountSwitcherCard extends ConsumerWidget {
     }
 
     if (!isExpanded) {
-      // Collapsed state - compact account switcher
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showAccountSwitcherDialog(context, ref),
-          borderRadius: BorderRadius.circular(AppTheme.radius8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing12,
-              vertical: AppTheme.spacing8,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppTheme.radius8),
-              border: Border.all(
-                color: AppColors.primaryLight.withValues(alpha: 0.3),
-                width: 1,
+      // Collapsed: match [SidebarNavItem] margin/padding and 24px icon so the
+      // control aligns with nav icons and nothing clips in the narrow rail.
+      return Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing8,
+          vertical: AppTheme.spacing4,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showAccountSwitcherDialog(context, ref),
+            borderRadius: BorderRadius.circular(AppTheme.radius8),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing12,
+                vertical: AppTheme.spacing12,
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icon
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.swap_vert_circle,
-                        color: AppColors.white,
-                        size: 18,
-                      ),
-                    ),
-                    if (isAmiMeter)
-                      Positioned(
-                        right: -6,
-                        top: -6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.white, width: 1),
-                          ),
-                          child: const Text(
-                            'AMI',
-                            style: TextStyle(
-                              color: AppColors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radius8),
+                border: Border.all(
+                  color: AppColors.primaryLight.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: isAmiMeter
+                  ? const Badge(
+                      backgroundColor: AppColors.primary,
+                      padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      label: Text(
+                        'AMI',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(width: AppTheme.spacing8),
-                // Account name (compact)
-              //   Column(
-              // crossAxisAlignment: CrossAxisAlignment.start,
-              // mainAxisSize: MainAxisSize.min,
-              //     children: [
-                  
-              //   Text(
-              //     activeAccount.nickname ?? activeAccount.formattedAccountNumber,
-              //     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              //           fontWeight: FontWeight.w600,
-              //           color: AppColors.textPrimary,
-              //         ),
-              //   ),
-              //   Text('#${activeAccount.accountNumber}',
-              //     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              //           fontWeight: FontWeight.normal,
-              //           color: AppColors.textSecondary,
-              //         ),),
-              //   ],),
-                // const SizedBox(width: AppTheme.spacing4),
-                // // Dropdown indicator
-                // const Icon(
-                //   Icons.keyboard_arrow_down,
-                //   color: AppColors.textSecondary,
-                //   size: 18,
-                // ),
-              ],
+                      child: Icon(
+                        Icons.swap_vert_circle,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.swap_vert_circle,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
             ),
           ),
         ),
@@ -274,6 +234,7 @@ class AccountSwitcherCard extends ConsumerWidget {
   void _showAccountSwitcherDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => const _AccountSwitcherDialog(),
     );
   }
@@ -378,15 +339,21 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
 
     final filteredAccounts = _getFilteredAndSortedAccounts(accounts);
 
+    final screenW = MediaQuery.sizeOf(context).width;
+    final screenH = MediaQuery.sizeOf(context).height;
+    final dialogMaxW = screenW > 624 ? 600.0 : (screenW - 24).clamp(280.0, 600.0);
+    final dialogMaxH = screenH * 0.9 < 700 ? screenH * 0.9 : 700.0;
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius12),
       ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
       child: Container(
-        width: 600,
-        constraints: const BoxConstraints(maxHeight: 700),
+        width: dialogMaxW,
+        constraints: BoxConstraints(maxHeight: dialogMaxH),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             // Header
             Container(
@@ -446,114 +413,107 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                 },
               ),
             ),
-            // Filters and Sorting
+            // Filters and Sorting (label + wrap so narrow screens don't overflow)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Status filter chips
-                  Row(
+                  Text(
+                    'Status:',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing8),
+                  Wrap(
+                    spacing: AppTheme.spacing8,
+                    runSpacing: AppTheme.spacing8,
                     children: [
-                      Text(
-                        'Status:',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                      _StatusChip(
+                        label: 'All',
+                        isSelected: _statusFilter == null,
+                        onTap: () => setState(() => _statusFilter = null),
                       ),
-                      const SizedBox(width: AppTheme.spacing8),
-                      Wrap(
-                        spacing: AppTheme.spacing8,
-                        children: [
-                          _StatusChip(
-                            label: 'All',
-                            isSelected: _statusFilter == null,
-                            onTap: () => setState(() => _statusFilter = null),
-                          ),
-                          _StatusChip(
-                            label: 'Paid',
-                            isSelected: _statusFilter == AccountStatus.paid,
-                            onTap: () => setState(() => _statusFilter = AccountStatus.paid),
-                            color: AppColors.success,
-                          ),
-                          _StatusChip(
-                            label: 'Due',
-                            isSelected: _statusFilter == AccountStatus.due,
-                            onTap: () => setState(() => _statusFilter = AccountStatus.due),
-                            color: AppColors.warning,
-                          ),
-                          _StatusChip(
-                            label: 'Overdue',
-                            isSelected: _statusFilter == AccountStatus.overdue,
-                            onTap: () => setState(() => _statusFilter = AccountStatus.overdue),
-                            color: AppColors.error,
-                          ),
-                        ],
+                      _StatusChip(
+                        label: 'Paid',
+                        isSelected: _statusFilter == AccountStatus.paid,
+                        onTap: () => setState(() => _statusFilter = AccountStatus.paid),
+                        color: AppColors.success,
+                      ),
+                      _StatusChip(
+                        label: 'Due',
+                        isSelected: _statusFilter == AccountStatus.due,
+                        onTap: () => setState(() => _statusFilter = AccountStatus.due),
+                        color: AppColors.warning,
+                      ),
+                      _StatusChip(
+                        label: 'Overdue',
+                        isSelected: _statusFilter == AccountStatus.overdue,
+                        onTap: () => setState(() => _statusFilter = AccountStatus.overdue),
+                        color: AppColors.error,
                       ),
                     ],
                   ),
                   const SizedBox(height: AppTheme.spacing12),
-                  // Sorting buttons
-                  Row(
+                  Text(
+                    'Sort by:',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing8),
+                  Wrap(
+                    spacing: AppTheme.spacing4,
+                    runSpacing: AppTheme.spacing8,
                     children: [
-                      Text(
-                        'Sort by:',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                      _SortButton(
+                        icon: Icons.account_balance_wallet,
+                        label: 'Balance',
+                        isActive: _sortField == AccountSortField.balance,
+                        isAscending: _sortAscending,
+                        onTap: () {
+                          setState(() {
+                            if (_sortField == AccountSortField.balance) {
+                              _sortAscending = !_sortAscending;
+                            } else {
+                              _sortField = AccountSortField.balance;
+                              _sortAscending = true;
+                            }
+                          });
+                        },
                       ),
-                      const SizedBox(width: AppTheme.spacing8),
-                      Wrap(
-                        spacing: AppTheme.spacing4,
-                        children: [
-                          _SortButton(
-                            icon: Icons.account_balance_wallet,
-                            label: 'Balance',
-                            isActive: _sortField == AccountSortField.balance,
-                            isAscending: _sortAscending,
-                            onTap: () {
-                              setState(() {
-                                if (_sortField == AccountSortField.balance) {
-                                  _sortAscending = !_sortAscending;
-                                } else {
-                                  _sortField = AccountSortField.balance;
-                                  _sortAscending = true;
-                                }
-                              });
-                            },
-                          ),
-                          _SortButton(
-                            icon: Icons.location_on,
-                            label: 'Address',
-                            isActive: _sortField == AccountSortField.address,
-                            isAscending: _sortAscending,
-                            onTap: () {
-                              setState(() {
-                                if (_sortField == AccountSortField.address) {
-                                  _sortAscending = !_sortAscending;
-                                } else {
-                                  _sortField = AccountSortField.address;
-                                  _sortAscending = true;
-                                }
-                              });
-                            },
-                          ),
-                          _SortButton(
-                            icon: Icons.numbers,
-                            label: 'Account #',
-                            isActive: _sortField == AccountSortField.accountNumber,
-                            isAscending: _sortAscending,
-                            onTap: () {
-                              setState(() {
-                                if (_sortField == AccountSortField.accountNumber) {
-                                  _sortAscending = !_sortAscending;
-                                } else {
-                                  _sortField = AccountSortField.accountNumber;
-                                  _sortAscending = true;
-                                }
-                              });
-                            },
-                          ),
-                        ],
+                      _SortButton(
+                        icon: Icons.location_on,
+                        label: 'Address',
+                        isActive: _sortField == AccountSortField.address,
+                        isAscending: _sortAscending,
+                        onTap: () {
+                          setState(() {
+                            if (_sortField == AccountSortField.address) {
+                              _sortAscending = !_sortAscending;
+                            } else {
+                              _sortField = AccountSortField.address;
+                              _sortAscending = true;
+                            }
+                          });
+                        },
+                      ),
+                      _SortButton(
+                        icon: Icons.numbers,
+                        label: 'Account #',
+                        isActive: _sortField == AccountSortField.accountNumber,
+                        isAscending: _sortAscending,
+                        onTap: () {
+                          setState(() {
+                            if (_sortField == AccountSortField.accountNumber) {
+                              _sortAscending = !_sortAscending;
+                            } else {
+                              _sortField = AccountSortField.accountNumber;
+                              _sortAscending = true;
+                            }
+                          });
+                        },
                       ),
                     ],
                   ),
@@ -562,7 +522,7 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
             ),
             const SizedBox(height: AppTheme.spacing8),
             // Accounts list
-            Flexible(
+            Expanded(
               child: filteredAccounts.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(AppTheme.spacing32),
@@ -585,7 +545,6 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                       ),
                     )
                   : ListView.builder(
-                      shrinkWrap: true,
                       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
                       itemCount: filteredAccounts.length,
                       itemBuilder: (context, index) {
@@ -636,8 +595,20 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
   }
 
   void _showConnectAccountDialog(BuildContext context, WidgetRef ref) {
+    String page = AppPageNames.unknown;
+    try {
+      final matchedLocation = GoRouterState.of(context).matchedLocation;
+      page = AppPageNames.navigationSubtypeForRoute(matchedLocation);
+    } catch (_) {
+      page = AppPageNames.unknown;
+    }
+    ref.read(deviceEventsRepositoryProvider).logInteractionDialogOpen(
+          currentPageName: page,
+          dialogDetails: AppPageNames.connectCustomerAccount,
+        );
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => _ConnectAccountFormDialog(
         onSuccess: () async {
           // Refresh accounts after successful connection
@@ -831,15 +802,19 @@ class _AccountCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                account.nickname ?? account.formattedAccountNumber,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                              Expanded(
+                                child: Text(
+                                  account.nickname ?? account.formattedAccountNumber,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(width: AppTheme.spacing8),
-                              const Spacer(),
                               // Status tag
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -920,7 +895,7 @@ class _AccountCard extends StatelessWidget {
 class _ConnectAccountFormDialog extends ConsumerStatefulWidget {
   const _ConnectAccountFormDialog({required this.onSuccess});
 
-  final VoidCallback onSuccess;
+  final Future<void> Function() onSuccess;
 
   @override
   ConsumerState<_ConnectAccountFormDialog> createState() => _ConnectAccountFormDialogState();
@@ -933,6 +908,8 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
   final _nicknameController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  String? _successMessage;
+  bool _isSuccess = false;
 
   @override
   void dispose() {
@@ -950,26 +927,30 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _successMessage = null;
     });
 
     try {
       final accountsRepo = ref.read(accountsRepositoryProvider);
-      await accountsRepo.connectAccount(
+      final response = await accountsRepo.connectAccount(
         customerNumber: _customerNumberController.text.trim(),
         accountNumberHint: _accountNumberHintController.text.trim(),
         nickName: _nicknameController.text.trim(),
       );
 
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        widget.onSuccess();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account connected successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+      if (response.status == 0) {
+        setState(() {
+          _isLoading = false;
+          _isSuccess = true;
+          _successMessage = response.message ?? 'Account connected successfully!';
+        });
+        return;
       }
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = response.message ?? 'Failed to connect account.';
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -978,8 +959,12 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
       });
     }
   }
+  Future<void> _handleSuccessOkay() async {
+    await widget.onSuccess();
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+  }
   String _extractConnectAccountErrorMessage(Object error) {
-    print('_extractConnectAccountErrorMessage: $error');
     // Prefer backend-provided `message` when available.
     if (error is DioException) {
       final data = error.response?.data;
@@ -1052,6 +1037,43 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 ],
               ),
               const SizedBox(height: AppTheme.spacing24),
+              if (_isSuccess) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.spacing12),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radius8),
+                    border: Border.all(color: AppColors.success),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: AppColors.success),
+                      const SizedBox(width: AppTheme.spacing8),
+                      Expanded(
+                        child: Text(
+                          _successMessage ?? 'Account connected successfully!',
+                          style: const TextStyle(color: AppColors.success),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacing24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _handleSuccessOkay,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.white,
+                      ),
+                      child: const Text('Okay'),
+                    ),
+                  ],
+                ),
+              ] else ...[
               // Customer Number
               TextFormField(
                 controller: _customerNumberController,
@@ -1070,24 +1092,24 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 },
               ),
               const SizedBox(height: AppTheme.spacing16),
-              // Account Number Hint
+              // Account Number (Last 5 digits)
               TextFormField(
                 controller: _accountNumberHintController,
                 decoration: const InputDecoration(
-                  labelText: 'Account Number Hint',
-                  hintText: 'Enter up to 5 characters',
+                  labelText: 'Account number (Last 5 digits)',
+                  hintText: 'Enter last 5 digits',
                   prefixIcon: Icon(Icons.numbers),
                   border: OutlineInputBorder(),
-                  helperText: 'Maximum 5 characters',
+                  helperText: 'Maximum 5 digits',
                 ),
                 keyboardType: TextInputType.number,
                 maxLength: 5,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Account number hint is required';
+                    return 'Last 5 digits are required';
                   }
                   if (value.trim().length > 5) {
-                    return 'Maximum 5 characters allowed';
+                    return 'Maximum 5 digits allowed';
                   }
                   return null;
                 },
@@ -1162,6 +1184,7 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                   ),
                 ],
               ),
+              ],
             ],
           ),
         ),

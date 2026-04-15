@@ -19,8 +19,6 @@ import 'widgets/ami_summary_cards.dart';
 
 enum FilterType { day, week, month, year }
 
-enum ViewMode { kwh, cost }
-
 class AmiUsagePage extends ConsumerStatefulWidget {
   const AmiUsagePage({super.key});
 
@@ -36,7 +34,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   DateTime _monthDate = DateTime.now();
   DateTime _yearDate = DateTime.now();
   int? _selectedIndex;
-  ViewMode _viewMode = ViewMode.kwh;
 
   /// User-selected week range (any span up to 7 days). Null = use getWeekRange(_weekDate).
   DateTime? _weekRangeStart;
@@ -255,11 +252,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                         filterType: _filterType,
                         touPerDay: touPerDay,
                       ),
-                      estimatedCost: _getSummaryEstimatedCost(
-                        data.stats,
-                        filterType: _filterType,
-                        touPerDay: touPerDay,
-                      ),
                       peakKWh: _getSummaryPeakKwh(
                         data.stats,
                         filterType: _filterType,
@@ -348,7 +340,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                                 _selectedIndex = index;
                               });
                             },
-                            viewMode: _viewMode,
                           )
                         else
                           AmiPeriodChart(
@@ -360,7 +351,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                                 _selectedIndex = index;
                               });
                             },
-                            viewMode: _viewMode,
                             touPerDay: touPerDay.isNotEmpty ? touPerDay : null,
                             showLoading: isTouLoading,
                           ),
@@ -404,51 +394,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildViewModeButton(
-    BuildContext context,
-    ViewMode mode,
-    IconData icon,
-    String label,
-  ) {
-    final isSelected = _viewMode == mode;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _viewMode = mode;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (mode == ViewMode.kwh ? AppColors.primary : AppColors.chart2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -499,7 +444,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                   context,
                   'Peak',
                   '11:00 AM - 8:00 PM',
-                  AppColors.chart4,
+                  AppColors.info,
                   tou.peakKwh,
                 ),
                 const SizedBox(height: AppTheme.spacing12),
@@ -530,7 +475,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                     context,
                     'Peak',
                     '11:00 AM - 8:00 PM',
-                    AppColors.chart4,
+                    AppColors.info,
                     tou.peakKwh,
                   ),
                 ),
@@ -654,29 +599,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       return double.parse(total.toStringAsFixed(2));
     }
     return dailyStats.totalKWh;
-  }
-
-  double _getSummaryEstimatedCost(
-    dynamic stats, {
-    required FilterType filterType,
-    required List<DayTou> touPerDay,
-  }) {
-    if (filterType == FilterType.day) {
-      return (stats as HourlyStats).estimatedCost;
-    }
-    final dailyStats = stats as DailyStats;
-    if ((filterType == FilterType.week || filterType == FilterType.month) &&
-        dailyStats.totalKWh == 0 &&
-        touPerDay.isNotEmpty) {
-      final totalKwh = _getSummaryTotalKwh(
-        stats,
-        filterType: filterType,
-        touPerDay: touPerDay,
-      );
-      final cost = totalKwh * ratePerKwh;
-      return double.parse(cost.toStringAsFixed(2));
-    }
-    return dailyStats.estimatedCost;
   }
 
   double _getSummaryAvgKwh(
@@ -873,23 +795,34 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
       return dailyAsync.when(
         data: (dailyUsages) {
-          // Transform DTOs to DailyReading and keep only this week's range (7 days)
+          // Transform DTOs to DailyReading and normalize into a fixed 7-day week.
           final startDay = DateTime(range.start.year, range.start.month, range.start.day);
           final endDay = DateTime(range.end.year, range.end.month, range.end.day);
-          final dailyData = dailyUsages
-              .map((dto) => _dtoToDailyReading(dto, meterIdStr))
-              .where((r) {
-                final d = DateTime.tryParse(r.readDate.trim().split(RegExp('[T ]')).first);
-                if (d == null) return false;
-                final entryDay = DateTime(d.year, d.month, d.day);
-                return !entryDay.isBefore(startDay) && !entryDay.isAfter(endDay);
-              })
-              .toList()
-            ..sort((a, b) {
-                final da = DateTime.tryParse(a.readDate.split(' ')[0]) ?? DateTime(0);
-                final db = DateTime.tryParse(b.readDate.split(' ')[0]) ?? DateTime(0);
-                return da.compareTo(db);
-              });
+          final byDay = <String, DailyReading>{};
+          for (final dto in dailyUsages) {
+            final reading = _dtoToDailyReading(dto, meterIdStr);
+            final parsed =
+                DateTime.tryParse(reading.readDate.trim().split(RegExp('[T ]')).first);
+            if (parsed == null) continue;
+            final entryDay = DateTime(parsed.year, parsed.month, parsed.day);
+            if (entryDay.isBefore(startDay) || entryDay.isAfter(endDay)) continue;
+            final key = '${entryDay.year}-${entryDay.month.toString().padLeft(2, '0')}-${entryDay.day.toString().padLeft(2, '0')}';
+            byDay[key] = reading;
+          }
+
+          final dailyData = <DailyReading>[];
+          for (int i = 0; i <= 6; i++) {
+            final day = startDay.add(Duration(days: i));
+            final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+            dailyData.add(
+              byDay[key] ??
+                  DailyReading(
+                    meter: meterIdStr,
+                    readDate: '${key} 00:00:00.000',
+                    kWhUsed: '0',
+                  ),
+            );
+          }
           final stats = calculateDailyStats(dailyData);
           final dateLabel = formatDateRange(range.start, range.end);
 
@@ -973,7 +906,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           // Avoid reduce/firstWhere on empty; show empty chart state upstream.
           final stats = DailyStats(
             totalKWh: 0,
-            estimatedCost: 0,
+            estimatedCost: 0, // kept in model; intentionally not shown in UI
             avgKWh: 0,
             peakKWh: 0,
             peakDate: '-',
@@ -1021,9 +954,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
         final stats = DailyStats(
           totalKWh: double.parse(totalKWh.toStringAsFixed(2)),
-          estimatedCost: double.parse(
-            (totalKWh * ratePerKwh).toStringAsFixed(2),
-          ),
+          estimatedCost: 0, // kept in model; intentionally not shown in UI
           avgKWh: double.parse(avgKWh.toStringAsFixed(2)),
           peakKWh: double.parse(peakMonth.value.toStringAsFixed(2)),
           peakDate: monthNames[peakMonth.key],
@@ -1057,15 +988,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   }
 
   String _formatDateLong(DateTime date) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
     const months = [
       'January',
       'February',
@@ -1080,9 +1002,8 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       'November',
       'December',
     ];
-    // Dart's DateTime.weekday is 1 (Monday) to 7 (Sunday),
-    // so map directly with index = weekday - 1.
-    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
+    // Omit weekday — full "Tuesday, March 31, 2026" overflows on narrow screens.
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   String _formatMonthYear(DateTime date) {
