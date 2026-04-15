@@ -209,7 +209,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         ],
       },
       {
-        'label': 'Average Billing Period',
+        'label': 'Average Usage',
         'subLabel': averageScope,
         'value': stats.avgMonthlyKwh.toStringAsFixed(0),
         'unit': 'kWh',

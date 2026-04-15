@@ -93,6 +93,11 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/signup/verify'),
+          tooltip: 'Back',
+        ),
       ),
       body: SafeArea(
         child: Center(

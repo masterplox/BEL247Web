@@ -260,6 +260,39 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                     ],
                   ),
                 ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.spacing12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radius8),
+                    border: Border.all(color: AppColors.warning),
+                  ),
+                  child: RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                      children: const [
+                        TextSpan(text: 'This account will be added at '),
+                        TextSpan(
+                          text: 'Basic Level',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(
+                          text:
+                              '. You may upgrade to the ',
+                        ),
+                        TextSpan(
+                          text: 'Premium Level',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: ' once it has been added.'),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacing16),
                 // Customer Number
                 TextFormField(
                   controller: _customerNumberController,

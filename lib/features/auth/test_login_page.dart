@@ -75,7 +75,7 @@ class _TestLoginPageState extends ConsumerState<TestLoginPage> {
       ),
       const SizedBox(height: 16),
       Text(
-        'BEL247 Portal',
+        'BEL24-7 Portal',
         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
           fontWeight: FontWeight.bold,
           color: AppColors.primary,

@@ -99,7 +99,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 children: [
                   // Logo and Title
                   _buildHeader(),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 24),
+
+                  // AMI Access Notice
+                  _buildAmiAccessNotice(),
+                  const SizedBox(height: 24),
                   
                   // Login Form
                   _buildLoginForm(authNotifier, authState),
@@ -130,13 +134,59 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
         const SizedBox(height: 16),
         const AppText(
-          'BEL247 Portal',
+          'BEL24-7 Portal',
           style: AppTextStyle.title,
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
         ),
       ],
     );
+
+  Widget _buildAmiAccessNotice() => AppCard(
+        elevation: 0,
+        color: AppColors.primaryLight.withValues(alpha: 0.08),
+        borderColor: AppColors.primary.withValues(alpha: 0.25),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 2),
+              child: const Icon(
+                Icons.info_outline,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    'Welcome!',
+                    style: AppTextStyle.subtitle,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  SizedBox(height: 6),
+                  AppText(
+                    'This portal is optimized for Customers with Advanced Metering Infrastructure (AMI).',
+                    style: AppTextStyle.body,
+                    color: AppColors.textSecondary,
+                  ),
+                  SizedBox(height: 4),
+                  AppText(
+                    'Access to data may be limited for Customers without AMI at this time.',
+                    style: AppTextStyle.body,
+                    color: AppColors.textSecondary,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildLoginForm(AuthNotifier authNotifier, AuthState authState) => AppCard(
       elevation: 8,

@@ -78,6 +78,11 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/signup'),
+          tooltip: 'Back',
+        ),
       ),
       body: SafeArea(
         child: Center(

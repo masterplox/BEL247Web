@@ -32,6 +32,9 @@ class DashboardPage extends ConsumerWidget {
       builder: (context, ref, accountState) {
         final accountDetailsAsync = ref.watch(accountDetailsProvider);
         final meterDataSource = ref.watch(meterDataSourceProvider);
+        final hasAmiConnectedAccount = accountState.accounts.any(
+          (account) => MeterDataResolver.isAmiMeter(account.meterNumber),
+        );
 
         // Get the first name from account details name field
         final firstName = accountDetailsAsync.maybeWhen(
@@ -62,7 +65,7 @@ class DashboardPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppTheme.spacing4),
                   Text(
-                    'Track usage, view balances, and manage your account all in one place',
+                    'Track usage, view balances, and manage your account all in one place.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontSize: 13,
@@ -93,7 +96,7 @@ class DashboardPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppTheme.spacing4),
                     Text(
-                      'Track usage, view balances, and manage your account all in one place',
+                      'Track usage, view balances, and manage your account all in one place.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -195,6 +198,10 @@ class DashboardPage extends ConsumerWidget {
               // Keep the richer, responsive header instead of the simple title
               header,
               const SizedBox(height: AppTheme.spacing12),
+              if (!hasAmiConnectedAccount) ...[
+                const _AmiAvailabilityBanner(),
+                const SizedBox(height: AppTheme.spacing8),
+              ],
               const AccountVerificationBanner(),
               const SizedBox(height: AppTheme.spacing8),
               grid,
@@ -204,4 +211,58 @@ class DashboardPage extends ConsumerWidget {
         );
       },
     );
+}
+
+class _AmiAvailabilityBanner extends StatelessWidget {
+  const _AmiAvailabilityBanner();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: AppTheme.spacing8),
+        padding: const EdgeInsets.all(AppTheme.spacing12),
+        decoration: BoxDecoration(
+          color: AppColors.info.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppTheme.radius12),
+          border: Border.all(
+            color: AppColors.info.withValues(alpha: 0.45),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.info),
+            const SizedBox(width: AppTheme.spacing12),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                  children: const [
+                    TextSpan(
+                      text:
+                          'Detailed energy usage insights are available only for Customers with AMI meters. ',
+                    ),
+                    TextSpan(
+                      text:
+                          'After your account is updated with an AMI meter, these features will become available unlocking deeper insights and new ways to understand and manage your energy use. ',
+                    ),
+                    TextSpan(
+                      text: 'Learn More: ',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    TextSpan(
+                      text: 'bit.ly/AMIbz.',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }

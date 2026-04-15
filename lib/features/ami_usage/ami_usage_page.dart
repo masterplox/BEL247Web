@@ -424,6 +424,26 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             ),
           ),
           const SizedBox(height: AppTheme.spacing12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppTheme.spacing12),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.info.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              'Use this view to explore how energy use changes throughout the day.\n'
+              'Your current bill is calculated using a standard energy rate, regardless of time of day.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spacing12),
           if (tou == null)
             const Padding(
               padding: EdgeInsets.all(AppTheme.spacing12),

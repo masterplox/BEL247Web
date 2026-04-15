@@ -914,8 +914,8 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
             ),
             const SizedBox(height: AppTheme.spacing16),
             // Bill Information
-            _buildDetailRow(context, 'Reading Date', billDetail.readingDate),
-            _buildDetailRow(context, 'Billing Date', billDetail.billingDate),
+            _buildDetailRow(context, 'Billing Period', billDetail.readingDate),
+            _buildDetailRow(context, 'Reading Date', billDetail.billingDate),
             _buildDetailRow(context, 'Payment Due Date', billDetail.paymentDueDate),
             _buildDetailRow(context, 'Status', billDetail.paid ? 'Paid' : 'Unpaid'),
             const Divider(height: AppTheme.spacing24),

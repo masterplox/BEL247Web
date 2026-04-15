@@ -97,6 +97,11 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+          tooltip: 'Back to Login',
+        ),
       ),
       body: SafeArea(
         child: Center(

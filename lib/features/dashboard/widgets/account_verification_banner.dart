@@ -78,12 +78,12 @@ class AccountVerificationBanner extends ConsumerWidget {
                       onPressed: () async {
                         final result =
                             await showFullAccessActivationDialog(context);
-                        if (result == true) {
+                        if (result ?? false) {
                           ref.invalidate(accountVerificationStatusProvider);
                         }
                       },
                       icon: const Icon(Icons.lock, size: 16),
-                      label: const Text('Upgrade to premium level'),
+                      label: const Text('UPGRADE TO PREMIUM LEVEL'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -133,12 +133,12 @@ class AccountVerificationBanner extends ConsumerWidget {
                               onPressed: () async {
                                 final result =
                                     await showFullAccessActivationDialog(context);
-                                if (result == true) {
+                                if (result ?? false) {
                                   ref.invalidate(accountVerificationStatusProvider);
                                 }
                               },
                               icon: const Icon(Icons.lock, size: 16),
-                              label: const Text('Upgrade to premium level'),
+                              label: const Text('UPGRADE TO PREMIUM LEVEL'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,

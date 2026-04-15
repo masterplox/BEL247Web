@@ -61,37 +61,86 @@ class GamificationCardWidget extends ConsumerWidget {
 
   List<Widget> _buildTips(BuildContext context) {
     final tips = [
-      {'icon': Icons.bolt, 'text': 'Turn off AC when away'},
-      {'icon': Icons.lightbulb_outline, 'text': 'Use LED bulbs'},
-      {'icon': Icons.local_laundry_service, 'text': 'Wash clothes cold'},
+      {
+        'icon': Icons.kitchen_outlined,
+        'text': 'Regular Refrigerator Maintenance Helps',
+        'assetPath': 'assets/save_energy_1.jpg',
+      },
+      {
+        'icon': Icons.lightbulb_outline,
+        'text': 'Save Energy - Turn off Lights, Fans and TV',
+        'assetPath': 'assets/save_energy_2.jpg',
+      },
+      {
+        'icon': Icons.power_off_outlined,
+        'text': 'Save Energy - Unplug all Appliances and Electronics',
+        'assetPath': 'assets/save_energy_3.jpg',
+      },
     ];
 
     return tips.map((tip) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: AppTheme.spacing8),
-        padding: const EdgeInsets.all(AppTheme.spacing8),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(AppTheme.radius8),
+      return InkWell(
+        onTap: () => _showTipImageDialog(
+          context,
+          tip['assetPath'] as String,
         ),
-        child: Row(
-          children: [
-            Icon(
-              tip['icon'] as IconData,
-              size: 16,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: AppTheme.spacing8),
-            Text(
-              tip['text'] as String,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 14,
-                  ),
-            ),
-          ],
+        borderRadius: BorderRadius.circular(AppTheme.radius8),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppTheme.spacing8),
+          padding: const EdgeInsets.all(AppTheme.spacing8),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radius8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                tip['icon'] as IconData,
+                size: 16,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: AppTheme.spacing8),
+              Expanded(
+                child: Text(
+                  tip['text'] as String,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 14,
+                      ),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spacing8),
+              Icon(
+                Icons.open_in_new,
+                size: 16,
+                color: AppColors.textSecondary.withValues(alpha: 0.8),
+              ),
+            ],
+          ),
         ),
       );
     }).toList();
+  }
+
+  Future<void> _showTipImageDialog(BuildContext context, String imagePath) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(AppTheme.spacing24),
+        child: InteractiveViewer(
+          minScale: 0.7,
+          maxScale: 4,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppTheme.radius12),
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
 }

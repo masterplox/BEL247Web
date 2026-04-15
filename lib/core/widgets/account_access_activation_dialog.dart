@@ -141,7 +141,7 @@ class _FullAccessActivationFlowState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'What you get after verification',
+                    'Premium Level offers features including:',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

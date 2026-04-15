@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../analytics/app_page_names.dart';
 import '../providers/engagement_providers.dart';
+import '../providers/meter_data_providers.dart';
 import '../widgets/account_switcher.dart';
 import '../widgets/app_support_dialog.dart';
 import '../widgets/centered_content.dart';
@@ -14,7 +15,6 @@ import '../widgets/connectivity_banner.dart';
 import '../widgets/notice_banner.dart';
 import '../widgets/sidebar_nav_item.dart';
 import 'navigation_providers.dart';
-import '../providers/meter_data_providers.dart';
 
 /// Responsive navigation widget that shows sidebar on desktop/tablet and bottom nav on mobile
 class ResponsiveNavigation extends ConsumerWidget {
@@ -271,7 +271,7 @@ class _SidebarHeader extends StatelessWidget {
             const SizedBox(width: AppTheme.spacing12),
             Expanded(
               child: Text(
-                'BEL247',
+                'BEL24-7',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
