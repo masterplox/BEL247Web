@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../theme/app_theme.dart';
 import '../providers/feature_providers.dart';
 import '../utils/account_connection_utils.dart';
 import 'app_empty_state.dart';
@@ -29,6 +30,7 @@ class AccountAwareScaffold extends ConsumerWidget {
     this.onEmptyAction,
     this.showConnectAccountAction = true,
     this.loadingMessage,
+    this.belowEmptyState,
     required this.builder,
   });
 
@@ -64,6 +66,10 @@ class AccountAwareScaffold extends ConsumerWidget {
   /// Optional message to show under the loading spinner while accounts
   /// are being initialized.
   final String? loadingMessage;
+
+  /// Optional widget shown below the empty state when there are no connected
+  /// accounts (e.g. informational banners).
+  final Widget? belowEmptyState;
 
   /// Builder for the actual page content once an account is available.
   ///
@@ -102,12 +108,32 @@ class AccountAwareScaffold extends ConsumerWidget {
       return Scaffold(
         appBar: appBar,
         body: Center(
-          child: AppEmptyState(
-            title: emptyTitle,
-            message: emptyMessage,
-            icon: emptyIcon,
-            actionLabel: effectiveLabel,
-            onAction: effectiveOnAction,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppEmptyState(
+                  title: emptyTitle,
+                  message: emptyMessage,
+                  icon: emptyIcon,
+                  actionLabel: effectiveLabel,
+                  onAction: effectiveOnAction,
+                ),
+                if (belowEmptyState != null) ...[
+                  const SizedBox(height: AppTheme.spacing16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing16,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: belowEmptyState,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       );

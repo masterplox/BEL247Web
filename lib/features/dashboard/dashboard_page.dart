@@ -13,6 +13,7 @@ import '../../../theme/colors.dart';
 import 'state/ami_dashboard_usage_providers.dart';
 import 'widgets/account_details_widget.dart';
 import 'widgets/account_verification_banner.dart';
+import 'widgets/ami_insights_disclaimer_banner.dart';
 import 'widgets/ami_consumption_chart_widget.dart';
 import 'widgets/ami_usage_stats_widget.dart';
 import 'widgets/balance_card_widget.dart';
@@ -29,6 +30,7 @@ class DashboardPage extends ConsumerWidget {
       emptyMessage:
           'You don\'t have any accounts connected yet. Connect an account to view your energy dashboard, bills, and usage history.',
       emptyIcon: Icons.account_circle_outlined,
+      belowEmptyState: const AmiInsightsDisclaimerBanner(),
       builder: (context, ref, accountState) {
         final accountDetailsAsync = ref.watch(accountDetailsProvider);
         final meterDataSource = ref.watch(meterDataSourceProvider);
@@ -199,7 +201,7 @@ class DashboardPage extends ConsumerWidget {
               header,
               const SizedBox(height: AppTheme.spacing12),
               if (!hasAmiConnectedAccount) ...[
-                const _AmiAvailabilityBanner(),
+                const AmiInsightsDisclaimerBanner(),
                 const SizedBox(height: AppTheme.spacing8),
               ],
               const AccountVerificationBanner(),
@@ -211,58 +213,4 @@ class DashboardPage extends ConsumerWidget {
         );
       },
     );
-}
-
-class _AmiAvailabilityBanner extends StatelessWidget {
-  const _AmiAvailabilityBanner();
-
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: AppTheme.spacing8),
-        padding: const EdgeInsets.all(AppTheme.spacing12),
-        decoration: BoxDecoration(
-          color: AppColors.info.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppTheme.radius12),
-          border: Border.all(
-            color: AppColors.info.withValues(alpha: 0.45),
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.info_outline, color: AppColors.info),
-            const SizedBox(width: AppTheme.spacing12),
-            Expanded(
-              child: RichText(
-                text: TextSpan(
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                  children: const [
-                    TextSpan(
-                      text:
-                          'Detailed energy usage insights are available only for Customers with AMI meters. ',
-                    ),
-                    TextSpan(
-                      text:
-                          'After your account is updated with an AMI meter, these features will become available unlocking deeper insights and new ways to understand and manage your energy use. ',
-                    ),
-                    TextSpan(
-                      text: 'Learn More: ',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    TextSpan(
-                      text: 'bit.ly/AMIbz.',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
 }
