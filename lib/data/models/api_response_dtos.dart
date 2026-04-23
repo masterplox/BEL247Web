@@ -236,6 +236,12 @@ class ConnectCustomerAccountResponseDto with _$ConnectCustomerAccountResponseDto
 
   factory ConnectCustomerAccountResponseDto.fromJson(Map<String, dynamic> json) =>
       _$ConnectCustomerAccountResponseDtoFromJson(json);
+
+  const ConnectCustomerAccountResponseDto._();
+
+  /// BEL APIs use `200` in the JSON body for success on several endpoints; some
+  /// responses may use `0` instead.
+  bool get isSuccess => status == 0 || status == 200;
 }
 
 // ============================================================================

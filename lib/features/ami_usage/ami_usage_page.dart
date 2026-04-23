@@ -1,5 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/feature_providers.dart';
 import '../../core/utils/account_connection_utils.dart';
@@ -18,6 +20,10 @@ import 'widgets/ami_period_chart.dart';
 import 'widgets/ami_summary_cards.dart';
 
 enum FilterType { day, week, month, year }
+
+/// BEL rate schedule (standard energy rate).
+const String _kStandardEnergyRateScheduleUrl =
+    'https://www.bel.com.bz/Rate_Schedule.aspx';
 
 class AmiUsagePage extends ConsumerStatefulWidget {
   const AmiUsagePage({super.key});
@@ -38,6 +44,26 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   /// User-selected week range (any span up to 7 days). Null = use getWeekRange(_weekDate).
   DateTime? _weekRangeStart;
   DateTime? _weekRangeEnd;
+
+  late final TapGestureRecognizer _standardEnergyRateLinkTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _standardEnergyRateLinkTap = TapGestureRecognizer()
+      ..onTap = _openStandardEnergyRateSchedule;
+  }
+
+  Future<void> _openStandardEnergyRateSchedule() async {
+    final uri = Uri.parse(_kStandardEnergyRateScheduleUrl);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  void dispose() {
+    _standardEnergyRateLinkTap.dispose();
+    super.dispose();
+  }
 
   void _handleFilterChange(FilterType filter) {
     setState(() {
@@ -434,13 +460,34 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                 color: AppColors.info.withValues(alpha: 0.4),
               ),
             ),
-            child: Text(
-              'Use this view to explore how energy use changes throughout the day.\n'
-              'Your current bill is calculated using a standard energy rate, regardless of time of day.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.4,
+            child: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                children: [
+                  const TextSpan(
+                    text:
+                        'Use this view to explore how energy use changes throughout the day.\n'
+                        'Your current bill is calculated using a ',
                   ),
+                  TextSpan(
+                    text: 'standard energy rate',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                        ),
+                    recognizer: _standardEnergyRateLinkTap,
+                  ),
+                  const TextSpan(
+                    text: ', regardless of time of day.',
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AppTheme.spacing12),

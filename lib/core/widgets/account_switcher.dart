@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/models/account.dart';
 import '../../data/repositories/accounts_repository.dart';
@@ -14,6 +16,8 @@ import '../providers/engagement_providers.dart';
 import '../providers/feature_providers.dart';
 import '../providers/meter_data_providers.dart';
 import '../utils/logger.dart';
+
+const String _kAmiLearnMoreUrl = 'https://bit.ly/AMIbz';
 
 /// Account switcher card displayed in the sidebar
 class AccountSwitcherCard extends ConsumerWidget {
@@ -909,13 +913,22 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
+  String? _connectedAccountNumber;
   bool _isSuccess = false;
+  late final TapGestureRecognizer _amiLearnMoreTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _amiLearnMoreTap = TapGestureRecognizer()..onTap = _openAmiLearnMore;
+  }
 
   @override
   void dispose() {
     _customerNumberController.dispose();
     _accountNumberHintController.dispose();
     _nicknameController.dispose();
+    _amiLearnMoreTap.dispose();
     super.dispose();
   }
 
@@ -938,11 +951,13 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
         nickName: _nicknameController.text.trim(),
       );
 
-      if (response.status == 0) {
+      if (response.isSuccess) {
         setState(() {
           _isLoading = false;
           _isSuccess = true;
           _successMessage = response.message ?? 'Account connected successfully!';
+          _connectedAccountNumber =
+              response.editableCustomerAccount.accountNumber?.trim();
         });
         return;
       }
@@ -960,9 +975,17 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
     }
   }
   Future<void> _handleSuccessOkay() async {
+    setState(() {
+      _isLoading = true;
+    });
     await widget.onSuccess();
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  Future<void> _openAmiLearnMore() async {
+    final uri = Uri.parse(_kAmiLearnMoreUrl);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
   String _extractConnectAccountErrorMessage(Object error) {
     // Prefer backend-provided `message` when available.
@@ -1027,7 +1050,15 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: _isLoading ? null : () => Navigator.of(context, rootNavigator: true).pop(),
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            if (_isSuccess) {
+                              _handleSuccessOkay();
+                            } else {
+                              Navigator.of(context, rootNavigator: true).pop();
+                            }
+                          },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
                       minWidth: 32,
@@ -1059,6 +1090,46 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                     ],
                   ),
                 ),
+                const SizedBox(height: AppTheme.spacing12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.spacing12),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppTheme.radius8),
+                    border: Border.all(
+                      color: AppColors.info.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
+                      children: [
+                        const TextSpan(
+                          text:
+                              'Detailed energy usage insights are available only for Customers with AMI meters. ',
+                        ),
+                        TextSpan(
+                          text:
+                              'After Account#${_connectedAccountNumber?.isNotEmpty ?? false ? _connectedAccountNumber : 'this account'} is updated with an AMI meter, these features will become available unlocking deeper insights and new ways to understand and manage your energy use. Learn More: ',
+                        ),
+                        TextSpan(
+                          text: 'bit.ly/AMIbz',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary,
+                              ),
+                          recognizer: _amiLearnMoreTap,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: AppTheme.spacing24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1069,7 +1140,18 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.white,
                       ),
-                      child: const Text('Okay'),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.white,
+                                ),
+                              ),
+                            )
+                          : const Text('Okay'),
                     ),
                   ],
                 ),

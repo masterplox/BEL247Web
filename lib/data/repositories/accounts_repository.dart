@@ -8,6 +8,10 @@ import '../models/api_response_dtos.dart';
 import '../services/api_client.dart';
 import '../services/token_storage_service.dart';
 
+// TEMP DEV TOGGLE:
+// Set to false to restore real API behavior.
+const bool _mockConnectAccountSuccess = false;
+
 class AccountsRepository {
   AccountsRepository([ApiClient? apiClient]) : _apiClient = apiClient ?? ApiClient.instance;
 
@@ -405,6 +409,24 @@ class AccountsRepository {
         'Connecting account: CustomerNumber=$customerNumber, AccountNumberHint=$accountNumberHint, NickName=$nickName',
         tag: 'AccountsRepository',
       );
+
+      if (_mockConnectAccountSuccess) {
+        Logger.warning(
+          'MOCK connectAccount enabled: skipping API call and returning fake success.',
+          tag: 'AccountsRepository',
+        );
+        return ConnectCustomerAccountResponseDto(
+          status: 200,
+          message: 'Successfully connected $customerNumber to $accountNumberHint',
+          editableCustomerAccount: EditableCustomerAccountDto(
+            customerNumber: customerNumber,
+            accountNumber: accountNumberHint,
+            nickName: nickName,
+            name: 'Mock Connected Account',
+            active: true,
+          ),
+        );
+      }
 
       final response = await _apiClient.post<Map<String, dynamic>>(
         ApiEndpoints.connectCustomerAccount,

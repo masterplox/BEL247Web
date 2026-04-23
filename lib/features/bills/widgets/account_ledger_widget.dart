@@ -903,47 +903,25 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         }
 
         // Display bill detail breakdown
-        return Column(
+        return Padding(padding: const EdgeInsets.all(AppTheme.spacing16), child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Bill Details',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
             const SizedBox(height: AppTheme.spacing16),
             // Bill Information
-            _buildDetailRow(context, 'Billing Period', billDetail.readingDate),
-            _buildDetailRow(context, 'Reading Date', billDetail.billingDate),
-            _buildDetailRow(context, 'Payment Due Date', billDetail.paymentDueDate),
-            _buildDetailRow(context, 'Status', billDetail.paid ? 'Paid' : 'Unpaid'),
-            const Divider(height: AppTheme.spacing24),
+            _buildDetailRow(context, 'Due Date', billDetail.paymentDueDate),
+            _buildDetailRow(context, 'Billing Period', billDetail.readingDate), 
             // Balance Information
             _buildDetailRow(context, 'Previous Balance', billDetail.previousBalance),
             _buildDetailRow(context, 'Less Payment', billDetail.lessPayment),
-            _buildDetailRow(context, 'Balance Forward', billDetail.balanceForward),
-            const Divider(height: AppTheme.spacing24),
-            // Consumption Information
-            _buildDetailRow(context, 'Previous Reading', billDetail.previousReading),
-            _buildDetailRow(context, 'Present Reading', billDetail.presentReading),
-            _buildDetailRow(context, 'Total Consumption', '${billDetail.totalConsumption} kWh'),
-            const Divider(height: AppTheme.spacing24),
+            _buildDetailRow(context, 'Outstanding Balance', billDetail.balanceForward),
             // Charges Breakdown
             _buildDetailRow(context, 'Consumption', billDetail.consumption),
-            _buildDetailRow(context, 'Minimum Bill', billDetail.minimumBill),
-            _buildDetailRow(context, 'Crime Stoppers Pledge', billDetail.crimeStoppersPledge),
-            _buildDetailRow(context, 'Other Charge', billDetail.otherCharge),
             _buildDetailRow(context, 'GST Charge', billDetail.gstCharge),
-            _buildDetailRow(context, 'Tax Adjustment', billDetail.taxAdjustment),
             const Divider(height: AppTheme.spacing24),
             // Totals
-            _buildDetailRow(context, 'Amount Due', billDetail.amountDue, isTotal: true),
-            _buildDetailRow(context, 'Balance', billDetail.balance),
-            if (billDetail.dueIn.isNotEmpty)
-              _buildDetailRow(context, 'Due In', billDetail.dueIn),
+            _buildDetailRow(context, 'Total', billDetail.amountDue, isTotal: true),
           ],
-        );
+        ));
       },
     );
   }

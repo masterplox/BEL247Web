@@ -4158,12 +4158,12 @@ class __$$ConnectCustomerAccountResponseDtoImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$ConnectCustomerAccountResponseDtoImpl
-    implements _ConnectCustomerAccountResponseDto {
+    extends _ConnectCustomerAccountResponseDto {
   const _$ConnectCustomerAccountResponseDtoImpl({
     required this.status,
     this.message,
     required this.editableCustomerAccount,
-  });
+  }) : super._();
 
   factory _$ConnectCustomerAccountResponseDtoImpl.fromJson(
     Map<String, dynamic> json,
@@ -4220,12 +4220,13 @@ class _$ConnectCustomerAccountResponseDtoImpl
 }
 
 abstract class _ConnectCustomerAccountResponseDto
-    implements ConnectCustomerAccountResponseDto {
+    extends ConnectCustomerAccountResponseDto {
   const factory _ConnectCustomerAccountResponseDto({
     required final int status,
     final String? message,
     required final EditableCustomerAccountDto editableCustomerAccount,
   }) = _$ConnectCustomerAccountResponseDtoImpl;
+  const _ConnectCustomerAccountResponseDto._() : super._();
 
   factory _ConnectCustomerAccountResponseDto.fromJson(
     Map<String, dynamic> json,

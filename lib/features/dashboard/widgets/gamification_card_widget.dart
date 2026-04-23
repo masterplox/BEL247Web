@@ -25,7 +25,7 @@ class GamificationCardWidget extends ConsumerWidget {
         return AppCard(
           padding: const EdgeInsets.all(AppTheme.spacing20),
           showBorder: true,
-          borderWidth: 1.0,
+          borderWidth: 1,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -48,38 +48,35 @@ class GamificationCardWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoadingCard(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.all(AppTheme.spacing20),
+  Widget _buildLoadingCard(BuildContext context) => const AppCard(
+      padding: EdgeInsets.all(AppTheme.spacing20),
       showBorder: true,
-      borderWidth: 1.0,
-      child: const Center(
+      borderWidth: 1,
+      child: Center(
         child: CircularProgressIndicator(),
       ),
     );
-  }
 
   List<Widget> _buildTips(BuildContext context) {
     final tips = [
+      {
+        'icon': Icons.lightbulb_outline,
+        'text': 'Turn off Lights, Fans and TV When Away',
+        'assetPath': 'assets/save_energy_2.jpg',
+      },
+      {
+        'icon': Icons.power_off_outlined,
+        'text': 'Unplug Appliances and Electronics When Not in Use',
+        'assetPath': 'assets/save_energy_3.jpg',
+      },
       {
         'icon': Icons.kitchen_outlined,
         'text': 'Regular Refrigerator Maintenance Helps',
         'assetPath': 'assets/save_energy_1.jpg',
       },
-      {
-        'icon': Icons.lightbulb_outline,
-        'text': 'Save Energy - Turn off Lights, Fans and TV',
-        'assetPath': 'assets/save_energy_2.jpg',
-      },
-      {
-        'icon': Icons.power_off_outlined,
-        'text': 'Save Energy - Unplug all Appliances and Electronics',
-        'assetPath': 'assets/save_energy_3.jpg',
-      },
     ];
 
-    return tips.map((tip) {
-      return InkWell(
+    return tips.map((tip) => InkWell(
         onTap: () => _showTipImageDialog(
           context,
           tip['assetPath'] as String,
@@ -117,12 +114,10 @@ class GamificationCardWidget extends ConsumerWidget {
             ],
           ),
         ),
-      );
-    }).toList();
+      )).toList();
   }
 
-  Future<void> _showTipImageDialog(BuildContext context, String imagePath) {
-    return showDialog<void>(
+  Future<void> _showTipImageDialog(BuildContext context, String imagePath) => showDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (context) => Dialog(
@@ -141,6 +136,5 @@ class GamificationCardWidget extends ConsumerWidget {
         ),
       ),
     );
-  }
 
 }
