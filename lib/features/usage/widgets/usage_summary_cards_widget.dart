@@ -47,15 +47,9 @@ class UsageSummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final consumptionPercentChange = yearlyStats.totalLastYearConsumption > 0
-        ? ((yearlyStats.consumptionSaved / yearlyStats.totalLastYearConsumption) * 100)
-        : 0.0;
-    final costPercentChange = yearlyStats.totalLastYearCost > 0
-        ? ((yearlyStats.costSaved / yearlyStats.totalLastYearCost) * 100)
-        : 0.0;
-
-    final savedEnergy = yearlyStats.consumptionSaved > 0;
-    final savedCost = yearlyStats.costSaved > 0;
+    final avgUsage = yearlyStats.monthsWithDataThisYear > 0
+        ? yearlyStats.totalCurrentYearConsumption / yearlyStats.monthsWithDataThisYear
+        : yearlyStats.totalCurrentYearConsumption;
 
     // Use LayoutBuilder to get responsive constraints
     return LayoutBuilder(
@@ -68,13 +62,15 @@ class UsageSummaryCards extends StatelessWidget {
         final cards = [
           _buildCard(
             context,
-            label: '${yearlyStats.currentYear} Total',
+            label: 'Total Usage',
             value: yearlyStats.totalCurrentYearConsumption.toStringAsFixed(0),
             unit: 'kWh used',
             icon: Icons.bolt,
             iconColor: AppColors.primary,
             bgColor: AppColors.primary.withValues(alpha: 0.1),
             valueColor: AppColors.primary,
+            subLabel:
+                '${yearlyStats.currentYear} billing periods with data: ${yearlyStats.monthsWithDataThisYear}',
           ),
           if (yearlyStats.peakMonthCurrentYearConsumption != null && yearlyStats.peakMonthCurrentYear != null)
             _buildPeakMonthCard(
@@ -82,28 +78,17 @@ class UsageSummaryCards extends StatelessWidget {
               yearlyStats.peakMonthCurrentYearConsumption!,
               yearlyStats.peakMonthCurrentYear!,
             ),
-          // _buildCard(
-          //   context,
-          //   label: '${yearlyStats.currentYear} Cost',
-          //   value: FormattingUtils.formatCurrency(yearlyStats.totalCurrentYearCost),
-          //   unit: 'total spent',
-          //   icon: Icons.attach_money,
-          //   iconColor: AppColors.info,
-          //   bgColor: AppColors.info.withValues(alpha: 0.1),
-          // ),
-          // Only show year-over-year comparison when we have enough data (avoid misleading "0%" for new accounts).
-          if (yearlyStats.hasLastYearData &&
-              yearlyStats.totalLastYearConsumption > 0 &&
-              yearlyStats.monthsWithDataThisYear >= 2)
-            _buildEnergyDiffCard(
-              context,
-              savedEnergy,
-              yearlyStats.consumptionSaved,
-              consumptionPercentChange,
-              yearlyStats.lastYear,
-            ),
-
-          // _buildCostDiffCard(context, savedCost, yearlyStats.costSaved, costPercentChange, yearlyStats.lastYear),
+          _buildCard(
+            context,
+            label: 'Avg. Usage',
+            value: avgUsage.toStringAsFixed(1),
+            unit: 'kWh',
+            icon: Icons.show_chart,
+            iconColor: const Color(0xFF8B5CF6),
+            bgColor: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+            valueColor: const Color(0xFF8B5CF6),
+            subLabel: yearlyStats.monthsWithDataThisYear > 0 ? 'per billing period' : null,
+          ),
         ];
 
         if (isMobile) {
@@ -150,6 +135,7 @@ class UsageSummaryCards extends StatelessWidget {
     required Color iconColor,
     required Color bgColor,
     Color? valueColor,
+    String? subLabel,
   }) => AppCard(
       padding: const EdgeInsets.all(AppTheme.spacing16),
       showBorder: true,
@@ -188,6 +174,16 @@ class UsageSummaryCards extends StatelessWidget {
                             fontSize: 11,
                           ),
                     ),
+                    if (subLabel != null) ...[
+                      const SizedBox(height: AppTheme.spacing4),
+                      Text(
+                        subLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -205,6 +201,8 @@ class UsageSummaryCards extends StatelessWidget {
       ),
     );
 
+  // Kept for possible future re-enable of year-over-year comparison card.
+  // ignore: unused_element
   Widget _buildEnergyDiffCard(
     BuildContext context,
     bool savedEnergy,
@@ -351,7 +349,7 @@ class UsageSummaryCards extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Peak Month',
+                      'Peak Usage',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -367,7 +365,7 @@ class UsageSummaryCards extends StatelessWidget {
                           ),
                     ),
                     Text(
-                      'kWh in $peakMonth',
+                      'kWh ($peakMonth)',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -394,6 +392,8 @@ class UsageSummaryCards extends StatelessWidget {
       ),
     );
 
+  // Kept for possible future re-enable of cost comparison card.
+  // ignore: unused_element
   Widget _buildCostDiffCard(
     BuildContext context,
     bool savedCost,

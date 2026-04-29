@@ -379,13 +379,13 @@ class UsageStatsWidget extends ConsumerWidget {
 
     return [
       {
-        'label': 'This Month',
+        'label': 'This Billing Period',
         'value': currentConsumption.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.bolt,
         'color': AppColors.primary,
         'bgColor': AppColors.primary,
-        'detailTitle': 'Current Month Usage',
+        'detailTitle': 'Current Billing Period Usage',
         'detailItems': [
           {'label': 'Consumption', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
           {'label': 'Amount', 'value': '\$${currentAmount.toStringAsFixed(2)}'},
@@ -394,36 +394,36 @@ class UsageStatsWidget extends ConsumerWidget {
         ],
       },
       {
-        'label': 'vs Last Month',
+        'label': 'vs Last Billing Period',
         'value': savedEnergy ? '-${consumptionDiff.abs().toStringAsFixed(0)}' : '+${consumptionDiff.abs().toStringAsFixed(0)}',
         'unit': 'kWh',
         'icon': Icons.trending_up,
         'color': savedEnergy ? AppColors.success : AppColors.error,
         'bgColor': savedEnergy ? AppColors.success : AppColors.error,
-        'detailTitle': 'Month Comparison',
+        'detailTitle': 'Billing Period Comparison',
         'detailItems': previous != null
             ? [
-                {'label': 'Last Month', 'value': '${previousConsumption.toStringAsFixed(0)} kWh'},
-                {'label': 'This Month', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
+                {'label': 'Last Billing Period', 'value': '${previousConsumption.toStringAsFixed(0)} kWh'},
+                {'label': 'This Billing Period', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
                 {'label': 'Difference', 'value': '${consumptionDiff.toStringAsFixed(0)} kWh'},
                 {'label': 'Cost Difference', 'value': '\$${(previousAmount - currentAmount).abs().toStringAsFixed(2)}'},
               ]
             : [
-                {'label': 'This Month', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
+                {'label': 'This Billing Period', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
                 {'label': 'No previous data', 'value': '-'},
               ],
       },
       {
-        'label': 'Peak Month (${highestMonth.readMonth})',
+        'label': 'Peak Billing Period (${highestMonth.readMonth})',
         'value': (double.tryParse(highestMonth.consumption) ?? 0.0).toStringAsFixed(0),
         'unit': 'kWh',
         //'subLabel': highestMonth.readMonth,
         'icon': Icons.local_fire_department,
         'color': AppColors.warning,
         'bgColor': AppColors.warning,
-        'detailTitle': 'Peak Usage Month',
+        'detailTitle': 'Peak Usage Billing Period',
         'detailItems': [
-          {'label': 'Month', 'value': '${highestMonth.readMonth} ${highestMonth.readYear}'},
+          {'label': 'Billing Period', 'value': '${highestMonth.readMonth} ${highestMonth.readYear}'},
           {'label': 'Consumption', 'value': '${highestMonth.consumption} kWh'},
           {'label': 'Amount', 'value': '\$${(double.tryParse(highestMonth.amount) ?? 0.0).toStringAsFixed(2)}'},
           {'label': 'Daily Average', 'value': '${highestMonth.averageUsage} kWh'},
