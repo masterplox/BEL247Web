@@ -96,10 +96,10 @@ class DownloadService {
         await _showErrorDialog(
           context,
           title: 'Download Failed',
-          message: 'Failed to download $displayName: ${e.toString()}',
+          message: 'Unable to download $displayName. Please try again.',
         );
       }
-      
+
       }
   }
 
@@ -179,10 +179,10 @@ class DownloadService {
         await _showErrorDialog(
           context,
           title: 'Download Failed',
-          message: 'Failed to download $displayName: ${e.toString()}',
+          message: 'Unable to download $displayName. Please try again.',
         );
       }
-      
+
     }
   }
 

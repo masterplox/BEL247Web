@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -259,11 +260,54 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
   AccountSortField _sortField = AccountSortField.none;
   bool _sortAscending = true;
   String _searchQuery = '';
+  ConnectedAccountActionResult? _feedback;
+  String? _busyAccountId;
+  Timer? _feedbackDismissTimer;
 
   @override
   void dispose() {
+    _feedbackDismissTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _applyActionFeedback(ConnectedAccountActionResult? result) {
+    _feedbackDismissTimer?.cancel();
+    if (result == null || result.isCancelled) {
+      if (_feedback != null) {
+        setState(() => _feedback = null);
+      }
+      return;
+    }
+    setState(() => _feedback = result);
+    if (result.isSuccess) {
+      _feedbackDismissTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted) {
+          setState(() => _feedback = null);
+        }
+      });
+    }
+  }
+
+  void _dismissFeedback() {
+    _feedbackDismissTimer?.cancel();
+    setState(() => _feedback = null);
+  }
+
+  Future<void> _handleEditNickname(Account account) async {
+    setState(() => _busyAccountId = account.id);
+    final result = await showEditAccountNicknameDialog(context, ref, account);
+    if (!mounted) return;
+    setState(() => _busyAccountId = null);
+    _applyActionFeedback(result);
+  }
+
+  Future<void> _handleRemoveAccount(Account account) async {
+    setState(() => _busyAccountId = account.id);
+    final result = await showRemoveConnectedAccountDialog(context, ref, account);
+    if (!mounted) return;
+    setState(() => _busyAccountId = null);
+    _applyActionFeedback(result);
   }
 
   List<Account> _getFilteredAndSortedAccounts(List<Account> accounts) {
@@ -392,6 +436,11 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                 ],
               ),
             ),
+            if (_feedback != null)
+              _AccountSwitcherFeedbackBar(
+                result: _feedback!,
+                onDismiss: _dismissFeedback,
+              ),
             // Search field
             Padding(
               padding: const EdgeInsets.all(AppTheme.spacing16),
@@ -559,20 +608,18 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                         return _AccountCard(
                           account: account,
                           isSelected: isSelected,
-                          onTap: () {
-                            ref.read(accountSwitcherProvider.notifier).switchAccount(account.id);
-                            Navigator.of(context, rootNavigator: true).pop();
-                          },
-                          onEditNickname: () => showEditAccountNicknameDialog(
-                            context,
-                            ref,
-                            account,
-                          ),
-                          onRemove: () => showRemoveConnectedAccountDialog(
-                            context,
-                            ref,
-                            account,
-                          ),
+                          menuEnabled: _busyAccountId == null,
+                          isBusy: _busyAccountId == account.id,
+                          onTap: _busyAccountId == null
+                              ? () {
+                                  ref
+                                      .read(accountSwitcherProvider.notifier)
+                                      .switchAccount(account.id);
+                                  Navigator.of(context, rootNavigator: true).pop();
+                                }
+                              : null,
+                          onEditNickname: () => _handleEditNickname(account),
+                          onRemove: () => _handleRemoveAccount(account),
                         );
                       },
                     ),
@@ -758,16 +805,20 @@ class _AccountCard extends StatelessWidget {
   const _AccountCard({
     required this.account,
     required this.isSelected,
-    required this.onTap,
     required this.onEditNickname,
     required this.onRemove,
+    this.onTap,
+    this.menuEnabled = true,
+    this.isBusy = false,
   });
 
   final Account account;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback onEditNickname;
   final VoidCallback onRemove;
+  final bool menuEnabled;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -777,7 +828,9 @@ class _AccountCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppTheme.radius8),
-          child: Container(
+          child: Opacity(
+            opacity: isBusy ? 0.55 : 1,
+            child: Container(
             padding: const EdgeInsets.all(AppTheme.spacing12),
             decoration: BoxDecoration(
               color: Colors.transparent,
@@ -882,14 +935,22 @@ class _AccountCard extends StatelessWidget {
                       ),
                     ),
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          onEditNickname();
-                        } else if (value == 'remove') {
-                          onRemove();
-                        }
-                      },
+                      enabled: menuEnabled,
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: menuEnabled
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondary.withValues(alpha: 0.4),
+                      ),
+                      onSelected: menuEnabled
+                          ? (value) {
+                              if (value == 'edit') {
+                                onEditNickname();
+                              } else if (value == 'remove') {
+                                onRemove();
+                              }
+                            }
+                          : null,
                       itemBuilder: (context) => [
                         const PopupMenuItem(
                           value: 'edit',
@@ -915,6 +976,16 @@ class _AccountCard extends StatelessWidget {
                   ],
                 ),
                 // Selected indicator
+                if (isBusy)
+                  const Positioned(
+                    top: 0,
+                    right: 0,
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
                 if (isSelected)
                   Positioned(
                     bottom: 0,
@@ -938,7 +1009,64 @@ class _AccountCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
+}
+
+/// Success/error banner shown inside the switch-account dialog (not snackbars).
+class _AccountSwitcherFeedbackBar extends StatelessWidget {
+  const _AccountSwitcherFeedbackBar({
+    required this.result,
+    required this.onDismiss,
+  });
+
+  final ConnectedAccountActionResult result;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSuccess = result.isSuccess;
+    final color = isSuccess ? AppColors.success : AppColors.error;
+
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing16,
+          vertical: AppTheme.spacing12,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle_outline : Icons.error_outline,
+              color: color,
+              size: 20,
+            ),
+            const SizedBox(width: AppTheme.spacing8),
+            Expanded(
+              child: Text(
+                result.message ??
+                    (isSuccess ? 'Changes saved' : 'Something went wrong'),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, size: 18),
+              onPressed: onDismiss,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Connect Account Form Dialog

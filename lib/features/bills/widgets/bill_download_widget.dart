@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/account_verification_providers.dart';
+import '../../../core/utils/error_handler.dart';
 import '../../../core/widgets/account_access_activation_dialog.dart';
 import '../../../data/models/bill.dart';
 import '../../../theme/app_theme.dart';
@@ -345,7 +346,7 @@ class _BillDownloadWidgetState extends ConsumerState<BillDownloadWidget> {
         throw Exception('Download failed');
       }
     } catch (e) {
-      _showDownloadError(e.toString());
+      _showDownloadError(ErrorHandler.getErrorMessage(e));
     } finally {
       setState(() {
         _downloadingBills[bill.id] = false;
@@ -390,7 +391,7 @@ class _BillDownloadWidgetState extends ConsumerState<BillDownloadWidget> {
   void _showDownloadError(String error) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Download failed: $error'),
+        content: Text(error),
         backgroundColor: AppColors.error,
         action: SnackBarAction(
           label: 'Retry',

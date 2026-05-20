@@ -873,7 +873,7 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
           ),
           const SizedBox(height: AppTheme.spacing16),
           Text(
-            'Error loading bill details: ${error.toString()}',
+            'Unable to load bill details. Please try again.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.error,
                 ),

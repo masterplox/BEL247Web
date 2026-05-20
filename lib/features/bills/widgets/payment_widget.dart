@@ -321,7 +321,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
       }
     } catch (e) {
       widget.onPaymentError?.call(e.toString());
-      _showErrorDialog(e.toString());
+      _showErrorDialog('Unable to process your payment. Please try again.');
     } finally {
       setState(() {
         _isProcessing = false;
@@ -377,7 +377,7 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
             const Text('Payment Failed'),
           ],
         ),
-        content: Text('Payment could not be processed: $error'),
+        content: Text(error),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context, rootNavigator: true).pop(),

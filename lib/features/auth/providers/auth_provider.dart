@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/providers/feature_providers.dart';
+import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/models/auth.dart';
 import '../../../data/repositories/accounts_repository.dart';
@@ -68,7 +69,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         isInitialized: true,
         isAuthenticated: false,
-        error: 'Failed to initialize authentication: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -178,7 +179,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: false,
-        error: 'Login failed: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -220,7 +221,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: false,
-        error: 'Signup failed: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -258,7 +259,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         otpVerified: false,
-        error: 'Failed to verify OTP: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -320,7 +321,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         otpSent: false,
         otpContact: null,
-        error: 'Failed to send verification code: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -362,7 +363,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         otpSent: false,
-        error: 'Failed to send OTP: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -407,7 +408,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         otpVerified: false,
-        error: 'Failed to verify OTP: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -459,7 +460,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: false,
-        error: 'Registration failed: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
       );
     }
   }
@@ -510,7 +511,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: false,
         userSession: null,
         lastRefresh: null,
-        error: 'Logout failed: ${e.toString()}',
+        error: ErrorHandler.getErrorMessage(e),
         otpSent: false,
         otpContact: null,
         otpVerified: false,

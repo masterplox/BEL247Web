@@ -387,7 +387,7 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
       }
     } catch (e) {
       widget.onPaymentError?.call(e.toString());
-      _showErrorDialog(e.toString());
+      _showErrorDialog('Unable to process your payment. Please try again.');
     } finally {
       if (mounted) {
         setState(() {
@@ -452,7 +452,7 @@ class _PaymentDialogWidgetState extends ConsumerState<PaymentDialogWidget> {
           Icon(Icons.error, color: AppColors.error),
           const SizedBox(width: AppTheme.spacing8),
           Expanded(
-            child: Text('Payment could not be processed: $error'),
+            child: Text(error),
           ),
         ],
       ),

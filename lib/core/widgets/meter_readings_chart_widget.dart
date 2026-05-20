@@ -76,7 +76,7 @@ class MeterReadingsChartWidget extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: AppTheme.spacing8),
-              AppText('Failed to load meter readings: $e', style: AppTextStyle.body),
+              AppText('Unable to load meter readings. Please try again.', style: AppTextStyle.body),
             ],
           ),
         ),
