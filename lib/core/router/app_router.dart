@@ -85,7 +85,11 @@ class AppRouter {
         name: 'reset-password',
         builder: (context, state) {
           final contact = state.uri.queryParameters['contact'];
-          return ResetPasswordPage(contact: contact);
+          final username = state.uri.queryParameters['username'];
+          return ResetPasswordPage(
+            contact: contact,
+            initialUsername: username,
+          );
         },
       ),
       GoRoute(
@@ -135,6 +139,24 @@ class AppRouter {
             path: '/dashboard',
             name: 'dashboard',
             builder: (context, state) => const DashboardPage(),
+          ),
+          GoRoute(
+            path: '/account/reset-password',
+            name: 'account-reset-password',
+            builder: (context, state) => const ForgotPasswordPage(authenticated: true),
+          ),
+          GoRoute(
+            path: '/account/reset-password/confirm',
+            name: 'account-reset-password-confirm',
+            builder: (context, state) {
+              final contact = state.uri.queryParameters['contact'];
+              final username = state.uri.queryParameters['username'];
+              return ResetPasswordPage(
+                contact: contact,
+                initialUsername: username,
+                authenticated: true,
+              );
+            },
           ),
           GoRoute(
             path: '/bills',

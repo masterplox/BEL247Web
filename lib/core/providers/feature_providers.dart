@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/account.dart';
+import '../../data/services/token_storage_service.dart';
+import '../services/user_preferences_storage.dart';
 import '../../data/models/bill.dart';
 import '../../data/models/consumption.dart';
 import '../utils/logger.dart';
@@ -717,10 +719,22 @@ class AccountSwitcherNotifier extends StateNotifier<AccountSwitcherState> {
   /// Switch to a different account
   void switchAccount(String accountId) {
     if (state.accounts.any((account) => account.id == accountId)) {
-      final previousAccountId = state.activeAccountId;
       state = state.copyWith(activeAccountId: accountId);
       Logger.info('Switched to account: $accountId');
-    } else {
+      _persistLastActiveAccount(accountId);
+    }
+  }
+
+  Future<void> _persistLastActiveAccount(String accountId) async {
+    try {
+      final session = await TokenStorageService.getUserSession();
+      if (session == null) return;
+      await UserPreferencesStorage.saveLastActiveAccountId(
+        userId: session.userId,
+        accountId: accountId,
+      );
+    } catch (e) {
+      Logger.warning('Failed to persist last active account', tag: 'AccountSwitcher');
     }
   }
 

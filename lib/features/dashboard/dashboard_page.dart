@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/meter_data_config.dart';
 import '../../../core/providers/meter_data_providers.dart';
+import '../../../core/services/user_preferences_storage.dart';
+import '../../../core/widgets/bel_mobile_app_qr_card.dart';
+import '../auth/providers/auth_provider.dart';
+import 'providers/dashboard_greeting_provider.dart';
 import '../../../core/widgets/account_aware_scaffold.dart';
 import '../../../core/widgets/account_switcher.dart';
 import '../../../core/widgets/app_page_scaffold.dart';
@@ -51,6 +55,24 @@ class DashboardPage extends ConsumerWidget {
           orElse: () => '',
         );
 
+        final welcomeBackAsync = ref.watch(showWelcomeBackGreetingProvider);
+        final showWelcomeBack = welcomeBackAsync.valueOrNull ?? true;
+        final greetingTitle = showWelcomeBack && firstName.isNotEmpty
+            ? 'Welcome back, $firstName'
+            : 'Welcome';
+
+        ref.listen(showWelcomeBackGreetingProvider, (previous, next) {
+          next.whenData((hasShownBefore) {
+            if (!hasShownBefore) {
+              final userId =
+                  ref.read(authNotifierProvider).userSession?.userId;
+              if (userId != null) {
+                UserPreferencesStorage.markWelcomeBackShown(userId);
+              }
+            }
+          });
+        });
+
         final header = LayoutBuilder(
           builder: (context, constraints) {
             final isMobile = constraints.maxWidth < 640;
@@ -59,7 +81,7 @@ class DashboardPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Welcome back, $firstName',
+                    greetingTitle,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 20,
@@ -90,7 +112,7 @@ class DashboardPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome back, $firstName',
+                      greetingTitle,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w600,
                             fontSize: 20,
@@ -208,6 +230,7 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: AppTheme.spacing8),
               grid,
               const SizedBox(height: AppTheme.spacing24),
+              const BelMobileAppQrCard(),
             ],
           ),
         );

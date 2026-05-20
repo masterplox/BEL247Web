@@ -6,6 +6,8 @@ import '../../features/bills/state/bills_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../providers/account_verification_providers.dart';
+import '../constants/customer_portal_support_types.dart';
+import 'activation_flow_support_footer.dart';
 import 'app_dialog.dart';
 
 /// Show the full access activation flow dialog.
@@ -304,6 +306,10 @@ class _FullAccessActivationFlowState
                   : const Text('Verify'),
             ),
           ],
+        ),
+        ActivationFlowSupportFooter(
+          sourcePage: '/premium-activation',
+          supportType: CustomerPortalSupportTypes.premiumUpgradeCode,
         ),
       ],
     );
@@ -695,6 +701,10 @@ class _BillDownloadActivationFlowState
                   : const Text('Verify'),
             ),
           ],
+        ),
+        ActivationFlowSupportFooter(
+          sourcePage: '/bill-download-activation',
+          supportType: CustomerPortalSupportTypes.billDownloadCode,
         ),
       ],
     );

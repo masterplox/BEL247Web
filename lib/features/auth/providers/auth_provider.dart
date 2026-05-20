@@ -8,6 +8,7 @@ import '../../../data/repositories/accounts_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/live_auth_repository.dart';
 import '../../../data/services/api_client.dart';
+import '../../../core/services/user_preferences_storage.dart';
 import '../../../data/services/token_storage_service.dart';
 
 /// Authentication state notifier for managing authentication state
@@ -99,9 +100,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
         tag: 'AuthProvider',
       );
       
-      // Always initialize accounts (even if empty) to mark as initialized
-      // This allows the UI to distinguish between "still loading" and "no accounts found"
-      _ref.read(accountSwitcherProvider.notifier).initializeAccounts(accounts);
+      String? restoredAccountId;
+      final session = state.userSession ?? await TokenStorageService.getUserSession();
+      if (session != null) {
+        final lastId =
+            await UserPreferencesStorage.getLastActiveAccountId(session.userId);
+        if (lastId != null && accounts.any((a) => a.id == lastId)) {
+          restoredAccountId = lastId;
+        }
+      }
+
+      _ref.read(accountSwitcherProvider.notifier).initializeAccounts(
+            accounts,
+            activeAccountId: restoredAccountId,
+          );
       
       if (accounts.isNotEmpty) {
         Logger.info(
@@ -251,37 +263,64 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Send OTP to user's contact for verification
+  /// Send OTP to user's contact for verification (legacy)
   Future<void> sendOtp(String contact) async {
+    final isEmail = contact.contains('@');
+    await requestPasswordCode(
+      mobileNumber: isEmail ? null : contact,
+      email: isEmail ? contact : null,
+      authenticated: false,
+    );
+  }
+
+  /// Request password reset verification code (exactly one contact channel).
+  Future<void> requestPasswordCode({
+    String? mobileNumber,
+    String? email,
+    String? username,
+    required bool authenticated,
+  }) async {
     try {
       state = state.copyWith(isLoading: true, error: null, otpSent: false);
-      
-      final request = OtpSendRequest(contact: contact);
-      final response = await _authRepository.sendOtp(request);
-      
+
+      final request = PasswordCodeRequest(
+        mobileNumber: mobileNumber,
+        email: email,
+        username: username,
+      );
+      final response = await _authRepository.requestPasswordCode(
+        request,
+        authenticated: authenticated,
+      );
+
       if (response.success) {
-        Logger.info('OTP sent successfully to: $contact');
+        final contactType = mobileNumber != null
+            ? 'phone'
+            : (email != null ? 'email' : 'username');
+        final contact = mobileNumber ?? email ?? username ?? '';
+        Logger.info('Password code sent to: $contact');
         state = state.copyWith(
           isLoading: false,
           otpSent: true,
           otpContact: contact,
+          passwordResetContactType: contactType,
           error: null,
         );
       } else {
-        Logger.warning('Send OTP failed: ${response.error}');
+        Logger.warning('Password code request failed: ${response.error}');
         state = state.copyWith(
           isLoading: false,
           otpSent: false,
-          error: response.error ?? 'Failed to send OTP',
+          error: response.error ?? 'Failed to send verification code',
         );
       }
     } catch (e, stackTrace) {
-      Logger.error('Send OTP error', error: e, stackTrace: stackTrace);
+      Logger.error('Request password code error', error: e, stackTrace: stackTrace);
       state = state.copyWith(
         isLoading: false,
         otpSent: false,
         otpContact: null,
-        error: 'Failed to send OTP: ${e.toString()}',
+        error: 'Failed to send verification code: ${e.toString()}',
       );
     }
   }
@@ -456,6 +495,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         otpSent: false,
         otpContact: null,
         otpVerified: false,
+        passwordResetContactType: null,
       );
     } catch (e, stackTrace) {
       Logger.error('Logout error', error: e, stackTrace: stackTrace);
@@ -474,6 +514,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         otpSent: false,
         otpContact: null,
         otpVerified: false,
+        passwordResetContactType: null,
       );
     }
   }
@@ -552,27 +593,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Reset password using phone, new password, and OTP
-  Future<void> resetPassword({
-    required String phone,
+  /// Reset password using username, new password, and verification code.
+  Future<void> resetDevicePassword({
+    required String username,
     required String newPassword,
     required String confirmPassword,
-    required String otp,
+    required String passwordCode,
+    required bool authenticated,
   }) async {
     try {
+      if (newPassword != confirmPassword) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Passwords do not match',
+        );
+        return;
+      }
+
       state = state.copyWith(isLoading: true, error: null);
-      
-      final request = PasswordResetRequest(
-        phone: phone,
-        newPassword: newPassword,
-        confirmPassword: confirmPassword,
-        otp: otp,
+
+      final request = DevicePasswordResetRequest(
+        username: username.trim(),
+        password: newPassword,
+        passwordCode: passwordCode.trim(),
       );
 
-      final response = await _authRepository.resetPassword(request);
-      
+      final response = await _authRepository.resetDevicePassword(
+        request,
+        authenticated: authenticated,
+      );
+
       if (response.success) {
-        Logger.info('Password reset successful for: $phone');
+        Logger.info('Password reset successful for: $username');
         state = state.copyWith(
           isLoading: false,
           error: null,
@@ -605,7 +657,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Reset OTP sent state
   void resetOtpState() {
-    state = state.copyWith(otpSent: false, otpContact: null, otpVerified: false);
+    state = state.copyWith(
+      otpSent: false,
+      otpContact: null,
+      otpVerified: false,
+      passwordResetContactType: null,
+    );
   }
 
   /// Reset all signup-related state (use this when signup flow is complete)

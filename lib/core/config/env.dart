@@ -50,7 +50,7 @@ class EnvConfig {
 
   static String get appName => const String.fromEnvironment(
         'APP_NAME',
-        defaultValue: 'BEL247 WebApp',
+        defaultValue: 'BEL247',
       );
 
   static String get appVersion => const String.fromEnvironment(

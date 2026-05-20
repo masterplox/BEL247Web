@@ -8,6 +8,8 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_text.dart';
 import '../../data/models/auth.dart';
+import '../../core/constants/customer_portal_support_types.dart';
+import '../../core/widgets/customer_portal_support_button.dart';
 import '../../theme/colors.dart';
 import 'providers/auth_provider.dart';
 
@@ -348,15 +350,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Widget _buildAdditionalOptions() => Column(
       children: [
-        // AppButton(
-        //   onPressed: () {
-        //     Logger.info('Forgot password clicked');
-        //     context.go('/forgot-password');
-        //   },
-        //   text: 'Forgot Password?',
-        //   buttonType: AppButtonType.text,
-        // ),
-        // const SizedBox(height: 16),
+        AppButton(
+          onPressed: () {
+            Logger.info('Forgot password clicked');
+            context.go('/forgot-password');
+          },
+          text: 'Forgot Password?',
+          buttonType: AppButtonType.text,
+        ),
+        Center(
+          child: CustomerPortalSupportButton(
+            sourcePage: '/login',
+            initialSupportType: CustomerPortalSupportTypes.general,
+          ),
+        ),
+        const SizedBox(height: 16),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           alignment: WrapAlignment.center,

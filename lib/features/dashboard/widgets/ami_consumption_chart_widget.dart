@@ -302,12 +302,18 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 40,
-            getTitlesWidget: (value, meta) => Text(
-              '${value.toInt()} kWh',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 10,
+            reservedSize: 54,
+            getTitlesWidget: (value, meta) => SideTitleWidget(
+              axisSide: meta.axisSide,
+              child: Text(
+                '${value.toInt()}\u00A0kWh',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 10,
+                ),
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.right,
               ),
             ),
           ),

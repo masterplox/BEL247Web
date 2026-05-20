@@ -79,6 +79,7 @@ class AuthState with _$AuthState {
     @Default(false) bool signupCompleted,
     String? guestUUID, // GuestUUID from Step 2
     String? signupContactType, // 'phone' or 'email'
+    String? passwordResetContactType, // 'phone', 'email', or 'username'
   }) = _AuthState;
 
   factory AuthState.fromJson(Map<String, dynamic> json) =>
@@ -184,7 +185,7 @@ class SignUpRequest with _$SignUpRequest {
       _$SignUpRequestFromJson(json);
 }
 
-/// Password reset request model
+/// Password reset request model (legacy mock / UI validation)
 @freezed
 class PasswordResetRequest with _$PasswordResetRequest {
   const factory PasswordResetRequest({
@@ -196,6 +197,32 @@ class PasswordResetRequest with _$PasswordResetRequest {
 
   factory PasswordResetRequest.fromJson(Map<String, dynamic> json) =>
       _$PasswordResetRequestFromJson(json);
+}
+
+/// Request password reset code — exactly one contact field must be set.
+@freezed
+class PasswordCodeRequest with _$PasswordCodeRequest {
+  const factory PasswordCodeRequest({
+    String? mobileNumber,
+    String? email,
+    String? username,
+  }) = _PasswordCodeRequest;
+
+  factory PasswordCodeRequest.fromJson(Map<String, dynamic> json) =>
+      _$PasswordCodeRequestFromJson(json);
+}
+
+/// Reset device password via API (Username, Password, PasswordCode).
+@freezed
+class DevicePasswordResetRequest with _$DevicePasswordResetRequest {
+  const factory DevicePasswordResetRequest({
+    required String username,
+    required String password,
+    required String passwordCode,
+  }) = _DevicePasswordResetRequest;
+
+  factory DevicePasswordResetRequest.fromJson(Map<String, dynamic> json) =>
+      _$DevicePasswordResetRequestFromJson(json);
 }
 
 /// Sign up Step 1 request model - Deliver OTP

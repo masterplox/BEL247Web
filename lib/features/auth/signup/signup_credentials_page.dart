@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/models/auth.dart';
+import '../../../core/widgets/credential_guidelines_dialog.dart';
 import '../../../theme/colors.dart';
 import '../providers/auth_provider.dart';
 
@@ -214,6 +215,15 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => showCredentialGuidelinesDialog(context),
+                    icon: const Icon(Icons.info_outline, size: 18),
+                    label: const Text('Username & password guidelines'),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

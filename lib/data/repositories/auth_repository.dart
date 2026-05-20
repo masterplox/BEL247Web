@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../core/utils/error_handler.dart';
 import '../../core/utils/logger.dart';
 import '../models/auth.dart';
+import '../models/password_code_api_json.dart';
 import '../services/token_storage_service.dart';
 import 'base_repository.dart';
 
@@ -23,8 +24,14 @@ abstract class AuthRepository extends BaseRepository {
   /// Change user password
   Future<ApiResponse<void>> changePassword(PasswordChangeRequest request);
   
-  /// Send OTP to user's contact for verification
+  /// Send OTP to user's contact for verification (legacy / mock)
   Future<ApiResponse<void>> sendOtp(OtpSendRequest request);
+
+  /// Deliver password reset code (exactly one of mobile, email, username)
+  Future<ApiResponse<void>> requestPasswordCode(
+    PasswordCodeRequest request, {
+    required bool authenticated,
+  });
 
   /// Verify OTP for user's contact
   Future<ApiResponse<void>> verifyOtp(OtpVerifyRequest request);
@@ -41,8 +48,14 @@ abstract class AuthRepository extends BaseRepository {
   /// Sign up Step 3 - Register user
   Future<ApiResponse<AuthResponse>> signUpStep3(SignUpStep3Request request);
 
-  /// Reset password using phone, new password, and OTP
+  /// Reset password using phone, new password, and OTP (legacy / mock)
   Future<ApiResponse<void>> resetPassword(PasswordResetRequest request);
+
+  /// Reset device password via API
+  Future<ApiResponse<void>> resetDevicePassword(
+    DevicePasswordResetRequest request, {
+    required bool authenticated,
+  });
 
   /// Check if user is authenticated
   Future<bool> isAuthenticated();
@@ -143,6 +156,26 @@ class MockAuthRepository implements AuthRepository {
     } catch (e, stackTrace) {
       Logger.error('Send OTP error', error: e, stackTrace: stackTrace);
       return ApiResponse.error('Send OTP failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<void>> requestPasswordCode(
+    PasswordCodeRequest request, {
+    required bool authenticated,
+  }) async {
+    try {
+      if (!isValidPasswordCodeRequest(request)) {
+        return ApiResponse.error(
+          'Provide exactly one of mobile number, email, or username',
+        );
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+      Logger.info('Mock password code sent (authenticated=$authenticated)');
+      return ApiResponse.success(null);
+    } catch (e, stackTrace) {
+      Logger.error('Request password code error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Failed to send verification code: ${e.toString()}');
     }
   }
 
@@ -454,6 +487,32 @@ class MockAuthRepository implements AuthRepository {
       return ApiResponse.success(null);
     } catch (e, stackTrace) {
       Logger.error('Password reset error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error('Password reset failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ApiResponse<void>> resetDevicePassword(
+    DevicePasswordResetRequest request, {
+    required bool authenticated,
+  }) async {
+    try {
+      if (request.username.isEmpty) {
+        return ApiResponse.error('Username is required');
+      }
+      if (request.password.isEmpty) {
+        return ApiResponse.error('Password is required');
+      }
+      if (request.passwordCode.isEmpty) {
+        return ApiResponse.error('Verification code is required');
+      }
+      await Future.delayed(const Duration(milliseconds: 600));
+      Logger.info(
+        'Mock device password reset successful (authenticated=$authenticated)',
+      );
+      return ApiResponse.success(null);
+    } catch (e, stackTrace) {
+      Logger.error('Device password reset error', error: e, stackTrace: stackTrace);
       return ApiResponse.error('Password reset failed: ${e.toString()}');
     }
   }

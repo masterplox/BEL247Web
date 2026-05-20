@@ -27,6 +27,30 @@ class ApiEndpoints {
   /// Body: Empty
   static String get logout => '/DeviceSession/V3/Logout';
 
+  /// Deliver password reset code (login / public flow)
+  /// POST /General/V5/Devices/PasswordCode
+  /// Auth: No
+  /// Body: exactly one of { MobileNumber, Email, Username }
+  static String get passwordCodePublic => '/General/V5/Devices/PasswordCode';
+
+  /// Reset password after code validation (login / public flow)
+  /// POST /General/V2/Devices/Password
+  /// Auth: No
+  /// Body: { Username, Password, PasswordCode }
+  static String get resetPasswordPublic => '/General/V2/Devices/Password';
+
+  /// Deliver password reset code (logged-in flow)
+  /// POST /DeviceSession/V5/Devices/PasswordCode
+  /// Auth: Yes
+  /// Body: exactly one of { MobileNumber, Email, Username }
+  static String get passwordCodeAuthenticated => '/DeviceSession/V5/Devices/PasswordCode';
+
+  /// Reset password after code validation (logged-in flow)
+  /// POST /DeviceSession/V2/Devices/Password
+  /// Auth: Yes
+  /// Body: { Username, Password, PasswordCode }
+  static String get resetPasswordAuthenticated => '/DeviceSession/V2/Devices/Password';
+
   /// Token refresh endpoint (if needed)
   /// Note: Check actual API for refresh token endpoint
   static String get refreshToken => '/DeviceSession/V3/Refresh';
@@ -86,6 +110,12 @@ class ApiEndpoints {
   /// Auth: Yes (1)
   /// Body: { CustomerNumber, AccountNumberHint, NickName }
   static String get connectCustomerAccount => '/CustomerAccounts/V2/Connect';
+
+  /// Edit nickname or remove connected account (send full account DTO)
+  /// PUT /CustomerAccounts/V3/PreferredCustomerAccounts
+  /// Auth: Yes (1)
+  static String get updatePreferredCustomerAccount =>
+      '/CustomerAccounts/V3/PreferredCustomerAccounts';
 
   // ============================================================================
   // Bill Endpoints

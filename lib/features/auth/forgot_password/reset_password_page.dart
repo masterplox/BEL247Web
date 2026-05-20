@@ -8,13 +8,24 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text.dart';
 import '../../../data/models/auth.dart';
+import '../../../core/constants/customer_portal_support_types.dart';
+import '../../../core/widgets/customer_portal_support_button.dart';
 import '../../../theme/colors.dart';
 import '../providers/auth_provider.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
-  const ResetPasswordPage({super.key, this.contact});
+  const ResetPasswordPage({
+    super.key,
+    this.contact,
+    this.initialUsername,
+    this.authenticated = false,
+  });
 
   final String? contact;
+  final String? initialUsername;
+
+  /// When true, uses authenticated reset endpoint and stays in app after success.
+  final bool authenticated;
 
   @override
   ConsumerState<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -22,6 +33,7 @@ class ResetPasswordPage extends ConsumerStatefulWidget {
 
 class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _otpController = TextEditingController();
@@ -43,19 +55,44 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   @override
   void initState() {
     super.initState();
-    // Validate that we have contact info
-    if (_contact == null) {
+    if (widget.initialUsername != null && widget.initialUsername!.isNotEmpty) {
+      _usernameController.text = widget.initialUsername!;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_usernameController.text.isEmpty && widget.authenticated) {
+        final sessionUsername = ref
+            .read(authNotifierProvider)
+            .userSession
+            ?.preferences['username'] as String?;
+        if (sessionUsername != null && sessionUsername.isNotEmpty) {
+          _usernameController.text = sessionUsername;
+        }
+      }
+    });
+
+    if (widget.contact == null || widget.contact!.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _showErrorDialog('Missing contact information. Please start over.');
-          context.go('/forgot-password');
+          _goToForgotPassword();
         }
       });
     }
   }
 
+  void _goToForgotPassword() {
+    if (widget.authenticated) {
+      context.go('/account/reset-password');
+    } else {
+      context.go('/forgot-password');
+    }
+  }
+
   @override
   void dispose() {
+    _usernameController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     _otpController.dispose();
@@ -131,7 +168,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
               ),
               const SizedBox(height: 24),
               AppButton(
-                onPressed: () => context.go('/forgot-password'),
+                onPressed: _goToForgotPassword,
                 text: 'Go Back',
               ),
             ],
@@ -169,7 +206,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => context.go('/forgot-password'),
+          onPressed: _goToForgotPassword,
         ),
       ),
       body: SafeArea(
@@ -240,6 +277,26 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              TextFormField(
+                controller: _usernameController,
+                readOnly: widget.authenticated,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  hintText: 'Enter your login username',
+                  prefixIcon: const Icon(Icons.person_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Username is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               // New Password Field
               TextFormField(
                 controller: _newPasswordController,
@@ -459,9 +516,19 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
               ),
               const SizedBox(height: 16),
               AppButton(
-                onPressed: () => context.go('/forgot-password'),
+                onPressed: _goToForgotPassword,
                 text: 'Back',
                 buttonType: AppButtonType.text,
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: CustomerPortalSupportButton(
+                  sourcePage: widget.authenticated
+                      ? '/account/reset-password/confirm'
+                      : '/reset-password',
+                  initialSupportType:
+                      CustomerPortalSupportTypes.passwordResetCode,
+                ),
               ),
             ],
           ),
@@ -472,7 +539,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     final contact = _contact;
     if (contact == null) {
       _showErrorDialog('Missing contact information. Please start over.');
-      context.go('/forgot-password');
+      _goToForgotPassword();
       return;
     }
 
@@ -496,14 +563,16 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     final confirmPassword = _confirmPasswordController.text;
     final otp = _otpController.text.trim();
 
-    Logger.info('Resetting password for: $contact');
+    final username = _usernameController.text.trim();
+    Logger.info('Resetting password for username: $username');
 
     try {
-      await ref.read(authNotifierProvider.notifier).resetPassword(
-            phone: contact, // API uses "phone" field but accepts email or phone
+      await ref.read(authNotifierProvider.notifier).resetDevicePassword(
+            username: username,
             newPassword: newPassword,
             confirmPassword: confirmPassword,
-            otp: otp,
+            passwordCode: otp,
+            authenticated: widget.authenticated,
           );
       
       // Success is handled by the listener above
@@ -527,18 +596,23 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             Text('Password Reset Successful'),
           ],
         ),
-        content: const Text(
-          'Your password has been successfully reset. You can now log in with your new password.',
+        content: Text(
+          widget.authenticated
+              ? 'Your password has been successfully updated.'
+              : 'Your password has been successfully reset. You can now log in with your new password.',
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context, rootNavigator: true).pop();
-              // Clear OTP state
               ref.read(authNotifierProvider.notifier).resetOtpState();
-              context.go('/login');
+              if (widget.authenticated) {
+                context.go('/dashboard');
+              } else {
+                context.go('/login');
+              }
             },
-            child: const Text('Go to Login'),
+            child: Text(widget.authenticated ? 'Done' : 'Go to Login'),
           ),
         ],
       ),

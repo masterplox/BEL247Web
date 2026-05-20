@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/providers/account_verification_providers.dart';
 import '../../core/providers/feature_providers.dart';
 import '../../core/utils/account_connection_utils.dart';
 import '../../core/widgets/app_empty_state.dart';
@@ -155,6 +156,18 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       );
     }
 
+    final hasPremiumAccess =
+        ref.watch(accountVerificationStatusProvider).valueOrNull ?? false;
+    final Set<FilterType>? allowedFilters =
+        hasPremiumAccess ? null : {FilterType.year};
+    if (!hasPremiumAccess && _filterType != FilterType.year) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _filterType = FilterType.year);
+        }
+      });
+    }
+
     // Get active account and meter ID
     final activeAccount = accountState.activeAccount;
     if (activeAccount == null || activeAccount.meterNumber == null) {
@@ -253,7 +266,27 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                 data: (data) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Filter Controls
+                    if (!hasPremiumAccess) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppTheme.spacing12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Text(
+                          'Basic access includes yearly usage history only. '
+                          'Upgrade to Premium Level to unlock day, week, and month views.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spacing12),
+                    ],
                     AmiFilterControls(
                       filterType: _filterType,
                       onFilterChange: _handleFilterChange,
@@ -268,6 +301,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                             )
                           : null,
                       onWeekRangeChange: _filterType == FilterType.week ? _handleWeekRangeChange : null,
+                      allowedFilters: allowedFilters,
                     ),
                     const SizedBox(height: AppTheme.spacing16),
 

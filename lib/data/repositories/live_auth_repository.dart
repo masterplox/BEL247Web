@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
+import '../../core/config/new_features_dev_mock.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/error_handler.dart';
 import '../../core/utils/logger.dart';
 import '../models/api_response_dtos.dart';
 import '../models/auth.dart';
+import '../models/password_code_api_json.dart';
 import '../services/api_client.dart';
 import '../services/token_storage_service.dart';
 import 'auth_repository.dart';
@@ -367,8 +369,76 @@ class LiveAuthRepository implements AuthRepository {
 
   @override
   Future<ApiResponse<void>> sendOtp(OtpSendRequest request) async {
-    // TODO: Implement when API endpoint is available
-    return ApiResponse.error('Not implemented yet');
+    final isEmail = request.contact.contains('@');
+    return requestPasswordCode(
+      PasswordCodeRequest(
+        mobileNumber: isEmail ? null : request.contact,
+        email: isEmail ? request.contact : null,
+      ),
+      authenticated: false,
+    );
+  }
+
+  @override
+  Future<ApiResponse<void>> requestPasswordCode(
+    PasswordCodeRequest request, {
+    required bool authenticated,
+  }) async {
+    try {
+      if (!isValidPasswordCodeRequest(request)) {
+        return ApiResponse.error(
+          'Provide exactly one of mobile number, email, or username',
+        );
+      }
+
+      final mock = await _interceptPasswordCodeMock(authenticated);
+      if (mock != null) {
+        return mock;
+      }
+
+      final endpoint = authenticated
+          ? ApiEndpoints.passwordCodeAuthenticated
+          : ApiEndpoints.passwordCodePublic;
+
+      Logger.info(
+        'Requesting password code (authenticated=$authenticated)',
+      );
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        endpoint,
+        data: passwordCodeRequestToApiJson(request),
+        authenticated: authenticated,
+      );
+
+      if (response.statusCode != 200) {
+        final message =
+            response.data?['message'] as String? ?? 'Failed to send verification code';
+        return ApiResponse.error(message, statusCode: response.statusCode);
+      }
+
+      final data = response.data;
+      if (data == null) {
+        return ApiResponse.error('Invalid response from server');
+      }
+
+      final dto = MessageResponseDto.fromJson(data);
+      if (dto.status != 200) {
+        return ApiResponse.error(
+          dto.message ?? 'Failed to send verification code',
+        );
+      }
+
+      Logger.info('Password code sent successfully');
+      return ApiResponse.success(null);
+    } on DioException catch (e, stackTrace) {
+      Logger.error('Password code API error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error(_extractErrorMessage(e));
+    } catch (e, stackTrace) {
+      Logger.error('Password code error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error(
+        'Failed to send verification code: ${ErrorHandler.getErrorMessage(e)}',
+      );
+    }
   }
 
   @override
@@ -678,8 +748,81 @@ class LiveAuthRepository implements AuthRepository {
 
   @override
   Future<ApiResponse<void>> resetPassword(PasswordResetRequest request) async {
-    // TODO: Implement when API endpoint is available
-    return ApiResponse.error('Not implemented yet');
+    if (request.newPassword != request.confirmPassword) {
+      return ApiResponse.error('Passwords do not match');
+    }
+    return resetDevicePassword(
+      DevicePasswordResetRequest(
+        username: request.phone,
+        password: request.newPassword,
+        passwordCode: request.otp,
+      ),
+      authenticated: false,
+    );
+  }
+
+  @override
+  Future<ApiResponse<void>> resetDevicePassword(
+    DevicePasswordResetRequest request, {
+    required bool authenticated,
+  }) async {
+    try {
+      if (request.username.trim().isEmpty) {
+        return ApiResponse.error('Username is required');
+      }
+      if (request.password.isEmpty) {
+        return ApiResponse.error('Password is required');
+      }
+      if (request.passwordCode.trim().isEmpty) {
+        return ApiResponse.error('Verification code is required');
+      }
+
+      final mock = await _interceptPasswordResetMock(authenticated);
+      if (mock != null) {
+        return mock;
+      }
+
+      final endpoint = authenticated
+          ? ApiEndpoints.resetPasswordAuthenticated
+          : ApiEndpoints.resetPasswordPublic;
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        endpoint,
+        data: <String, dynamic>{
+          'Username': request.username,
+          'Password': request.password,
+          'PasswordCode': request.passwordCode,
+        },
+        authenticated: authenticated,
+      );
+
+      if (response.statusCode != 200) {
+        final message =
+            response.data?['message'] as String? ?? 'Password reset failed';
+        return ApiResponse.error(message, statusCode: response.statusCode);
+      }
+
+      final data = response.data;
+      if (data == null) {
+        return ApiResponse.error('Invalid response from server');
+      }
+
+      final dto = MessageResponseDto.fromJson(data);
+      if (dto.status != 200) {
+        return ApiResponse.error(dto.message ?? 'Password reset failed');
+      }
+
+      Logger.info('Device password reset successful');
+      return ApiResponse.success(null);
+    } on DioException catch (e, stackTrace) {
+      Logger.error('Password reset API error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error(_extractErrorMessage(e));
+    } catch (e, stackTrace) {
+      Logger.error('Password reset error', error: e, stackTrace: stackTrace);
+      return ApiResponse.error(
+        'Password reset failed: ${ErrorHandler.getErrorMessage(e)}',
+      );
+    }
   }
 
   @override
@@ -757,6 +900,40 @@ class LiveAuthRepository implements AuthRepository {
       isValid: errors.isEmpty,
       errors: errors,
       fieldErrors: fieldErrors,
+    );
+  }
+
+  Future<ApiResponse<void>?> _interceptPasswordCodeMock(bool authenticated) async {
+    if (!NewFeaturesDevMock.isActive) {
+      return null;
+    }
+    await NewFeaturesDevMock.simulatedDelay();
+    final label = authenticated
+        ? 'DeviceSession/V5/Devices/PasswordCode'
+        : 'General/V5/Devices/PasswordCode';
+    return NewFeaturesDevMock.intercept<ApiResponse<void>>(
+      operation: label,
+      onSuccess: () => ApiResponse.success(null),
+      onFailure: ApiResponse.error,
+      failureMessage:
+          '[Dev mock] Failed to send verification code. Invalid contact or user not found.',
+    );
+  }
+
+  Future<ApiResponse<void>?> _interceptPasswordResetMock(bool authenticated) async {
+    if (!NewFeaturesDevMock.isActive) {
+      return null;
+    }
+    await NewFeaturesDevMock.simulatedDelay();
+    final label = authenticated
+        ? 'DeviceSession/V2/Devices/Password'
+        : 'General/V2/Devices/Password';
+    return NewFeaturesDevMock.intercept<ApiResponse<void>>(
+      operation: label,
+      onSuccess: () => ApiResponse.success(null),
+      onFailure: ApiResponse.error,
+      failureMessage:
+          '[Dev mock] Password reset failed. Check username, code, or password rules.',
     );
   }
 

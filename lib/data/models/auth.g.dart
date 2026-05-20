@@ -102,6 +102,7 @@ _$AuthStateImpl _$$AuthStateImplFromJson(Map<String, dynamic> json) =>
       signupCompleted: json['signupCompleted'] as bool? ?? false,
       guestUUID: json['guestUUID'] as String?,
       signupContactType: json['signupContactType'] as String?,
+      passwordResetContactType: json['passwordResetContactType'] as String?,
     );
 
 Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
@@ -118,6 +119,7 @@ Map<String, dynamic> _$$AuthStateImplToJson(_$AuthStateImpl instance) =>
       'signupCompleted': instance.signupCompleted,
       'guestUUID': instance.guestUUID,
       'signupContactType': instance.signupContactType,
+      'passwordResetContactType': instance.passwordResetContactType,
     };
 
 _$TokenRefreshRequestImpl _$$TokenRefreshRequestImplFromJson(
@@ -248,6 +250,38 @@ Map<String, dynamic> _$$PasswordResetRequestImplToJson(
   'newPassword': instance.newPassword,
   'confirmPassword': instance.confirmPassword,
   'otp': instance.otp,
+};
+
+_$PasswordCodeRequestImpl _$$PasswordCodeRequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$PasswordCodeRequestImpl(
+  mobileNumber: json['mobileNumber'] as String?,
+  email: json['email'] as String?,
+  username: json['username'] as String?,
+);
+
+Map<String, dynamic> _$$PasswordCodeRequestImplToJson(
+  _$PasswordCodeRequestImpl instance,
+) => <String, dynamic>{
+  'mobileNumber': instance.mobileNumber,
+  'email': instance.email,
+  'username': instance.username,
+};
+
+_$DevicePasswordResetRequestImpl _$$DevicePasswordResetRequestImplFromJson(
+  Map<String, dynamic> json,
+) => _$DevicePasswordResetRequestImpl(
+  username: json['username'] as String,
+  password: json['password'] as String,
+  passwordCode: json['passwordCode'] as String,
+);
+
+Map<String, dynamic> _$$DevicePasswordResetRequestImplToJson(
+  _$DevicePasswordResetRequestImpl instance,
+) => <String, dynamic>{
+  'username': instance.username,
+  'password': instance.password,
+  'passwordCode': instance.passwordCode,
 };
 
 _$SignUpStep1RequestImpl _$$SignUpStep1RequestImplFromJson(

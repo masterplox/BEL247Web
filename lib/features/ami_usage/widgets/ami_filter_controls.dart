@@ -16,6 +16,7 @@ class AmiFilterControls extends StatelessWidget {
     required this.lastSelectableDate,
     this.weekRange,
     this.onWeekRangeChange,
+    this.allowedFilters,
   });
 
   final FilterType filterType;
@@ -30,8 +31,12 @@ class AmiFilterControls extends StatelessWidget {
   /// When filter is week, called with (start, end) when user picks a custom range (max 7 days).
   final void Function(DateTime start, DateTime end)? onWeekRangeChange;
 
+  /// When set, only these filters are selectable (e.g. basic users: year only).
+  final Set<FilterType>? allowedFilters;
+
   @override
   Widget build(BuildContext context) {
+    final allowed = allowedFilters ?? FilterType.values.toSet();
     final filters = [
       {'value': FilterType.day, 'label': 'Day'},
       {'value': FilterType.week, 'label': 'Week'},
@@ -49,17 +54,21 @@ class AmiFilterControls extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ...filters.map((filter) {
-                final isSelected = filterType == filter['value'];
+                final type = filter['value'] as FilterType;
+                final isAllowed = allowed.contains(type);
+                final isSelected = filterType == type;
                 return Padding(
                   padding: const EdgeInsets.only(right: AppTheme.spacing8),
                   child: FilterChip(
                     label: Text(filter['label'] as String),
                     selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) {
-                        onFilterChange(filter['value'] as FilterType);
-                      }
-                    },
+                    onSelected: isAllowed
+                        ? (selected) {
+                            if (selected) {
+                              onFilterChange(type);
+                            }
+                          }
+                        : null,
                     selectedColor: AppColors.primary.withOpacity(0.2),
                     checkmarkColor: AppColors.primary,
                     labelStyle: TextStyle(

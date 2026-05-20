@@ -120,7 +120,7 @@ class _FeedbackFab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => FloatingActionButton.small(
-        tooltip: 'Send feedback',
+        tooltip: 'Customer Portal Support',
         onPressed: () => showAppSupportDialog(context, ref),
         child: const Icon(Icons.feedback_outlined),
       );
@@ -402,6 +402,19 @@ class _SidebarFooter extends ConsumerWidget {
                       ),
                 ),
                 const SizedBox(height: AppTheme.spacing12),
+                TextButton.icon(
+                  onPressed: () => context.go('/account/reset-password'),
+                  icon: const Icon(Icons.lock_reset, size: 16),
+                  label: const Text('Change password'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacing12,
+                      vertical: AppTheme.spacing8,
+                    ),
+                    minimumSize: const Size(double.infinity, 36),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacing8),
                 OutlinedButton.icon(
                   onPressed: () async {
                     await ref.read(authNotifierProvider.notifier).logout();

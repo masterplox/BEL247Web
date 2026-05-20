@@ -16,6 +16,7 @@ import '../providers/engagement_providers.dart';
 import '../providers/feature_providers.dart';
 import '../providers/meter_data_providers.dart';
 import '../utils/logger.dart';
+import 'manage_connected_account_dialogs.dart';
 
 const String _kAmiLearnMoreUrl = 'https://bit.ly/AMIbz';
 
@@ -562,6 +563,16 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                             ref.read(accountSwitcherProvider.notifier).switchAccount(account.id);
                             Navigator.of(context, rootNavigator: true).pop();
                           },
+                          onEditNickname: () => showEditAccountNicknameDialog(
+                            context,
+                            ref,
+                            account,
+                          ),
+                          onRemove: () => showRemoveConnectedAccountDialog(
+                            context,
+                            ref,
+                            account,
+                          ),
                         );
                       },
                     ),
@@ -748,11 +759,15 @@ class _AccountCard extends StatelessWidget {
     required this.account,
     required this.isSelected,
     required this.onTap,
+    required this.onEditNickname,
+    required this.onRemove,
   });
 
   final Account account;
   final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback onEditNickname;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -865,6 +880,37 @@ class _AccountCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          onEditNickname();
+                        } else if (value == 'remove') {
+                          onRemove();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: Icon(Icons.edit_outlined),
+                            title: Text('Edit nickname'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'remove',
+                          child: ListTile(
+                            leading: Icon(Icons.delete_outline, color: AppColors.error),
+                            title: Text(
+                              'Remove account',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

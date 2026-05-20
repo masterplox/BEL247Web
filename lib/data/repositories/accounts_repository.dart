@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/config/new_features_dev_mock.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/logger.dart';
 import '../models/account.dart';
 import '../models/api_response_dtos.dart';
+import '../models/editable_customer_account_api_json.dart';
 import '../services/api_client.dart';
 import '../services/token_storage_service.dart';
 
@@ -30,9 +32,12 @@ class AccountsRepository {
 
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = ConnectedAccountsResponseDto.fromJson(response.data!);
-        
+        final accountDtos = _withDevFullAccess(
+          responseDto.editableCustomerAccounts,
+        );
+
         // Map DTOs to Account models
-        final accounts = responseDto.editableCustomerAccounts
+        final accounts = accountDtos
             .map(_mapDtoToAccount)
             .where((account) => account.isActive) // Only include active accounts
             .toList();
@@ -356,30 +361,23 @@ class AccountsRepository {
 
       if (response.statusCode == 200 && response.data != null) {
         final responseDto = ConnectedAccountsResponseDto.fromJson(response.data!);
-        
+        final accountDtos = _withDevFullAccess(
+          responseDto.editableCustomerAccounts,
+        );
+
         // Find the account matching the ID (format: customerNumber_accountNumber)
         final parts = accountId.split('_');
         if (parts.length != 2) return null;
-        
+
         final customerNumber = parts[0];
         final accountNumber = parts[1];
-        
-        final matchingDto = responseDto.editableCustomerAccounts.firstWhere(
-          (dto) => 
-            (dto.customerNumber ?? '') == customerNumber &&
-            (dto.accountNumber ?? '') == accountNumber,
+
+        final matchingDto = accountDtos.firstWhere(
+          (dto) =>
+              (dto.customerNumber ?? '') == customerNumber &&
+              (dto.accountNumber ?? '') == accountNumber,
           orElse: () => throw StateError('Account not found'),
         );
-
-        // Frontend-only override for dev/testing:
-        // mimic the API returning these flags as `true`.
-        // (Keeping this gated to development so we don't accidentally grant access in prod.)
-        // if (EnvConfig.isDevelopment) {
-        //   return matchingDto.copyWith(
-        //     fullAccess: true,
-        //     billDownloadAccess: false,
-        //   );
-        // }
 
         return matchingDto;
       }
@@ -392,6 +390,99 @@ class AccountsRepository {
         tag: 'AccountsRepository',
       );
       return null;
+    }
+  }
+
+  /// PUT full account DTO to V3 PreferredCustomerAccounts.
+  Future<BaseApiResponseDto> _putPreferredCustomerAccount(
+    EditableCustomerAccountDto dto,
+  ) async {
+    if (NewFeaturesDevMock.isActive) {
+      await NewFeaturesDevMock.simulatedDelay();
+      final mock = NewFeaturesDevMock.intercept<BaseApiResponseDto>(
+        operation: 'CustomerAccounts/V3/PreferredCustomerAccounts',
+        onSuccess: () => const BaseApiResponseDto(
+          status: 200,
+          message: '[Dev mock] Account updated successfully',
+        ),
+        onFailure: (message) => throw Exception(message),
+        failureMessage:
+            '[Dev mock] Could not update account. Please try again later.',
+      );
+      if (mock != null) {
+        return mock;
+      }
+    }
+
+    final response = await _apiClient.put<Map<String, dynamic>>(
+      ApiEndpoints.updatePreferredCustomerAccount,
+      data: editableCustomerAccountToApiJson(dto),
+      authenticated: true,
+    );
+
+    if (response.statusCode == 200 && response.data != null) {
+      return BaseApiResponseDto.fromJson(response.data!);
+    }
+
+    final message = response.data?['message'] as String? ??
+        'Request failed with status ${response.statusCode}';
+    throw Exception(message);
+  }
+
+  /// Update connected account nickname (sends full DTO).
+  Future<BaseApiResponseDto> updateConnectedAccountNickname({
+    required String accountId,
+    required String newNickname,
+  }) async {
+    try {
+      final dto = await fetchAccountDetails(accountId);
+      if (dto == null) {
+        throw Exception('Account not found');
+      }
+
+      final updated = dto.copyWith(nickName: newNickname.trim());
+      final result = await _putPreferredCustomerAccount(updated);
+      Logger.info(
+        'Updated nickname for account $accountId',
+        tag: 'AccountsRepository',
+      );
+      return result;
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error updating account nickname',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      rethrow;
+    }
+  }
+
+  /// Remove connected account (sends full DTO with Active: false).
+  Future<BaseApiResponseDto> removeConnectedAccount({
+    required String accountId,
+  }) async {
+    try {
+      final dto = await fetchAccountDetails(accountId);
+      if (dto == null) {
+        throw Exception('Account not found');
+      }
+
+      final removed = dto.copyWith(active: false);
+      final result = await _putPreferredCustomerAccount(removed);
+      Logger.info(
+        'Removed connected account $accountId',
+        tag: 'AccountsRepository',
+      );
+      return result;
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error removing connected account',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'AccountsRepository',
+      );
+      rethrow;
     }
   }
 
@@ -463,6 +554,24 @@ class AccountsRepository {
       );
       rethrow;
     }
+  }
+
+  /// Applies [NewFeaturesDevMock.mockAllAccountsFullAccess] when active (dev only).
+  List<EditableCustomerAccountDto> _withDevFullAccess(
+    List<EditableCustomerAccountDto> dtos,
+  ) {
+    if (!NewFeaturesDevMock.mockAllAccountsFullAccessActive) {
+      return dtos;
+    }
+
+    Logger.warning(
+      'Applying dev fullAccess override to ${dtos.length} connected account(s)',
+      tag: 'AccountsRepository',
+    );
+
+    return dtos
+        .map((dto) => dto.copyWith(fullAccess: true))
+        .toList(growable: false);
   }
 
   /// Legacy method for backward compatibility

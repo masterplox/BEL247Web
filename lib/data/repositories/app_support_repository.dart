@@ -21,6 +21,7 @@ class AppSupportRepository {
     required String accountNumber,
     required String customerNumber,
     String supportType = supportTypeGeneral,
+    bool authenticated = true,
   }) async {
     if (EnvConfig.useMockApi) {
       Logger.debug('AppSupportRequest (mock skip)', tag: 'AppSupport');
@@ -39,7 +40,7 @@ class AppSupportRepository {
           'CustomerNumber': customerNumber,
           'SupportType': supportType,
         },
-        authenticated: true,
+        authenticated: authenticated,
       );
       final ok = response.statusCode != null &&
           response.statusCode! >= 200 &&
