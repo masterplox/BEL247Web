@@ -10,7 +10,6 @@ import 'providers/dashboard_greeting_provider.dart';
 import '../../../core/widgets/account_aware_scaffold.dart';
 import '../../../core/widgets/account_switcher.dart';
 import '../../../core/widgets/app_page_scaffold.dart';
-import '../../../features/bills/state/bills_providers.dart';
 import '../../../features/usage/state/meter_readings_providers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -36,29 +35,21 @@ class DashboardPage extends ConsumerWidget {
       emptyIcon: Icons.account_circle_outlined,
       belowEmptyState: const AmiInsightsDisclaimerBanner(),
       builder: (context, ref, accountState) {
-        final accountDetailsAsync = ref.watch(accountDetailsProvider);
         final meterDataSource = ref.watch(meterDataSourceProvider);
         final hasAmiConnectedAccount = accountState.accounts.any(
           (account) => MeterDataResolver.isAmiMeter(account.meterNumber),
         );
 
-        // Get the first name from account details name field
-        final firstName = accountDetailsAsync.maybeWhen(
-          data: (accountDetails) {
-            final name = accountDetails?.name;
-            if (name != null && name.isNotEmpty) {
-              final nameParts = name.split(' ');
-              return nameParts.isNotEmpty ? nameParts.first : '';
-            }
-            return '';
-          },
-          orElse: () => '',
-        );
+        final session = ref.watch(authNotifierProvider).userSession;
+        final usernameFromSession =
+            (session?.preferences['username'] as String?)?.trim() ?? '';
+        final username =
+            usernameFromSession.isNotEmpty ? usernameFromSession : session?.email.trim() ?? '';
 
         final welcomeBackAsync = ref.watch(showWelcomeBackGreetingProvider);
         final showWelcomeBack = welcomeBackAsync.valueOrNull ?? true;
-        final greetingTitle = showWelcomeBack && firstName.isNotEmpty
-            ? 'Welcome back, $firstName'
+        final greetingTitle = showWelcomeBack && username.isNotEmpty
+            ? 'Welcome back, $username'
             : 'Welcome';
 
         ref.listen(showWelcomeBackGreetingProvider, (previous, next) {

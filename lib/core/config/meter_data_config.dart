@@ -30,11 +30,14 @@ class MeterDataResolver {
   ///
   /// The first matching rule wins.
   static const List<MeterDataRule> rules = <MeterDataRule>[
-    // AMI meters
-    MeterDataRule(
-      meterNumberPrefix: '0225',
-      source: MeterDataSource.ami,
-    ),
+    // AMI meters (prefix match; first rule wins)
+    MeterDataRule(meterNumberPrefix: '0225', source: MeterDataSource.ami),
+    MeterDataRule(meterNumberPrefix: '0226', source: MeterDataSource.ami),
+    MeterDataRule(meterNumberPrefix: '0425', source: MeterDataSource.ami),
+    MeterDataRule(meterNumberPrefix: '0525', source: MeterDataSource.ami),
+    MeterDataRule(meterNumberPrefix: '0925', source: MeterDataSource.ami),
+    MeterDataRule(meterNumberPrefix: '1225', source: MeterDataSource.ami),
+    MeterDataRule(meterNumberPrefix: '1625', source: MeterDataSource.ami),
   ];
 
   static MeterDataSource resolve(String? meterNumber) {

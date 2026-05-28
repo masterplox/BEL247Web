@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/providers/feature_providers.dart';
+import '../../../core/services/user_preferences_storage.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/models/auth.dart';
@@ -9,7 +10,6 @@ import '../../../data/repositories/accounts_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/live_auth_repository.dart';
 import '../../../data/services/api_client.dart';
-import '../../../core/services/user_preferences_storage.dart';
 import '../../../data/services/token_storage_service.dart';
 
 /// Authentication state notifier for managing authentication state
@@ -150,6 +150,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (response.success && response.data != null) {
         Logger.info('Login successful');
+        Logger.info('Login response: ${response.data}');
 
         // At this point LiveAuthRepository has already stored the tokens.
         // We trust that path; if storage has issues it will be logged there.

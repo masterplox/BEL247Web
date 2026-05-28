@@ -197,7 +197,6 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                           () => _showBillDetailsDialog(
                             context,
                             accountDetails,
-                            isVerified: isVerified,
                           ),
                           dueLabel: 'Due:',
                           dueValue: dueDate,
@@ -234,7 +233,6 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                               () => _showBillDetailsDialog(
                                 context,
                                 accountDetails,
-                                isVerified: isVerified,
                               ),
                               dueLabel: 'Due:',
                               dueValue: dueDate,
@@ -445,12 +443,10 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
 
   void _showBillDetailsDialog(
     BuildContext context,
-    EditableCustomerAccountDto accountDetails, {
-    required bool isVerified,
-  }) {
+    EditableCustomerAccountDto accountDetails,
+  ) {
     final lastBillAmount = _parseBalance(accountDetails.lastBillAmount);
     final pastDue = _parseBalance(accountDetails.pastDue);
-    final deposit = _parseBalance(accountDetails.deposit);
 
     AppDialog.showCenter(
       context: context,
@@ -468,13 +464,6 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
             FormattingUtils.formatCurrency(pastDue),
             color: pastDue > 0 ? AppColors.error : null,
           ),
-          const Divider(),
-          if (isVerified) ...[
-            _buildDetailRow(
-              'Deposit on Account',
-              FormattingUtils.formatCurrency(deposit.abs()),
-            ),
-          ],
         ],
       ),
       actions: [

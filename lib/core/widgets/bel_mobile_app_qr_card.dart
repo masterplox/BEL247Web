@@ -25,14 +25,14 @@ class BelMobileAppQrCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Apply for services on the BEL 24-7 app',
+                'Download or Upgrade the BEL 24-7 App',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
               ),
               const SizedBox(height: AppTheme.spacing8),
               Text(
-                'Scan the QR code for your device or open the app store to download BEL 24-7 and apply for new services.',
+                'Apply for services, submit reports, access power updates, receive real-time notifications, view educational content, notices and more!',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),

@@ -133,6 +133,10 @@ class LiveAuthRepository implements AuthRepository {
       final String firstName = firstNameFromCustomer ?? firstNameFromUsername;
       final String lastName = lastNameFromCustomer ?? lastNameFromUsername;
 
+      final effectiveUsername = userDto.username.trim().isNotEmpty
+          ? userDto.username.trim()
+          : request.username.trim();
+
       // Create user session
       final userSession = UserSession(
         userId: userId,
@@ -143,7 +147,7 @@ class LiveAuthRepository implements AuthRepository {
         lastActivity: now,
         isActive: !userDto.sessionExpired,
         preferences: {
-          'username': userDto.username,
+          'username': effectiveUsername,
           'loggedIn': userDto.loggedIn,
           'identified': userDto.identified,
           'connected': userDto.connected,
@@ -694,6 +698,10 @@ class LiveAuthRepository implements AuthRepository {
       final String firstName = firstNameFromCustomer ?? firstNameFromUsername;
       final String lastName = lastNameFromCustomer ?? lastNameFromUsername;
 
+      final effectiveUsername = userDto.username.trim().isNotEmpty
+          ? userDto.username.trim()
+          : request.username.trim();
+
       // Create user session
       final userSession = UserSession(
         userId: userId,
@@ -704,7 +712,7 @@ class LiveAuthRepository implements AuthRepository {
         lastActivity: now,
         isActive: !userDto.sessionExpired,
         preferences: {
-          'username': userDto.username,
+          'username': effectiveUsername,
           'loggedIn': userDto.loggedIn,
           'identified': userDto.identified,
           'connected': userDto.connected,

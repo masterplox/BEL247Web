@@ -6,6 +6,7 @@ class Logger {
   static const String _appName = 'BEL247';
   
   static void debug(String message, {String? tag}) {
+    // debugPrint('DEBUG: $message');
     if (kDebugMode) {
       developer.log(
         message,
@@ -16,6 +17,7 @@ class Logger {
   }
   
   static void info(String message, {String? tag}) {
+    // debugPrint('INFO: $message');
     developer.log(
       message,
       name: tag ?? _appName,
@@ -24,6 +26,7 @@ class Logger {
   }
   
   static void warning(String message, {String? tag}) {
+    // debugPrint('WARNING: $message');
     developer.log(
       message,
       name: tag ?? _appName,
@@ -32,6 +35,7 @@ class Logger {
   }
   
   static void error(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+    // debugPrint('ERROR: $message');
     developer.log(
       message,
       name: tag ?? _appName,

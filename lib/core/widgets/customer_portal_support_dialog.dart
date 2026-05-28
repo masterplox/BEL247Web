@@ -8,7 +8,6 @@ import '../providers/feature_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import 'app_dialog.dart';
-import 'app_toast.dart';
 
 /// Shows Customer Portal Support with category dropdown and optional guest fields.
 Future<void> showCustomerPortalSupportDialog(
@@ -17,13 +16,15 @@ Future<void> showCustomerPortalSupportDialog(
   required String sourcePage,
   String? initialSupportType,
 }) async {
+  final hostContext = context;
   await AppDialog.showCenter(
-    context: context,
+    context: hostContext,
     title: 'Customer Portal Support',
     subtitle:
         'Tell us what happened. We\'ll route your request to our support team.',
     maxWidth: 480,
     content: _CustomerPortalSupportForm(
+      hostContext: hostContext,
       sourcePage: sourcePage,
       initialSupportType:
           initialSupportType ?? CustomerPortalSupportTypes.general,
@@ -34,11 +35,13 @@ Future<void> showCustomerPortalSupportDialog(
 
 class _CustomerPortalSupportForm extends ConsumerStatefulWidget {
   const _CustomerPortalSupportForm({
+    required this.hostContext,
     required this.sourcePage,
     required this.initialSupportType,
   });
 
-  /// Sent to API as [SourcePage]; not shown in the UI.
+  final BuildContext hostContext;
+  /// Sent to API as SourcePage; not shown in the UI.
   final String sourcePage;
   final String initialSupportType;
 
@@ -92,7 +95,7 @@ class _CustomerPortalSupportFormState
     setState(() => _submitting = true);
     try {
       final repo = ref.read(appSupportRepositoryProvider);
-      final ok = await repo.submitRequest(
+      final (ok, message) = await repo.submitRequest(
         contactFullName: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         email: _emailController.text.trim(),
@@ -104,16 +107,42 @@ class _CustomerPortalSupportFormState
         authenticated: session != null,
       );
       if (!mounted) return;
-      if (ok) {
-        Navigator.of(context, rootNavigator: true).pop();
-        AppToast.success(context, 'Thanks — your message was sent.');
-      } else {
-        AppToast.error(context, 'Could not send your request. Please try again.');
-      }
+
+      Navigator.of(context, rootNavigator: true).pop();
+      if (!widget.hostContext.mounted) return;
+      await AppDialog.showCenter(
+        context: widget.hostContext,
+        title: ok ? 'Support Request Submitted' : 'Support Request Failed',
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.of(widget.hostContext, rootNavigator: true).pop(),
+            child: const Text('Okay'),
+          ),
+        ],
+        showCloseButton: false,
+        barrierDismissible: false,
+      );
     } catch (_) {
-      if (mounted) {
-        AppToast.error(context, 'Could not send your request. Please try again.');
-      }
+      if (!mounted) return;
+
+      Navigator.of(context, rootNavigator: true).pop();
+      if (!widget.hostContext.mounted) return;
+      await AppDialog.showCenter(
+        context: widget.hostContext,
+        title: 'Support Request Failed',
+        content: const Text('Could not send your request. Please try again.'),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.of(widget.hostContext, rootNavigator: true).pop(),
+            child: const Text('Okay'),
+          ),
+        ],
+        showCloseButton: false,
+        barrierDismissible: false,
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -143,7 +172,7 @@ class _CustomerPortalSupportFormState
             const SizedBox(height: AppTheme.spacing16),
           ],
           DropdownButtonFormField<String>(
-            value: _supportType,
+            initialValue: _supportType,
             decoration: const InputDecoration(
               labelText: 'Support category',
               border: OutlineInputBorder(),

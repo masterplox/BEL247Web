@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'app_dialog.dart';
 
-/// Placeholder username/password rules (replace with official copy later).
 Future<void> showCredentialGuidelinesDialog(BuildContext context) =>
     AppDialog.showCenter(
       context: context,
@@ -17,22 +16,21 @@ Future<void> showCredentialGuidelinesDialog(BuildContext context) =>
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             SizedBox(height: 8),
-            _GuidelineItem('Use at least 3 characters.'),
-            _GuidelineItem('Use only letters, numbers, and common symbols.'),
-            _GuidelineItem('Avoid spaces at the beginning or end.'),
-            _GuidelineItem('Choose something you can remember but others cannot guess.'),
-            _GuidelineItem('Do not share your username with anyone.'),
+            _GuidelineItem('At least 6 characters'),
+            _GuidelineItem('Maximum of 30 characters'),
+            _GuidelineItem('Can contain lower and uppercase letters'),
+            _GuidelineItem('Can contain period (.) and underscore (_) characters'),
             SizedBox(height: 20),
             Text(
               'Password',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             SizedBox(height: 8),
-            _GuidelineItem('Use at least 8 characters.'),
-            _GuidelineItem('Include uppercase and lowercase letters.'),
-            _GuidelineItem('Include at least one number.'),
-            _GuidelineItem('Include at least one special character.'),
-            _GuidelineItem('Do not reuse passwords from other websites.'),
+            _GuidelineItem('At least one number'),
+            _GuidelineItem('At least one lowercase character'),
+            _GuidelineItem('At least one uppercase character'),
+            _GuidelineItem('At least one special character'),
+            _GuidelineItem('At least 8 characters in length'),
           ],
         ),
       ),
