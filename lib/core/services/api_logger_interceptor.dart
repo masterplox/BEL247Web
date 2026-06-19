@@ -1,9 +1,27 @@
 import 'dart:convert';
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/env.dart';
 import '../utils/logger.dart';
+
+@JS('console.log')
+external void _jsLog(JSAny? object);
+
+@JS('console.error')
+external void _jsError(JSAny? object);
+
+@JS('console.groupCollapsed')
+external void _jsGroupCollapsed(JSString label);
+
+@JS('console.group')
+external void _jsGroup(JSString label);
+
+@JS('console.groupEnd')
+external void _jsGroupEnd();
 
 /// Comprehensive API logging interceptor for Dio
 /// 
@@ -67,6 +85,7 @@ class ApiLoggerInterceptor extends Interceptor {
     // Store timestamp for duration calculation
     options.extra['_api_logger_start_time'] = timestamp.millisecondsSinceEpoch;
 
+    _browserRequest(method, url, options);
     handler.next(options);
   }
 
@@ -96,6 +115,7 @@ class ApiLoggerInterceptor extends Interceptor {
       _logResponseBody(response.data, response.requestOptions.responseType);
     }
 
+    _browserResponse(method, url, statusCode, duration, response.data);
     handler.next(response);
   }
 
@@ -159,7 +179,84 @@ class ApiLoggerInterceptor extends Interceptor {
       tag: 'API_Logger',
     );
 
+    _browserError(method, url, err, duration);
     handler.next(err);
+  }
+
+  /// Browser console: request group
+  void _browserRequest(String method, String url, RequestOptions options) {
+    if (!kIsWeb) return;
+    _jsGroupCollapsed('📤 [$method] $url'.toJS);
+    if (options.queryParameters.isNotEmpty) {
+      final params = _maskSensitiveData
+          ? _maskSensitiveFields(options.queryParameters)
+          : options.queryParameters;
+      _jsLog('Query:'.toJS);
+      _jsLog(params.jsify());
+    }
+    if (options.data != null) {
+      _jsLog('Body:'.toJS);
+      if (options.data is Map || options.data is List) {
+        final body = _maskSensitiveData
+            ? _maskSensitiveDynamic(options.data)
+            : options.data;
+        _jsLog((body as Object).jsify());
+      } else {
+        _jsLog(options.data.toString().toJS);
+      }
+    }
+    _jsGroupEnd();
+  }
+
+  /// Browser console: response group
+  void _browserResponse(
+    String method,
+    String url,
+    int statusCode,
+    Duration duration,
+    dynamic data,
+  ) {
+    if (!kIsWeb) return;
+    final emoji = _getStatusEmoji(statusCode);
+    _jsGroupCollapsed(
+        '$emoji [$method] $statusCode | ${duration.inMilliseconds}ms | $url'
+            .toJS);
+    if (data != null) {
+      _jsLog('Response:'.toJS);
+      if (data is Map || data is List) {
+        final body =
+            _maskSensitiveData ? _maskSensitiveDynamic(data) : data;
+        _jsLog((body as Object).jsify());
+      } else {
+        _jsLog(data.toString().toJS);
+      }
+    }
+    _jsGroupEnd();
+  }
+
+  /// Browser console: error group
+  void _browserError(
+      String method, String url, DioException err, Duration duration) {
+    if (!kIsWeb) return;
+    final statusCode = err.response?.statusCode;
+    _jsGroup(
+        '❌ [$method] ${statusCode ?? 'ERR'} | ${duration.inMilliseconds}ms | $url'
+            .toJS);
+    final info = <String, dynamic>{
+      'type': err.type.toString(),
+      'message': err.message ?? 'Unknown error',
+      if (statusCode != null) 'statusCode': statusCode,
+    };
+    final responseData = err.response?.data;
+    if (responseData != null) {
+      info['body'] = (responseData is Map || responseData is List)
+          ? (_maskSensitiveData
+              ? _maskSensitiveDynamic(responseData)
+              : responseData)
+          : responseData.toString();
+    }
+    _jsError(info.jsify());
+    _jsGroupEnd();
   }
 
   /// Build full URL from request options

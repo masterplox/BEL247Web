@@ -44,7 +44,7 @@ class ApiClient {
     dio.interceptors.add(_ConditionalAuthInterceptor(dio));
     dio.interceptors.add(_RetryInterceptor(dio));
     dio.interceptors.add(ApiLoggerInterceptor(
-      enabled: true,
+      enabled: false,
       logRequestHeaders: true,
       logResponseHeaders: false,
       maskSensitiveData: true,

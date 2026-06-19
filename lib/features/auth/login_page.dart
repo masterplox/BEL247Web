@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/customer_portal_support_types.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/utils/logger.dart';
+import '../../core/utils/mobile_detection.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_text.dart';
-import '../../data/models/auth.dart';
-import '../../core/constants/customer_portal_support_types.dart';
+import '../../core/widgets/bel_mobile_app_qr_card.dart';
 import '../../core/widgets/customer_portal_support_button.dart';
+import '../../data/models/auth.dart';
 import '../../theme/colors.dart';
 import 'providers/auth_provider.dart';
 
@@ -74,6 +76,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
     }
 
+    // Redirect mobile phone users to the app download landing
+    if (MobileDetection.isMobilePhone) {
+      return _buildMobileLandingView();
+    }
+
     // Listen for authentication state changes
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next.isAuthenticated && !(previous?.isAuthenticated ?? false)) {
@@ -122,6 +129,83 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
   }
+
+  Widget _buildMobileLandingView() => Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildMobileDeviceNotice(),
+                    const SizedBox(height: 20),
+                    const BelMobileAppQrCard(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildMobileDeviceNotice() => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warning, width: 1.5),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.smartphone,
+                    color: Color(0xFF92400E),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: AppText(
+                    'You\'re on a Mobile Device',
+                    style: AppTextStyle.subtitle,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const AppText(
+              'The BEL24-7 Customer Portal is designed for desktop web browsers and is not optimized for mobile phones.',
+              style: AppTextStyle.body,
+              color: Color(0xFF78350F),
+            ),
+            const SizedBox(height: 8),
+            const AppText(
+              'For the best experience, please download the BEL 24-7 mobile app which is built specifically for your device.',
+              style: AppTextStyle.body,
+              color: Color(0xFF78350F),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildHeader() => Column(
       children: [
@@ -358,7 +442,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           text: 'Forgot Password?',
           buttonType: AppButtonType.text,
         ),
-        Center(
+        const Center(
           child: CustomerPortalSupportButton(
             sourcePage: '/login',
             initialSupportType: CustomerPortalSupportTypes.general,
