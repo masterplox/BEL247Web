@@ -30,9 +30,9 @@ class ApiClient {
     final dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(milliseconds: 15000),
-        receiveTimeout: const Duration(milliseconds: 15000),
-        sendTimeout: const Duration(milliseconds: 15000),
+        connectTimeout: const Duration(milliseconds: 90000),
+        receiveTimeout: const Duration(milliseconds: 90000),
+        sendTimeout: const Duration(milliseconds: 90000),
         headers: <String, dynamic>{
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ class ApiClient {
     dio.interceptors.add(_ConditionalAuthInterceptor(dio));
     dio.interceptors.add(_RetryInterceptor(dio));
     dio.interceptors.add(ApiLoggerInterceptor(
-      enabled: false,
+      enabled: true,
       logRequestHeaders: true,
       logResponseHeaders: false,
       maskSensitiveData: true,
