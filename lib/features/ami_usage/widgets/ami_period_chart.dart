@@ -160,6 +160,17 @@ class AmiPeriodChart extends StatelessWidget {
             height: 300,
             child: Stack(
               children: [
+                if (hasPending)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _PendingReadingHatchPainter(
+                          pendingIndices: pendingIndices,
+                          barCount: effectiveData.length,
+                        ),
+                      ),
+                    ),
+                  ),
                 BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
@@ -376,17 +387,6 @@ class AmiPeriodChart extends StatelessWidget {
                     }).toList(),
                   ),
                 ),
-                if (hasPending)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _PendingReadingHatchPainter(
-                          pendingIndices: pendingIndices,
-                          barCount: effectiveData.length,
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
