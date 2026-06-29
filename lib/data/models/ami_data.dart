@@ -63,10 +63,13 @@ class DailyReading {
     required this.meter,
     required this.readDate,
     required this.kWhUsed,
+    this.missing = false,
   });
   final String meter;
   final String readDate;
   final String kWhUsed;
+  /// True when this entry was synthesized to fill a gap (meter read not yet received).
+  final bool missing;
 }
 
 /// Hourly aggregated data
@@ -76,10 +79,21 @@ class HourlyData {
     required this.hour,
     required this.kWh,
     required this.time,
+    this.missing = false,
   });
   final int hour;
   final double kWh;
   final String time;
+  /// True when this entry was synthesized to fill a gap (no interval reads for this hour).
+  final bool missing;
+}
+
+/// Formats hour (0–23) as a display string e.g. "12 AM", "3 PM".
+String hourLabel(int h) {
+  if (h == 0) return '12 AM';
+  if (h < 12) return '$h AM';
+  if (h == 12) return '12 PM';
+  return '${h - 12} PM';
 }
 
 /// Statistics for hourly data
@@ -195,6 +209,7 @@ List<HourlyData> aggregateToHourly(List<IntervalReading> intervals) {
       hour: hour,
       kWh: double.parse(totalKWh.toStringAsFixed(3)),
       time: timeLabel,
+      missing: hourIntervals.isEmpty,
     ));
   }
 
@@ -281,7 +296,9 @@ TouConsumption computeTouFromHourKwh(List<(int hour, double kwh)> pairs) {
 
 /// Calculate statistics for hourly data
 HourlyStats calculateHourlyStats(List<HourlyData> hourlyData) {
-  if (hourlyData.isEmpty) {
+  // Exclude placeholder (missing) entries so stats only reflect real reads.
+  final actual = hourlyData.where((h) => !h.missing).toList();
+  if (actual.isEmpty) {
     return HourlyStats(
       totalKWh: 0,
       estimatedCost: 0,
@@ -291,10 +308,10 @@ HourlyStats calculateHourlyStats(List<HourlyData> hourlyData) {
       peakHour: 0,
     );
   }
-  final totalKWh = hourlyData.fold<double>(0, (sum, d) => sum + d.kWh);
+  final totalKWh = actual.fold<double>(0, (sum, d) => sum + d.kWh);
   final estimatedCost = totalKWh * ratePerKwh;
-  final avgKWh = totalKWh / hourlyData.length;
-  final peak = hourlyData.reduce((max, d) => d.kWh > max.kWh ? d : max);
+  final avgKWh = totalKWh / actual.length;
+  final peak = actual.reduce((max, d) => d.kWh > max.kWh ? d : max);
 
   return HourlyStats(
     totalKWh: double.parse(totalKWh.toStringAsFixed(2)),

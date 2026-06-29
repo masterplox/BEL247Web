@@ -126,6 +126,7 @@ class AmiPeriodChart extends StatelessWidget {
     double maxValue = 0;
     for (var i = 0; i < effectiveData.length; i++) {
       final reading = effectiveData[i];
+      if (reading.missing) continue;
       final dateKey = _dateKeyFromReading(reading);
       final dayTou = dateKey != null ? touByDate[dateKey] : null;
       if (dayTou != null) {
@@ -139,211 +140,286 @@ class AmiPeriodChart extends StatelessWidget {
     // fl_chart asserts when maxY == minY (common when all values are 0)
     final safeMaxY = maxValue > 0 ? maxValue * 1.1 : 1.0;
 
-    final barColor = AppColors.primary;
+    const barColor = AppColors.primary;
+
+    // Collect indices of bars that are pending (no meter read yet).
+    final pendingIndices = effectiveData.asMap().entries
+        .where((e) => e.value.missing)
+        .map((e) => e.key)
+        .toList();
+    final hasPending = pendingIndices.isNotEmpty;
 
     return AppCard(
       clipBehavior: Clip.none,
       padding: const EdgeInsets.all(AppTheme.spacing16),
-      child: SizedBox(
-        height: 300,
-        child: BarChart(
-          BarChartData(
-            alignment: BarChartAlignment.spaceAround,
-            maxY: safeMaxY,
-            barTouchData: BarTouchData(
-              enabled: true,
-              touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (group) => barColor,
-                tooltipRoundedRadius: 8,
-                tooltipPadding: const EdgeInsets.all(8),
-                tooltipMargin: 8,
-                getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                  final index = group.x.toInt();
-                  if (index >= 0 && index < effectiveData.length) {
-                    final reading = effectiveData[index];
-                    try {
-                      final date = DateTime.parse(reading.readDate.split(' ')[0]);
-                      final dateStr = _formatDate(date);
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 300,
+            child: Stack(
+              children: [
+                BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: safeMaxY,
+                    barTouchData: BarTouchData(
+                      enabled: true,
+                      touchTooltipData: BarTouchTooltipData(
+                        getTooltipColor: (group) => barColor,
+                        tooltipRoundedRadius: 8,
+                        tooltipPadding: const EdgeInsets.all(8),
+                        tooltipMargin: 8,
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          final index = group.x.toInt();
+                          if (index >= 0 && index < effectiveData.length) {
+                            final reading = effectiveData[index];
+                            if (reading.missing) return null;
+                            try {
+                              final date = DateTime.parse(reading.readDate.split(' ')[0]);
+                              final dateStr = _formatDate(date);
+                              final dateKey = _dateKeyFromReading(reading);
+                              final dayTou = dateKey != null ? touByDate[dateKey] : null;
+                              if (dayTou != null) {
+                                final tooltipText = 'Off-Peak: ${dayTou.offKwh.toStringAsFixed(1)} kWh\n'
+                                    'Peak: ${dayTou.peakKwh.toStringAsFixed(1)} kWh\n'
+                                    'Mid-Peak: ${dayTou.midPeakKwh.toStringAsFixed(1)} kWh\n'
+                                    '───\n$dateStr';
+                                return BarTooltipItem(
+                                  tooltipText,
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              }
+                              final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
+                              final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n$dateStr';
+                              return BarTooltipItem(
+                                tooltipText,
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              );
+                            } catch (e) {
+                              final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
+                              final tooltipText = '${kWh.toStringAsFixed(1)} kWh';
+                              return BarTooltipItem(
+                                tooltipText,
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              );
+                            }
+                          }
+                          return BarTooltipItem(
+                            '',
+                            const TextStyle(fontSize: 12),
+                          );
+                        },
+                      ),
+                      touchCallback: (FlTouchEvent event, barTouchResponse) {
+                        if (event is FlTapUpEvent && barTouchResponse?.spot != null) {
+                          final index = barTouchResponse!.spot!.touchedBarGroupIndex;
+                          if (index >= 0 && index < effectiveData.length) {
+                            if (effectiveData[index].missing) return;
+                            onSelectIndex(selectedIndex == index ? null : index);
+                          }
+                        }
+                      },
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          interval: intervalForAxis,
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index >= 0 && index < effectiveData.length && index % intervalForModulo == 0) {
+                              try {
+                                final reading = effectiveData[index];
+                                final date = DateTime.parse(reading.readDate.split(' ')[0]);
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    _formatBottomLabel(date),
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                return const Text('');
+                              }
+                            }
+                            return const Text('');
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 50,
+                          getTitlesWidget: (value, meta) => Text(
+                              '${value.toStringAsFixed(0)} kWh',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 10,
+                              ),
+                            ),
+                        ),
+                      ),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: safeMaxY / 5,
+                      getDrawingHorizontalLine: (value) => const FlLine(
+                          color: AppColors.border,
+                          strokeWidth: 1,
+                        ),
+                    ),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: const Border(
+                        bottom: BorderSide(color: AppColors.border),
+                        left: BorderSide(color: AppColors.border),
+                      ),
+                    ),
+                    barGroups: effectiveData.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final reading = entry.value;
+
+                      // Pending (missing) bar — rendered transparent; the
+                      // CustomPainter overlay draws the grey fill + hatching.
+                      if (reading.missing) {
+                        return BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: 0,
+                              width: 12,
+                              color: AppColors.transparent,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(4),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+
+                      final isSelected = selectedIndex == index;
                       final dateKey = _dateKeyFromReading(reading);
                       final dayTou = dateKey != null ? touByDate[dateKey] : null;
                       if (dayTou != null) {
-                        final tooltipText = 'Off-Peak: ${dayTou.offKwh.toStringAsFixed(1)} kWh\n'
-                            'Peak: ${dayTou.peakKwh.toStringAsFixed(1)} kWh\n'
-                            'Mid-Peak: ${dayTou.midPeakKwh.toStringAsFixed(1)} kWh\n'
-                            '───\n$dateStr';
-                        return BarTooltipItem(
-                          tooltipText,
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                        final off = dayTou.offKwh;
+                        final peak = dayTou.peakKwh;
+                        final mid = dayTou.midPeakKwh;
+                        final total = off + peak + mid;
+                        return BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: total,
+                              width: 12,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                              rodStackItems: [
+                                BarChartRodStackItem(
+                                  0,
+                                  off,
+                                  AppColors.primary,
+                                ),
+                                BarChartRodStackItem(
+                                  off,
+                                  off + peak,
+                                  AppColors.info,
+                                ),
+                                BarChartRodStackItem(
+                                  off + peak,
+                                  off + peak + mid,
+                                  AppColors.chart3,
+                                ),
+                              ],
+                            ),
+                          ],
                         );
                       }
                       final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                      final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n$dateStr';
-                      return BarTooltipItem(
-                        tooltipText,
-                        const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      );
-                    } catch (e) {
-                      final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                      final tooltipText = '${kWh.toStringAsFixed(1)} kWh';
-                      return BarTooltipItem(
-                        tooltipText,
-                        const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      );
-                    }
-                  }
-                  return BarTooltipItem(
-                    '',
-                    const TextStyle(fontSize: 12),
-                  );
-                },
-              ),
-              touchCallback: (FlTouchEvent event, barTouchResponse) {
-                if (event is FlTapUpEvent && barTouchResponse?.spot != null) {
-                  final index = barTouchResponse!.spot!.touchedBarGroupIndex;
-                  if (index >= 0 && index < data.length) {
-                    onSelectIndex(selectedIndex == index ? null : index);
-                  }
-                }
-              },
-            ),
-            titlesData: FlTitlesData(
-              show: true,
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 30,
-                  interval: intervalForAxis,
-                  getTitlesWidget: (value, meta) {
-                    final index = value.toInt();
-                    if (index >= 0 && index < effectiveData.length && index % intervalForModulo == 0) {
-                      try {
-                        final reading = effectiveData[index];
-                        final date = DateTime.parse(reading.readDate.split(' ')[0]);
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            _formatBottomLabel(date),
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 10,
+                      return BarChartGroupData(
+                        x: index,
+                        barRods: [
+                          BarChartRodData(
+                            toY: kWh,
+                            color: isSelected ? barColor : barColor.withValues(alpha: 0.7),
+                            width: 12,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(4),
                             ),
                           ),
-                        );
-                      } catch (e) {
-                        return const Text('');
-                      }
-                    }
-                    return const Text('');
-                  },
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 50,
-                  getTitlesWidget: (value, meta) => Text(
-                      '${value.toStringAsFixed(0)} kWh',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 10,
+                if (hasPending)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _PendingReadingHatchPainter(
+                          pendingIndices: pendingIndices,
+                          barCount: effectiveData.length,
+                        ),
                       ),
                     ),
-                ),
-              ),
-            ),
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: safeMaxY / 5,
-              getDrawingHorizontalLine: (value) => const FlLine(
-                  color: AppColors.border,
-                  strokeWidth: 1,
-                ),
-            ),
-            borderData: FlBorderData(
-              show: true,
-              border: const Border(
-                bottom: BorderSide(color: AppColors.border),
-                left: BorderSide(color: AppColors.border),
-              ),
-            ),
-            barGroups: effectiveData.asMap().entries.map((entry) {
-              final index = entry.key;
-              final reading = entry.value;
-              final isSelected = selectedIndex == index;
-              final dateKey = _dateKeyFromReading(reading);
-              final dayTou = dateKey != null ? touByDate[dateKey] : null;
-              if (dayTou != null) {
-                final off = dayTou.offKwh;
-                final peak = dayTou.peakKwh;
-                final mid = dayTou.midPeakKwh;
-                final total = off + peak + mid;
-                return BarChartGroupData(
-                  x: index,
-                  barRods: [
-                    BarChartRodData(
-                      toY: total,
-                      width: 12,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                      rodStackItems: [
-                        BarChartRodStackItem(
-                          0,
-                          off,
-                          AppColors.primary,
-                        ),
-                        BarChartRodStackItem(
-                          off,
-                          off + peak,
-                          AppColors.info,
-                        ),
-                        BarChartRodStackItem(
-                          off + peak,
-                          off + peak + mid,
-                          AppColors.chart3,
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }
-              final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-              return BarChartGroupData(
-                x: index,
-                barRods: [
-                  BarChartRodData(
-                    toY: kWh,
-                    color: isSelected ? barColor : barColor.withOpacity(0.7),
-                    width: 12,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
-                    ),
                   ),
-                ],
-              );
-            }).toList(),
+              ],
+            ),
           ),
-        ),
+          if (hasPending) ...[
+            const SizedBox(height: 8),
+            _buildPendingDisclaimer(),
+          ],
+        ],
       ),
     );
   }
+
+  static Widget _buildPendingDisclaimer() => const Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(
+        Icons.schedule_outlined,
+        size: 13,
+        color: AppColors.textTertiary,
+      ),
+      SizedBox(width: 5),
+      Expanded(
+        child: Text(
+          'Readings for highlighted periods are still on their way — check back in 24 to 48 hours for the full picture.',
+          style: TextStyle(
+            color: AppColors.textTertiary,
+            fontSize: 11,
+            height: 1.4,
+          ),
+        ),
+      ),
+    ],
+  );
 
   /// Skip some x-axis labels for a cleaner axis (like dashboard charts).
   double _getBottomInterval() {
@@ -403,4 +479,69 @@ class AmiPeriodChart extends StatelessWidget {
         return 'th';
     }
   }
+}
+
+class _PendingReadingHatchPainter extends CustomPainter {
+  const _PendingReadingHatchPainter({
+    required this.pendingIndices,
+    required this.barCount,
+  });
+
+  final List<int> pendingIndices;
+  final int barCount;
+
+  static const double _leftReserved = 50.0;
+  static const double _bottomReserved = 30.0;
+  static const double _barWidth = 12.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (pendingIndices.isEmpty || barCount == 0) return;
+
+    final chartWidth = size.width - _leftReserved;
+    final chartHeight = size.height - _bottomReserved;
+    final sectionWidth = chartWidth / barCount;
+
+    final fillPaint = Paint()
+      ..color = AppColors.grey200
+      ..style = PaintingStyle.fill;
+
+    final hatchPaint = Paint()
+      ..color = AppColors.grey400.withValues(alpha: 0.55)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    for (final index in pendingIndices) {
+      final centerX = _leftReserved + (index + 0.5) * sectionWidth;
+      final left = centerX - _barWidth / 2;
+      final right = centerX + _barWidth / 2;
+
+      // Grey fill with rounded top corners
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTRB(left, 0, right, chartHeight),
+          topLeft: const Radius.circular(4),
+          topRight: const Radius.circular(4),
+        ),
+        fillPaint,
+      );
+
+      // Diagonal hatching lines (45°)
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(left, 0, right, chartHeight));
+      const spacing = 4.0;
+      for (double d = -chartHeight; d < _barWidth + chartHeight; d += spacing) {
+        canvas.drawLine(
+          Offset(left + d, 0),
+          Offset(left + d + chartHeight, chartHeight),
+          hatchPaint,
+        );
+      }
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PendingReadingHatchPainter old) =>
+      old.pendingIndices != pendingIndices || old.barCount != barCount;
 }

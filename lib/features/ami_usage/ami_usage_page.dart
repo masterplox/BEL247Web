@@ -46,6 +46,9 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   DateTime? _weekRangeStart;
   DateTime? _weekRangeEnd;
 
+  /// Tracks when data for the current view was last fetched (page open, filter/date change, or manual refresh).
+  DateTime _lastRefreshed = DateTime.now();
+
   late final TapGestureRecognizer _standardEnergyRateLinkTap;
 
   @override
@@ -70,6 +73,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     setState(() {
       _filterType = filter;
       _selectedIndex = null;
+      _lastRefreshed = DateTime.now();
     });
   }
 
@@ -90,6 +94,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           break;
       }
       _selectedIndex = null;
+      _lastRefreshed = DateTime.now();
       if (_filterType == FilterType.week) {
         final startDay = DateTime(date.year, date.month, date.day);
         _weekRangeStart = startDay;
@@ -111,7 +116,59 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       _weekRangeEnd = endDay;
       _weekDate = startDay;
       _selectedIndex = null;
+      _lastRefreshed = DateTime.now();
     });
+  }
+
+  /// Forces a fresh fetch of the current view's data and updates the refresh timestamp.
+  void _handleRefresh(int meterId) {
+    setState(() {
+      _lastRefreshed = DateTime.now();
+      _selectedIndex = null;
+    });
+    switch (_filterType) {
+      case FilterType.day:
+        ref.invalidate(amiDailyIntervalsProvider((meterId: meterId, targetDate: _dayDate)));
+        break;
+      case FilterType.week:
+        final range = _getWeekRange();
+        ref.invalidate(amiDailyRangeProvider((
+          meterId: meterId,
+          startDate: range.start,
+          endDate: range.end,
+        )));
+        ref.invalidate(amiTouRangeDataProvider((
+          meterId: meterId,
+          startDate: range.start,
+          endDate: range.end,
+        )));
+        break;
+      case FilterType.month:
+        final monthRange = getMonthRange(_monthDate);
+        ref.invalidate(amiDailyRangeProvider((
+          meterId: meterId,
+          startDate: monthRange.start,
+          endDate: monthRange.end,
+        )));
+        ref.invalidate(amiTouRangeDataProvider((
+          meterId: meterId,
+          startDate: monthRange.start,
+          endDate: monthRange.end,
+        )));
+        break;
+      case FilterType.year:
+        ref.invalidate(amiMonthlyTotalsProvider((meterId: meterId, year: _yearDate.year)));
+        break;
+    }
+  }
+
+  /// Formats the last-refreshed timestamp as "Last refreshed at 3:45 PM".
+  String _formatRefreshTime(DateTime t) {
+    final h = t.hour;
+    final m = t.minute.toString().padLeft(2, '0');
+    final period = h < 12 ? 'AM' : 'PM';
+    final displayHour = h == 0 ? 12 : (h > 12 ? h - 12 : h);
+    return 'Last refreshed at $displayHour:$m $period';
   }
 
   /// Current week range for display and data: user selection or default week containing _weekDate.
@@ -390,7 +447,41 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppTheme.spacing12),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(
+                              Icons.schedule_outlined,
+                              size: 11,
+                              color: AppColors.textTertiary,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              _formatRefreshTime(_lastRefreshed),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: IconButton(
+                                onPressed: () => _handleRefresh(meterId),
+                                padding: EdgeInsets.zero,
+                                tooltip: 'Refresh data',
+                                icon: const Icon(
+                                  Icons.refresh_rounded,
+                                  size: 16,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         if (_filterType == FilterType.day)
                           AmiDayChart(
                             data: data.hourlyData,
@@ -841,34 +932,24 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
       return intervalsAsync.when(
         data: (intervals) {
-          // If the API returns no intervals, treat this as "no data" for day view.
-          // This prevents charts/summary from showing misleading 0-values and avoids edge cases.
-          if (intervals.isEmpty) {
-            final dateLabel = _formatDateLong(_dayDate);
-            final stats = calculateHourlyStats(const <HourlyData>[]);
-            return AsyncValue.data((
-              dailyData: <DailyReading>[],
-              hourlyData: <HourlyData>[],
-              stats: stats,
-              dateLabel: dateLabel,
-              selectedDetail: null,
-            ));
-          }
-
-          // Transform DTOs to IntervalReading
+          // aggregateToHourly always returns all 24 hours; hours with no
+          // interval data are automatically marked missing: true.
           final intervalData = intervals.map(_dtoToIntervalReading).toList();
           final hourlyData = aggregateToHourly(intervalData);
+
           final stats = calculateHourlyStats(hourlyData);
           final dateLabel = _formatDateLong(_dayDate);
 
           HourlyDetail? selectedDetail;
           if (_selectedIndex != null && _selectedIndex! < hourlyData.length) {
             final hour = hourlyData[_selectedIndex!];
-            selectedDetail = HourlyDetail(
-              hour: hour.hour,
-              time: hour.time,
-              kWh: hour.kWh,
-            );
+            if (!hour.missing) {
+              selectedDetail = HourlyDetail(
+                hour: hour.hour,
+                time: hour.time,
+                kWh: hour.kWh,
+              );
+            }
           }
 
           return AsyncValue.data((
@@ -921,6 +1002,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                     meter: meterIdStr,
                     readDate: '${key} 00:00:00.000',
                     kWhUsed: '0',
+                    missing: true,
                   ),
             );
           }
@@ -964,23 +1046,50 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
       return dailyAsync.when(
         data: (dailyUsages) {
-          // Transform DTOs to DailyReading
-          final dailyData = dailyUsages
-              .map((dto) => _dtoToDailyReading(dto, meterIdStr))
-              .toList();
+          // Normalize to a full month, marking days with no reads as missing.
+          final monthStart = DateTime(monthRange.start.year, monthRange.start.month, monthRange.start.day);
+          final monthEnd = DateTime(monthRange.end.year, monthRange.end.month, monthRange.end.day);
+          final byDayMap = <String, DailyReading>{};
+          for (final dto in dailyUsages) {
+            final reading = _dtoToDailyReading(dto, meterIdStr);
+            final parsed = DateTime.tryParse(reading.readDate.trim().split(RegExp(r'[\sT]')).first);
+            if (parsed == null) continue;
+            final entryDay = DateTime(parsed.year, parsed.month, parsed.day);
+            if (entryDay.isBefore(monthStart) || entryDay.isAfter(monthEnd)) continue;
+            final key = '${entryDay.year}-${entryDay.month.toString().padLeft(2, '0')}-${entryDay.day.toString().padLeft(2, '0')}';
+            byDayMap[key] = reading;
+          }
+          final daysInRange = monthEnd.difference(monthStart).inDays + 1;
+          final dailyData = <DailyReading>[];
+          for (int i = 0; i < daysInRange; i++) {
+            final day = monthStart.add(Duration(days: i));
+            final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+            dailyData.add(
+              byDayMap[key] ??
+                  DailyReading(
+                    meter: meterIdStr,
+                    readDate: '${key} 00:00:00.000',
+                    kWhUsed: '0',
+                    missing: true,
+                  ),
+            );
+          }
+
           final stats = calculateDailyStats(dailyData);
           final dateLabel = _formatMonthYear(_monthDate);
 
           DayDetail? selectedDetail;
           if (_selectedIndex != null && _selectedIndex! < dailyData.length) {
             final reading = dailyData[_selectedIndex!];
-            final date =
-                DateTime.tryParse(reading.readDate.split(' ')[0]) ??
-                DateTime.now();
-            selectedDetail = DayDetail(
-              date: date,
-              kWh: double.tryParse(reading.kWhUsed) ?? 0.0,
-            );
+            if (!reading.missing) {
+              final date =
+                  DateTime.tryParse(reading.readDate.split(' ')[0]) ??
+                  DateTime.now();
+              selectedDetail = DayDetail(
+                date: date,
+                kWh: double.tryParse(reading.kWhUsed) ?? 0.0,
+              );
+            }
           }
 
           return AsyncValue.data((
