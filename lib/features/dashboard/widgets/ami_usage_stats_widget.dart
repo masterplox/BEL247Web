@@ -4,29 +4,32 @@ import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../data/models/ami_data.dart' show ratePerKwh;
+import '../../../data/models/billing_period.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import '../state/ami_dashboard_usage_providers.dart';
+import '../state/billing_period_providers.dart';
 
 /// Dashboard usage stats for AMI meters.
 ///
-/// This mirrors the layout/interaction of `UsageStatsWidget`, but uses AMI data
-/// (amiDailyRange + amiMonthlyTotals) instead of legacy monthly meter readings.
+/// This mirrors the layout/interaction of `UsageStatsWidget`, but is scoped to
+/// billing periods rather than calendar months. "This Billing Period" is the
+/// cycle the account is currently inside, so its usage is partial and its
+/// amount is not billed yet.
 class AmiUsageStatsWidget extends ConsumerWidget {
   const AmiUsageStatsWidget({super.key});
-  static final DateFormat _shortRangeDateFormat = DateFormat('MMM d');
-  static final DateFormat _monthYearFormat = DateFormat('MMMM yyyy');
+  static final DateFormat _scopeDateFormat = DateFormat('MMM d, yyyy');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(amiDashboardUsageStatsProvider);
+    final statsAsync = ref.watch(billingPeriodsProvider);
 
     return statsAsync.when(
       loading: () => _buildLoadingGrid(context),
       error: (_, __) => const SizedBox.shrink(),
       data: (stats) {
         // If nothing to show, behave like legacy widget (hide section).
-        if (stats.thisMonthDaysWithData == 0 && stats.monthsAnalyzed == 0) {
+        if (!stats.hasUsageData) {
           return const SizedBox.shrink();
         }
 
@@ -122,56 +125,53 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         },
       );
 
-  List<Map<String, dynamic>> _buildCards(
-    ({
-      double thisMonthKwh,
-      double thisMonthEstimatedCost,
-      int thisMonthDaysWithData,
-      double lastMonthKwh,
-      double diffVsLastMonthKwh,
-      bool savedEnergy,
-      String peakMonthLabel,
-      double peakMonthKwh,
-      double avgMonthlyKwh,
-      double yearlyTotalKwh,
-      double yearlyEstimatedCost,
-      int monthsAnalyzed,
-    }) stats,
-  ) {
-    final thisMonthKwh = stats.thisMonthKwh;
-    final lastMonthKwh = stats.lastMonthKwh;
-    final diff = stats.diffVsLastMonthKwh;
-    final savedEnergy = stats.savedEnergy;
-    final now = DateTime.now();
-    final currentStart = DateTime(now.year, now.month, 1);
-    final currentEnd = DateTime(now.year, now.month, now.day);
-    final previousStart = DateTime(now.year, now.month - 1, 1);
-    final previousEnd = DateTime(now.year, now.month, 0);
-    final currentRange = _formatDateRange(currentStart, currentEnd);
-    final previousRange = _formatDateRange(previousStart, previousEnd);
-    final trailingYearLabel = now.year.toString();
-    final averageScope = 'Jan ${now.year} - ${_monthYearFormat.format(now)}';
+  List<Map<String, dynamic>> _buildCards(BillingPeriodsResult stats) {
+    final cards = <Map<String, dynamic>>[];
 
-    return [
-      {
+    final current = stats.current;
+    final previous = stats.previous;
+    final peak = stats.peak;
+
+    if (current != null) {
+      cards.add({
         'label': 'This Billing Period',
-        'subLabel': currentRange,
-        'value': thisMonthKwh.toStringAsFixed(0),
+        'subLabel': current.label,
+        'value': current.usageKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.bolt,
         'color': AppColors.primary,
         'bgColor': AppColors.primary,
-        'detailTitle': 'Current Billing Period Usage (AMI)',
-        'detailSubtitle': 'Usage shown reflects your billing period',
+        'detailTitle': 'Current Billing Period Usage',
+        'detailSubtitle': 'The billing period you are currently in',
         'detailItems': [
-          {'label': 'Billing Period', 'value': currentRange},
-          {'label': 'Consumption', 'value': '${thisMonthKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Days with data', 'value': '${stats.thisMonthDaysWithData} days'},
+          {'label': 'Billing Period', 'value': current.label},
+          {
+            'label': 'Consumption',
+            'value': '${current.usageKwh.toStringAsFixed(2)} kWh',
+          },
+          {
+            'label': 'Est. Amount',
+            'value': '\$${(current.usageKwh * ratePerKwh).toStringAsFixed(2)}',
+          },
+          {
+            'label': 'Daily Average',
+            'value': '${current.avgDailyKwh.toStringAsFixed(1)} kWh',
+          },
+          {
+            'label': 'Billing Days',
+            'value': '${current.daysWithData} of ${current.days} days',
+          },
         ],
-      },
-      {
-        'label': 'vs Previous Billing Period',
-        'subLabel': '$currentRange vs $previousRange',
+      });
+    }
+
+    if (current != null && previous != null) {
+      final diff = stats.diffVsPreviousKwh;
+      final savedEnergy = stats.savedEnergy;
+
+      cards.add({
+        'label': 'vs Last Billing Period',
+        'subLabel': '${current.label} vs ${previous.label}',
         'value': savedEnergy
             ? '-${diff.abs().toStringAsFixed(0)}'
             : '+${diff.abs().toStringAsFixed(0)}',
@@ -179,12 +179,23 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         'icon': Icons.trending_up,
         'color': savedEnergy ? AppColors.success : AppColors.error,
         'bgColor': savedEnergy ? AppColors.success : AppColors.error,
-        'detailTitle': 'Billing Period Comparison (AMI)',
+        'detailTitle': 'Billing Period Comparison',
         'detailSubtitle':
-            'Compares your energy usage for your current and previous billing periods',
+            'Compared over the same number of days so far, not against the full previous period',
         'detailItems': [
-          {'label': 'Current Period', 'value': '$currentRange • ${thisMonthKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Previous Period', 'value': '$previousRange • ${lastMonthKwh.toStringAsFixed(2)} kWh'},
+          {
+            'label': 'Current Period',
+            'value': '${current.label} • ${current.usageKwh.toStringAsFixed(2)} kWh',
+          },
+          {
+            'label': 'Previous Period',
+            'value':
+                '${previous.label} • ${stats.previousPeriodToDateKwh.toStringAsFixed(2)} kWh',
+          },
+          {
+            'label': 'Days Compared',
+            'value': '${current.daysWithData} days',
+          },
           {
             'label': 'Difference',
             'value': '${diff.toStringAsFixed(2)} kWh',
@@ -192,41 +203,70 @@ class AmiUsageStatsWidget extends ConsumerWidget {
             'valueColor': diff < 0 ? AppColors.error : AppColors.success,
           },
         ],
-      },
-      {
+      });
+    }
+
+    if (peak != null) {
+      cards.add({
         'label': 'Peak Billing Period',
-        'subLabel': '${stats.peakMonthLabel} $trailingYearLabel',
-        'value': stats.peakMonthKwh.toStringAsFixed(0),
+        'subLabel': peak.label,
+        'value': peak.usageKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.local_fire_department,
         'color': AppColors.warning,
         'bgColor': AppColors.warning,
-        'detailTitle': 'Peak Usage Period',
-        'detailSubtitle': 'Highest electricity usage this year',
+        'detailTitle': 'Peak Usage Billing Period',
+        'detailSubtitle': 'Your highest billed period',
         'detailItems': [
-          {'label': 'Billing Period', 'value': '${stats.peakMonthLabel} $trailingYearLabel'},
-          {'label': 'Consumption', 'value': '${stats.peakMonthKwh.toStringAsFixed(2)} kWh'},
+          {'label': 'Billing Period', 'value': peak.label},
+          {
+            'label': 'Consumption',
+            'value': '${peak.usageKwh.toStringAsFixed(2)} kWh',
+          },
+          if (peak.amount != null)
+            {'label': 'Amount', 'value': '\$${peak.amount!.toStringAsFixed(2)}'},
+          {
+            'label': 'Daily Average',
+            'value': '${peak.avgDailyKwh.toStringAsFixed(1)} kWh',
+          },
         ],
-      },
-      {
-        'label': 'Average Usage',
-        'subLabel': averageScope,
-        'value': stats.avgMonthlyKwh.toStringAsFixed(0),
+      });
+    }
+
+    if (stats.periodsAnalyzed > 0) {
+      final scope = _formatScope(stats.scopeStart, stats.scopeEnd);
+
+      cards.add({
+        'label': 'Avg per Billing Period',
+        'subLabel': scope,
+        'value': stats.avgPeriodKwh.toStringAsFixed(0),
         'unit': 'kWh',
         'icon': Icons.bar_chart,
         'color': const Color(0xFF8B5CF6),
         'bgColor': const Color(0xFF8B5CF6),
-        'detailTitle': 'Average Statistics (AMI)',
-        'detailSubtitle': 'Average usage based on your billed periods this year',
+        'detailTitle': 'Average Statistics',
+        'detailSubtitle': 'Averaged across your completed billing periods',
         'detailItems': [
-          {'label': 'Date Scope', 'value': averageScope},
-          {'label': 'Avg. Monthly Usage', 'value': '${stats.avgMonthlyKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Yearly Total Usage', 'value': '${stats.yearlyTotalKwh.toStringAsFixed(2)} kWh'},
-          {'label': 'Months Analyzed', 'value': '${stats.monthsAnalyzed}'},
-          {'label': 'Total kWh', 'value': stats.yearlyTotalKwh.toStringAsFixed(0)},
+          {'label': 'Date Scope', 'value': scope},
+          {
+            'label': 'Avg. per Billing Period',
+            'value': '${stats.avgPeriodKwh.toStringAsFixed(2)} kWh',
+          },
+          if (stats.totalAmount > 0)
+            {
+              'label': 'Total Billed',
+              'value': '\$${stats.totalAmount.toStringAsFixed(2)}',
+            },
+          {
+            'label': 'Billing Periods Analyzed',
+            'value': '${stats.periodsAnalyzed}',
+          },
+          {'label': 'Total kWh', 'value': stats.totalKwh.toStringAsFixed(0)},
         ],
-      },
-    ];
+      });
+    }
+
+    return cards;
   }
 
   Widget _buildStatCard(BuildContext context, Map<String, dynamic> stat) => InkWell(
@@ -378,7 +418,9 @@ class AmiUsageStatsWidget extends ConsumerWidget {
     );
   }
 
-  String _formatDateRange(DateTime start, DateTime end) =>
-      '${_shortRangeDateFormat.format(start)} - ${_shortRangeDateFormat.format(end)}';
+  String _formatScope(DateTime? start, DateTime? end) {
+    if (start == null || end == null) return '-';
+    return '${_scopeDateFormat.format(start)} - ${_scopeDateFormat.format(end)}';
+  }
 }
 

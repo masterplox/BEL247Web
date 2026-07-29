@@ -1,17 +1,18 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
-import '../../../data/models/api_response_dtos.dart';
+import '../../../data/models/billing_period.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import '../state/ami_dashboard_usage_providers.dart';
+import '../state/billing_period_providers.dart';
 
 /// Dashboard usage trend chart for AMI meters.
 ///
-/// Mirrors `ConsumptionChartWidget` but uses `amiMonthlyTotals` for the current year.
+/// Mirrors `ConsumptionChartWidget` but is scoped to billing periods: the
+/// "Period" view plots days inside the current cycle, the "History" view plots
+/// one point per completed billing period.
 class AmiConsumptionChartWidget extends ConsumerStatefulWidget {
   const AmiConsumptionChartWidget({super.key});
 
@@ -19,25 +20,23 @@ class AmiConsumptionChartWidget extends ConsumerStatefulWidget {
   ConsumerState<AmiConsumptionChartWidget> createState() => _AmiConsumptionChartWidgetState();
 }
 
-enum _AmiTrendRange { month, year }
+enum _AmiTrendRange { period, history }
 
 class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartWidget> {
-  static final DateFormat _rangeFormat = DateFormat('MMM d');
-  _AmiTrendRange _range = _AmiTrendRange.month;
-
-  static const _monthNames = <String>[
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
+  _AmiTrendRange _range = _AmiTrendRange.period;
 
   @override
   Widget build(BuildContext context) {
-    final monthDailyAsync = ref.watch(amiDashboardCurrentMonthDailyUpToYesterdayProvider);
-    final yearlyMonthlyAsync = ref.watch(amiDashboardMonthlyTotalsProvider);
+    final periodsAsync = ref.watch(billingPeriodsProvider);
 
     final AsyncValue<List<Map<String, dynamic>>> chartDataAsync =
-        _range == _AmiTrendRange.month
-            ? monthDailyAsync.whenData(_prepareMonthChartData)
-            : yearlyMonthlyAsync.whenData(_prepareYearChartData);
+        periodsAsync.whenData(
+      (result) => _range == _AmiTrendRange.period
+          ? _preparePeriodChartData(result)
+          : _prepareHistoryChartData(result),
+    );
+
+    final rangeLabel = _rangeLabel(periodsAsync.valueOrNull);
 
     return chartDataAsync.when(
       loading: () => _buildLoadingCard(context),
@@ -66,7 +65,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
                       ),
                       const SizedBox(height: AppTheme.spacing4),
                       Text(
-                        _currentRangeLabel(),
+                        rangeLabel,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                               fontSize: 12,
@@ -92,16 +91,16 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
     );
   }
 
-  String _currentRangeLabel() {
-    final now = DateTime.now();
-    if (_range == _AmiTrendRange.month) {
-      final start = DateTime(now.year, now.month, 1);
-      final end = DateTime(now.year, now.month, now.day);
-      return '${_rangeFormat.format(start)} - ${_rangeFormat.format(end)}';
+  String _rangeLabel(BillingPeriodsResult? result) {
+    if (result == null) return '';
+
+    if (_range == _AmiTrendRange.period) {
+      return result.current?.label ?? '';
     }
-    final start = DateTime(now.year, 1, 1);
-    final end = DateTime(now.year, 12, 31);
-    return '${_rangeFormat.format(start)} - ${_rangeFormat.format(end)}';
+
+    final closed = result.closedPeriods;
+    if (closed.isEmpty) return '';
+    return '${closed.length} completed billing periods';
   }
 
   bool _isChartDataEffectivelyEmpty(List<Map<String, dynamic>> chartData) =>
@@ -161,15 +160,15 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
           children: [
             _buildRangeToggleButton(
               context,
-              'Month',
-              _range == _AmiTrendRange.month,
-              () => setState(() => _range = _AmiTrendRange.month),
+              'Period',
+              _range == _AmiTrendRange.period,
+              () => setState(() => _range = _AmiTrendRange.period),
             ),
             _buildRangeToggleButton(
               context,
-              'Year',
-              _range == _AmiTrendRange.year,
-              () => setState(() => _range = _AmiTrendRange.year),
+              'History',
+              _range == _AmiTrendRange.history,
+              () => setState(() => _range = _AmiTrendRange.history),
             ),
           ],
         ),
@@ -205,35 +204,26 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
         ),
       );
 
-  List<Map<String, dynamic>> _prepareYearChartData(
-    List<MonthlyUsageEntryDto> monthlyTotals,
-  ) {
-    // Fill all 12 months so the chart is stable.
-    final monthToKwh = <int, double>{};
-    for (final m in monthlyTotals) {
-      final int month = m.month;
-      final double kwh = m.monthlyUsageKwh;
-      if (month >= 1 && month <= 12) {
-        monthToKwh[month] = kwh;
-      }
-    }
+  /// One point per completed billing period.
+  List<Map<String, dynamic>> _prepareHistoryChartData(
+    BillingPeriodsResult result,
+  ) =>
+      result.closedPeriods
+          .map(
+            (period) => {
+              'label': period.label,
+              'consumption': period.usageKwh,
+            },
+          )
+          .toList();
 
-    return List.generate(12, (i) {
-      final monthIndex = i + 1;
-      final kwh = monthToKwh[monthIndex] ?? 0.0;
-      return {
-        'label': _monthNames[i],
-        'consumption': kwh,
-      };
-    });
-  }
-
-  List<Map<String, dynamic>> _prepareMonthChartData(
-    List<DailyUsageEntryDto> dailyRows,
+  /// One point per day inside the current billing period.
+  List<Map<String, dynamic>> _preparePeriodChartData(
+    BillingPeriodsResult result,
   ) {
     // De-dupe by date, keep the max for a day to avoid double counting.
     final byDay = <DateTime, double>{};
-    for (final r in dailyRows) {
+    for (final r in result.currentPeriodDaily) {
       final dateStr = r.usageDate.trim().split(RegExp('[T ]')).first;
       final d = DateTime.tryParse(dateStr);
       if (d == null) continue;
@@ -285,7 +275,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    _range == _AmiTrendRange.month
+                    _range == _AmiTrendRange.period
                         ? _formatOrdinalDay(chartData[index]['label'] as String)
                         : chartData[index]['label'] as String,
                     style: const TextStyle(

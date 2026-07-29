@@ -13,7 +13,7 @@ import '../../../core/widgets/app_page_scaffold.dart';
 import '../../../features/usage/state/meter_readings_providers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import 'state/ami_dashboard_usage_providers.dart';
+import 'state/billing_period_providers.dart';
 import 'widgets/account_details_widget.dart';
 import 'widgets/account_verification_banner.dart';
 import 'widgets/ami_insights_disclaimer_banner.dart';
@@ -126,7 +126,7 @@ class DashboardPage extends ConsumerWidget {
         );
 
         final showReadingsSection = meterDataSource == MeterDataSource.ami
-            ? ref.watch(amiDashboardHasUsageDataProvider).maybeWhen(
+            ? ref.watch(hasBillingPeriodUsageProvider).maybeWhen(
                 data: (hasData) => hasData,
                 loading: () => true,
                 orElse: () => false,
