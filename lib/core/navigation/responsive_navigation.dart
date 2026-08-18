@@ -6,6 +6,7 @@ import '../../features/auth/providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import '../analytics/app_page_names.dart';
+import '../providers/app_version_provider.dart';
 import '../providers/engagement_providers.dart';
 import '../providers/meter_data_providers.dart';
 import '../widgets/account_switcher.dart';
@@ -479,6 +480,8 @@ class _SidebarFooter extends ConsumerWidget {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
+                    const SizedBox(height: AppTheme.spacing8),
+                    const _SidebarAppVersion(),
                   ],
                 ),
               ],
@@ -512,6 +515,24 @@ class _SidebarFooter extends ConsumerWidget {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _SidebarAppVersion extends ConsumerWidget {
+  const _SidebarAppVersion();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final version = ref.watch(appVersionProvider).valueOrNull;
+    if (version == null || version.isEmpty) return const SizedBox.shrink();
+
+    return Text(
+      version,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.textTertiary,
+            fontSize: 11,
+          ),
     );
   }
 }

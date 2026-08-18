@@ -182,6 +182,7 @@ class AmiPeriodChart extends StatelessWidget {
                         tooltipRoundedRadius: 8,
                         tooltipPadding: const EdgeInsets.all(8),
                         tooltipMargin: 8,
+                        maxContentWidth: 200,
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           final index = group.x.toInt();
                           if (index >= 0 && index < effectiveData.length) {
@@ -193,9 +194,11 @@ class AmiPeriodChart extends StatelessWidget {
                               final dateKey = _dateKeyFromReading(reading);
                               final dayTou = dateKey != null ? touByDate[dateKey] : null;
                               if (dayTou != null) {
+                                final total = dayTou.offKwh + dayTou.peakKwh + dayTou.midPeakKwh;
                                 final tooltipText = 'Off-Peak: ${dayTou.offKwh.toStringAsFixed(1)} kWh\n'
                                     'Peak: ${dayTou.peakKwh.toStringAsFixed(1)} kWh\n'
                                     'Mid-Peak: ${dayTou.midPeakKwh.toStringAsFixed(1)} kWh\n'
+                                    'Total: ${total.toStringAsFixed(1)} kWh\n'
                                     '───\n$dateStr';
                                 return BarTooltipItem(
                                   tooltipText,
