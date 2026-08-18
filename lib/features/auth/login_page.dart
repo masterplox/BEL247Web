@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/env.dart';
 import '../../core/constants/customer_portal_support_types.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/utils/logger.dart';
@@ -76,8 +77,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
     }
 
-    // Redirect mobile phone users to the app download landing
-    if (MobileDetection.isMobilePhone) {
+    // Redirect mobile phone users to the app download landing.
+    // Gated by EnvConfig.blockMobilePhones, which is off by default.
+    if (EnvConfig.blockMobilePhones && MobileDetection.isMobilePhone) {
       return _buildMobileLandingView();
     }
 

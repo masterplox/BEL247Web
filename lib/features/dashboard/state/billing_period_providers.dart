@@ -15,10 +15,14 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/api_response_dtos.dart';
 import '../../../data/models/billing_period.dart';
+import '../../ami_usage/ami_usage_date_limits.dart';
 import '../../ami_usage/state/ami_usage_providers.dart';
 import '../../bills/state/bills_providers.dart';
 import 'ami_dashboard_usage_providers.dart'
-    show amiDashboardMeterIdProvider, amiDashboardMonthlyTotalsProvider;
+    show
+        amiDashboardMeterIdProvider,
+        amiDashboardMonthlyTotalsProvider,
+        usageDashboardCardsProvider;
 
 /// How many past bills to pull when building the period history.
 const int _maxBillHistory = 12;
@@ -355,4 +359,62 @@ Future<BillingPeriodsResult> _calendarMonthFallback(Ref ref, int meterId) async 
 final hasBillingPeriodUsageProvider = FutureProvider<bool>((ref) async {
   final result = await ref.watch(billingPeriodsProvider.future);
   return result.hasUsageData;
+});
+
+/// Daily kWh for the in-progress billing period, from DailyRangeBucket.
+///
+/// Prefers the billed window from `/AMI/UsageDashboardCards` so the Period
+/// chart is a single range request and does not wait on per-day intervals or
+/// bill-detail fetches.
+final amiBillingPeriodTrendProvider =
+    FutureProvider<List<DailyUsageEntryDto>>((ref) async {
+  final meterId = ref.watch(amiDashboardMeterIdProvider);
+  if (meterId == null || meterId == 0) return const [];
+
+  final lastSelectable = AmiUsageDateLimits.lastSelectableDate;
+  final today = _dayOnly(DateTime.now());
+  late DateTime start;
+  late DateTime end;
+
+  final cards = await ref.watch(usageDashboardCardsProvider.future);
+  if (cards.currentStartDate != null) {
+    start = _dayOnly(cards.currentStartDate!);
+    end = cards.currentEndDate != null
+        ? _dayOnly(cards.currentEndDate!)
+        : lastSelectable;
+  } else {
+    final closed = await ref.watch(closedBillingPeriodsProvider.future);
+    if (closed.isNotEmpty) {
+      var currentStart = closed.last.end;
+      var currentEnd = _addOneMonth(currentStart);
+      var rolls = 0;
+      while (currentEnd.isBefore(today) && rolls < _maxPeriodRollForward) {
+        currentStart = currentEnd;
+        currentEnd = _addOneMonth(currentEnd);
+        rolls++;
+      }
+      start = DateTime(
+        currentStart.year,
+        currentStart.month,
+        currentStart.day + 1,
+      );
+      end = currentEnd;
+    } else {
+      start = DateTime(today.year, today.month, 1);
+      end = lastSelectable;
+    }
+  }
+
+  if (end.isAfter(lastSelectable)) {
+    end = lastSelectable;
+  }
+  if (start.isAfter(end)) return const [];
+
+  return ref.watch(
+    amiDailyRangeProvider((
+      meterId: meterId,
+      startDate: start,
+      endDate: end,
+    )).future,
+  );
 });

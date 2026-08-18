@@ -211,12 +211,23 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
   }
 
   @override
-  Widget build(BuildContext context) => Dialog(
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final compact = media.size.height < 500;
+    return Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radius12),
         ),
-        child: Container(
-          width: 500,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: compact ? 8 : 24,
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 500,
+            maxHeight: media.size.height * (compact ? 0.95 : 0.88),
+          ),
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.spacing24),
           child: Form(
             key: _formKey,
@@ -227,13 +238,16 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 // Header
                 Row(
                   children: [
-                    Text(
+                    Expanded(
+                      child: Text(
                       'Connect Account',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: _isLoading
@@ -458,14 +472,15 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 ],
                 const SizedBox(height: AppTheme.spacing24),
                 // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppTheme.spacing12,
+                  runSpacing: AppTheme.spacing8,
                   children: [
                     TextButton(
                       onPressed: _isLoading ? null : () => Navigator.of(context, rootNavigator: true).pop(),
                       child: const Text('Cancel'),
                     ),
-                    const SizedBox(width: AppTheme.spacing12),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
@@ -490,5 +505,7 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }

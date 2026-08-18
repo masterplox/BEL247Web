@@ -220,19 +220,25 @@ class ApiEndpoints {
   /// GET /V1/MeterUsage/DailyIntervals
   /// Auth: Yes (1)
   /// Query: { meterId, targetDate }
-  static String get amiDailyIntervals => '/AMI/DailyIntervals';
+  static String get amiDailyIntervals => '/AMI/DailyIntervalsBucket';
 
   /// Get daily usage for a date range
   /// GET /V1/MeterUsage/DailyRange
   /// Auth: Yes (1)
   /// Query: { meterId, startDate, endDate }
-  static String get amiDailyRange => '/AMI/DailyRange';
+  static String get amiDailyRange => '/AMI/DailyRangeBucket';
 
   /// Get monthly totals for a year
   /// GET /V1/MeterUsage/MonthlyTotals
   /// Auth: Yes (1)
   /// Query: { meterId, year }
-  static String get amiMonthlyTotals => '/AMI/MonthlyTotals';
+  static String get amiMonthlyTotals => '/AMI/MonthlyTotalsBucket';
+
+  /// Get the four billing-period dashboard cards for an AMI meter
+  /// GET /AMI/UsageDashboardCards
+  /// Auth: Yes (1)
+  /// Query: { meterId, periods }
+  static String get amiUsageDashboardCards => '/AMI/UsageDashboardCards';
 
   // ============================================================================
   // Digiwallet Endpoints

@@ -54,12 +54,9 @@ class AmiSummaryCards extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final isMobile = screenWidth < AppTheme.tabletBreakpoint;
-        final isDesktop = screenWidth >= AppTheme.desktopBreakpoint;
-
-        if (isMobile) {
-          // Mobile: single column layout
+        final isNarrow = constraints.maxWidth < 520;
+        final columns = constraints.maxWidth >= 900 ? 3 : 2;
+        if (isNarrow) {
           return Column(
             children: cards
                 .map((card) => Padding(
@@ -70,13 +67,11 @@ class AmiSummaryCards extends StatelessWidget {
           );
         }
 
-        // Calculate columns based on screen size
-        final columns = isDesktop ? 4 : 2;
         final availableWidth = constraints.maxWidth;
         const crossAxisSpacing = AppTheme.spacing12;
-        final cardWidth = (availableWidth - (crossAxisSpacing * (columns - 1))) / columns;
+        final cardWidth =
+            (availableWidth - (crossAxisSpacing * (columns - 1))) / columns;
 
-        // Use Wrap widget for flexible grid that allows natural height
         return Wrap(
           spacing: crossAxisSpacing,
           runSpacing: AppTheme.spacing12,
@@ -142,12 +137,18 @@ class AmiSummaryCards extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                     ),
-                  Text(
-                    card['value'] as String,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                        ),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        card['value'] as String,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ),
                   ),
                   if (card['prefix'] != true)
                     Text(

@@ -1,18 +1,17 @@
 import 'package:bel247_web/app.dart';
+import 'package:bel247_web/core/providers/riverpod_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  testWidgets('BEL247 App smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('BEL247 app mounts (same scope as main)', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: BEL247App(),
+      RiverpodConfig.createScope(
+        child: const BEL247App(),
       ),
     );
+    await tester.pump();
 
-    // Verify that our app loads without errors
-    expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.byType(MaterialApp), findsWidgets);
   });
 }

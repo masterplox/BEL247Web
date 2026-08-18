@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../theme/app_theme.dart';
 import '../providers/meter_data_providers.dart';
 
 /// Navigation state for managing responsive navigation
@@ -130,9 +131,12 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
   /// Automatically opens sidebar for desktop/tablet (snapped behavior)
   /// Only resets sidebar state if screen size category changed
   void updateScreenSize(Size screenSize) {
-    final isMobile = screenSize.width < 600;
-    final isTablet = screenSize.width >= 600 && screenSize.width < 1200;
-    final isDesktop = screenSize.width >= 1200;
+    // Match [AppTheme.tabletBreakpoint] so 200–300% browser zoom (which
+    // shrinks CSS pixels) uses bottom navigation instead of a squeezed sidebar.
+    final isMobile = screenSize.width < AppTheme.tabletBreakpoint;
+    final isTablet = screenSize.width >= AppTheme.tabletBreakpoint &&
+        screenSize.width < AppTheme.desktopBreakpoint;
+    final isDesktop = screenSize.width >= AppTheme.desktopBreakpoint;
 
     // Check if screen size category changed
     final sizeCategoryChanged = 
@@ -142,7 +146,8 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
 
     // Only auto-open/close sidebar if screen size category changed
     // If sidebar was manually toggled, preserve its state even when category changes
-    final shouldOpenSidebar = isDesktop || isTablet;
+    // Tablet starts collapsed so page content keeps enough width at moderate zoom.
+    final shouldOpenSidebar = isDesktop;
     final newSidebarState = sizeCategoryChanged && !_sidebarManuallyToggled
         ? shouldOpenSidebar 
         : state.isSidebarOpen;

@@ -110,17 +110,23 @@ class AppDialog extends StatelessWidget {
   }
 
   Widget _buildCenterDialog(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final compact = media.size.height < 500;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius16),
       ),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: compact ? 8 : 24,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: maxWidth ?? 500,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+          maxHeight: media.size.height * (compact ? 0.95 : 0.9),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing24),
+          padding: EdgeInsets.all(compact ? AppTheme.spacing16 : AppTheme.spacing24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +139,7 @@ class AppDialog extends StatelessWidget {
                 ),
               ),
               if (actions != null && actions!.isNotEmpty) ...[
-                const SizedBox(height: AppTheme.spacing24),
+                const SizedBox(height: AppTheme.spacing16),
                 _buildActions(context),
               ],
             ],
@@ -256,8 +262,10 @@ class AppDialog extends StatelessWidget {
       );
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+    return Wrap(
+      alignment: WrapAlignment.end,
+      spacing: AppTheme.spacing8,
+      runSpacing: AppTheme.spacing8,
       children: actions!,
     );
   }

@@ -47,39 +47,34 @@ class AmiFilterControls extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Filter buttons - horizontally scrollable to avoid overflow on narrow screens
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...filters.map((filter) {
-                final type = filter['value'] as FilterType;
-                final isAllowed = allowed.contains(type);
-                final isSelected = filterType == type;
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppTheme.spacing8),
-                  child: FilterChip(
-                    label: Text(filter['label'] as String),
-                    selected: isSelected,
-                    onSelected: isAllowed
-                        ? (selected) {
-                            if (selected) {
-                              onFilterChange(type);
-                            }
-                          }
-                        : null,
-                    selectedColor: AppColors.primary.withOpacity(0.2),
-                    checkmarkColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
+        // Filter buttons wrap so Day/Week/Month/Year stay visible at high zoom.
+        Wrap(
+          spacing: AppTheme.spacing8,
+          runSpacing: AppTheme.spacing8,
+          children: [
+            ...filters.map((filter) {
+              final type = filter['value'] as FilterType;
+              final isAllowed = allowed.contains(type);
+              final isSelected = filterType == type;
+              return FilterChip(
+                label: Text(filter['label'] as String),
+                selected: isSelected,
+                onSelected: isAllowed
+                    ? (selected) {
+                        if (selected) {
+                          onFilterChange(type);
+                        }
+                      }
+                    : null,
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              );
+            }),
+          ],
         ),
         const SizedBox(height: AppTheme.spacing16),
         // Date navigation
@@ -164,39 +159,44 @@ class AmiFilterControls extends StatelessWidget {
         newDate = currentDate.add(const Duration(days: 7));
         break;
       case FilterType.month:
-        newDate = DateTime(currentDate.year, currentDate.month + 1, currentDate.day);
+        newDate = DateTime(currentDate.year, currentDate.month + 1, 1);
         break;
       case FilterType.year:
-        newDate = DateTime(currentDate.year + 1, currentDate.month, currentDate.day);
+        newDate = DateTime(currentDate.year + 1, 1, 1);
         break;
     }
-    if (!_isAfterLastSelectable(newDate)) onDateChange(newDate);
+    onDateChange(_clampToLastSelectable(newDate));
   }
 
   bool _isNextDisabled() {
-    DateTime newDate;
+    final last = DateTime(
+      lastSelectableDate.year,
+      lastSelectableDate.month,
+      lastSelectableDate.day,
+    );
+    final current = DateTime(currentDate.year, currentDate.month, currentDate.day);
     switch (filterType) {
       case FilterType.day:
-        newDate = currentDate.add(const Duration(days: 1));
-        break;
+        return !current.isBefore(last);
       case FilterType.week:
-        newDate = currentDate.add(const Duration(days: 7));
-        break;
+        final nextStart = current.add(const Duration(days: 7));
+        return nextStart.isAfter(last);
       case FilterType.month:
-        newDate = DateTime(currentDate.year, currentDate.month + 1, currentDate.day);
-        break;
+        return current.year > last.year ||
+            (current.year == last.year && current.month >= last.month);
       case FilterType.year:
-        newDate = DateTime(currentDate.year + 1, currentDate.month, currentDate.day);
-        break;
+        return current.year >= last.year;
     }
-    return _isAfterLastSelectable(newDate);
   }
 
-  /// True if [date] is after [lastSelectableDate] (date-only comparison).
-  bool _isAfterLastSelectable(DateTime date) {
+  DateTime _clampToLastSelectable(DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
-    final last = DateTime(lastSelectableDate.year, lastSelectableDate.month, lastSelectableDate.day);
-    return d.isAfter(last);
+    final last = DateTime(
+      lastSelectableDate.year,
+      lastSelectableDate.month,
+      lastSelectableDate.day,
+    );
+    return d.isAfter(last) ? last : d;
   }
 
   Future<void> _showDatePicker(BuildContext context) async {
@@ -260,10 +260,16 @@ class AmiFilterControls extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setState) {
+          final screenW = MediaQuery.of(context).size.width;
+          return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: const Text('Select year'),
-          content: SizedBox(
-            width: 280,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5,
+              maxWidth: (screenW - 48).clamp(200.0, 280.0),
+            ),
             child: DropdownButtonFormField<int>(
               initialValue: selectedYear <= maxYear ? selectedYear : maxYear,
               decoration: const InputDecoration(
@@ -286,7 +292,8 @@ class AmiFilterControls extends StatelessWidget {
               child: const Text('OK'),
             ),
           ],
-        ),
+          );
+        },
       ),
     );
 
@@ -318,10 +325,15 @@ class AmiFilterControls extends StatelessWidget {
           final displayMonth = allowedMonths.contains(selectedMonth) ? selectedMonth : allowedMonths.last;
           final displayYear = selectedYear <= maxYear ? selectedYear : maxYear;
           return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             title: const Text('Select month and year'),
-            content: SizedBox(
-              width: 280,
-              child: Column(
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+                maxWidth: (MediaQuery.of(context).size.width - 48).clamp(200.0, 280.0),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -349,6 +361,7 @@ class AmiFilterControls extends StatelessWidget {
                     onChanged: (v) => setState(() => selectedYear = v ?? selectedYear),
                   ),
                 ],
+              ),
               ),
             ),
             actions: [

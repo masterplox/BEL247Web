@@ -7,12 +7,13 @@ import '../../core/providers/account_verification_providers.dart';
 import '../../core/providers/feature_providers.dart';
 import '../../core/utils/account_connection_utils.dart';
 import '../../core/widgets/app_empty_state.dart';
+import '../../data/models/ami_bucket_parser.dart';
 import '../../data/models/ami_data.dart';
 import '../../data/models/api_response_dtos.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import 'ami_usage_date_limits.dart';
-import 'state/ami_usage_providers.dart' show amiDailyIntervalsProvider, amiDailyRangeProvider, amiMonthlyTotalsProvider, amiTouRangeDataProvider, DayTou;
+import 'state/ami_usage_providers.dart' show amiDailyIntervalsProvider, amiDailyRangeRowsProvider, amiMonthlyTotalsProvider, amiMonthlyTotalsResultProvider, amiTouRangeDataProvider, dayTouFromMonthlyRows, touTotalFromMonthlyRows, DayTou;
 import 'widgets/ami_day_chart.dart';
 import 'widgets/ami_detail_cards.dart'
     show AmiDetail, AmiDetailCard, HourlyDetail, DayDetail, MonthDetail;
@@ -38,8 +39,8 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   // Independent anchor dates per filter so changing one does not affect others.
   DateTime _dayDate = AmiUsageDateLimits.lastSelectableDate;
   DateTime _weekDate = AmiUsageDateLimits.lastSelectableDate;
-  DateTime _monthDate = DateTime.now();
-  DateTime _yearDate = DateTime.now();
+  DateTime _monthDate = AmiUsageDateLimits.lastSelectableDate;
+  DateTime _yearDate = AmiUsageDateLimits.lastSelectableDate;
   int? _selectedIndex;
 
   /// User-selected week range (any span up to 7 days). Null = use getWeekRange(_weekDate).
@@ -132,12 +133,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
         break;
       case FilterType.week:
         final range = _getWeekRange();
-        ref.invalidate(amiDailyRangeProvider((
-          meterId: meterId,
-          startDate: range.start,
-          endDate: range.end,
-        )));
-        ref.invalidate(amiTouRangeDataProvider((
+        ref.invalidate(amiDailyRangeRowsProvider((
           meterId: meterId,
           startDate: range.start,
           endDate: range.end,
@@ -145,19 +141,14 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
         break;
       case FilterType.month:
         final monthRange = getMonthRange(_monthDate);
-        ref.invalidate(amiDailyRangeProvider((
-          meterId: meterId,
-          startDate: monthRange.start,
-          endDate: monthRange.end,
-        )));
-        ref.invalidate(amiTouRangeDataProvider((
+        ref.invalidate(amiDailyRangeRowsProvider((
           meterId: meterId,
           startDate: monthRange.start,
           endDate: monthRange.end,
         )));
         break;
       case FilterType.year:
-        ref.invalidate(amiMonthlyTotalsProvider((meterId: meterId, year: _yearDate.year)));
+        ref.invalidate(amiMonthlyTotalsResultProvider((meterId: meterId, year: _yearDate.year)));
         break;
     }
   }
@@ -258,7 +249,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     // Watch the appropriate provider based on filter type
     final dataAsync = _watchDataProvider(meterId);
 
-    // For week/month: fetch TOU breakdown for stacked chart and consumption section
+    // Week/month: TOU comes from DailyRangeBucket. Year: MonthlyTotalsBucket.
     DateTime? rangeStart;
     DateTime? rangeEnd;
     if (_filterType == FilterType.week) {
@@ -277,11 +268,16 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             endDate: rangeEnd,
           )))
         : null;
-    final touTotal = touRangeAsync?.whenOrNull(data: (v) => v.total);
-    final touPerDay = touRangeAsync?.whenOrNull(data: (v) => v.perDay) ?? const <DayTou>[];
-    // TOU is considered "loading" for the UI when we expect a range (week/month)
-    // but the async value has not yet produced data for total consumption.
-    final isTouLoading = (rangeStart != null && rangeEnd != null) && touTotal == null;
+    final yearTouAsync = _filterType == FilterType.year
+        ? ref.watch(amiMonthlyTotalsProvider((meterId: meterId, year: _yearDate.year)))
+        : null;
+    final touTotal = touRangeAsync?.whenOrNull(data: (v) => v.total) ??
+        yearTouAsync?.whenOrNull(data: touTotalFromMonthlyRows);
+    final touPerDay = touRangeAsync?.whenOrNull(data: (v) => v.perDay) ??
+        yearTouAsync?.whenOrNull(data: dayTouFromMonthlyRows) ??
+        const <DayTou>[];
+    final isTouLoading = (rangeStart != null && rangeEnd != null) &&
+        touRangeAsync?.whenOrNull(data: (v) => v.total) == null;
 
     return Scaffold(
       // appBar: AppBar(
@@ -318,228 +314,68 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
               ),
               const SizedBox(height: AppTheme.spacing20),
 
-              // Data loading/error handling
-              dataAsync.when(
-                data: (data) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!hasPremiumAccess) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppTheme.spacing12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Text(
-                          'Basic access includes yearly usage history only. '
-                          'Upgrade to Premium Level to unlock day, week, and month views.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spacing12),
-                    ],
-                    AmiFilterControls(
-                      filterType: _filterType,
-                      onFilterChange: _handleFilterChange,
-                      currentDate: _currentFilterDate,
-                      onDateChange: _handleDateChange,
-                      dateLabel: data.dateLabel,
-                      lastSelectableDate: AmiUsageDateLimits.lastSelectableDate,
-                      weekRange: _filterType == FilterType.week
-                          ? DateTimeRange(
-                              start: _getWeekRange().start,
-                              end: _getWeekRange().end,
-                            )
-                          : null,
-                      onWeekRangeChange: _filterType == FilterType.week ? _handleWeekRangeChange : null,
-                      allowedFilters: allowedFilters,
+              if (!hasPremiumAccess) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.spacing12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
                     ),
-                    const SizedBox(height: AppTheme.spacing16),
-
-                    // Summary Cards
-                    AmiSummaryCards(
-                      totalKWh: _getSummaryTotalKwh(
-                        data.stats,
-                        filterType: _filterType,
-                        touPerDay: touPerDay,
-                      ),
-                      peakKWh: _getSummaryPeakKwh(
-                        data.stats,
-                        filterType: _filterType,
-                        touPerDay: touPerDay,
-                      ),
-                      peakTime: _getSummaryPeakLabel(
-                        data.stats,
-                        filterType: _filterType,
-                        touPerDay: touPerDay,
-                      ),
-                      avgKWh: _getSummaryAvgKwh(
-                        data.stats,
-                        filterType: _filterType,
-                        touPerDay: touPerDay,
-                      ),
-                      filterType: _filterType,
-                    ),
-                    const SizedBox(height: AppTheme.spacing20),
-                    /*
-                    // View Mode Toggle (kWh / Cost) - temporarily disabled
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildViewModeButton(
-                                context,
-                                ViewMode.kwh,
-                                Icons.bolt_outlined,
-                                'kWh',
-                              ),
-                              const SizedBox(width: 4),
-                              _buildViewModeButton(
-                                context,
-                                ViewMode.cost,
-                                Icons.attach_money_outlined,
-                                'Cost',
-                              ),
-                            ],
-                          ),
+                  ),
+                  child: Text(
+                    'Basic access includes yearly usage history only. '
+                    'Upgrade to Premium Level to unlock day, week, and month views.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
-                      ],
-                    ),
-                    */
-                    // Chart
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _getChartTitle(),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 12,
-                                    letterSpacing: 0.5,
-                                    color: AppColors.textSecondary,
-                                  ),
-                            ),
-                            Text(
-                              'Tap a point for details',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
-                                  ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Icon(
-                              Icons.schedule_outlined,
-                              size: 11,
-                              color: AppColors.textTertiary,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              _formatRefreshTime(_lastRefreshed),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                            const SizedBox(width: 2),
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: IconButton(
-                                onPressed: () => _handleRefresh(meterId),
-                                padding: EdgeInsets.zero,
-                                tooltip: 'Refresh data',
-                                icon: const Icon(
-                                  Icons.refresh_rounded,
-                                  size: 16,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (_filterType == FilterType.day)
-                          AmiDayChart(
-                            data: data.hourlyData,
-                            selectedHour: _selectedIndex,
-                            onSelectHour: (index) {
-                              setState(() {
-                                _selectedIndex = index;
-                              });
-                            },
-                          )
-                        else
-                          AmiPeriodChart(
-                            data: data.dailyData,
-                            filterType: _filterType,
-                            selectedIndex: _selectedIndex,
-                            onSelectIndex: (index) {
-                              setState(() {
-                                _selectedIndex = index;
-                              });
-                            },
-                            touPerDay: touPerDay.isNotEmpty ? touPerDay : null,
-                            showLoading: isTouLoading,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: AppTheme.spacing20),
-
-                    // Selected Detail Card
-                    if (_selectedIndex != null && data.selectedDetail != null)
-                      AmiDetailCard(
-                        detail: data.selectedDetail!,
-                        onClose: () {
-                          setState(() {
-                            _selectedIndex = null;
-                          });
-                        },
-                      ),
-                    // Time of Use Consumption (day: from hourlyData; week/month: from provider)
-                    if (_filterType != FilterType.year) ...[
-                      const SizedBox(height: AppTheme.spacing20),
-                      _buildTimeOfUseSection(
-                        context,
-                        filterType: _filterType,
-                        dayTou: _filterType == FilterType.day
-                            ? computeTouFromHourly(data.hourlyData)
-                            : null,
-                        rangeTou: touTotal,
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => const Center(
-                  child: AppEmptyState(
-                    title: 'Error Loading Data',
-                    message:
-                        'Failed to load smart meter data. Please try again.',
-                    icon: Icons.error_outline,
+                const SizedBox(height: AppTheme.spacing12),
+              ],
+              AmiFilterControls(
+                filterType: _filterType,
+                onFilterChange: _handleFilterChange,
+                currentDate: _currentFilterDate,
+                onDateChange: _handleDateChange,
+                dateLabel: _filterDateLabel,
+                lastSelectableDate: AmiUsageDateLimits.lastSelectableDate,
+                weekRange: _filterType == FilterType.week
+                    ? DateTimeRange(
+                        start: _getWeekRange().start,
+                        end: _getWeekRange().end,
+                      )
+                    : null,
+                onWeekRangeChange:
+                    _filterType == FilterType.week ? _handleWeekRangeChange : null,
+                allowedFilters: allowedFilters,
+              ),
+              const SizedBox(height: AppTheme.spacing16),
+
+              dataAsync.when(
+                data: (data) => _buildLoadedContent(
+                  context,
+                  data: data,
+                  meterId: meterId,
+                  touPerDay: touPerDay,
+                  touTotal: touTotal,
+                  isTouLoading: isTouLoading,
+                ),
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 80),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (error, stack) => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(
+                    child: AppEmptyState(
+                      title: 'Error Loading Data',
+                      message:
+                          'Failed to load smart meter data. Please try again.',
+                      icon: Icons.error_outline,
+                    ),
                   ),
                 ),
               ),
@@ -550,6 +386,170 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     );
   }
 
+  String get _filterDateLabel {
+    switch (_filterType) {
+      case FilterType.day:
+        return _formatDateLong(_dayDate);
+      case FilterType.week:
+        final range = _getWeekRange();
+        return formatDateRange(range.start, range.end);
+      case FilterType.month:
+        return _formatMonthYear(_monthDate);
+      case FilterType.year:
+        return _yearDate.year.toString();
+    }
+  }
+
+  Widget _buildLoadedContent(
+    BuildContext context, {
+    required ({
+      List<DailyReading> dailyData,
+      List<HourlyData> hourlyData,
+      dynamic stats,
+      String dateLabel,
+      AmiDetail? selectedDetail,
+    }) data,
+    required int meterId,
+    required List<DayTou> touPerDay,
+    required TouConsumption? touTotal,
+    required bool isTouLoading,
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AmiSummaryCards(
+            totalKWh: _getSummaryTotalKwh(
+              data.stats,
+              filterType: _filterType,
+              touPerDay: touPerDay,
+            ),
+            peakKWh: _getSummaryPeakKwh(
+              data.stats,
+              filterType: _filterType,
+              touPerDay: touPerDay,
+            ),
+            peakTime: _getSummaryPeakLabel(
+              data.stats,
+              filterType: _filterType,
+              touPerDay: touPerDay,
+            ),
+            avgKWh: _getSummaryAvgKwh(
+              data.stats,
+              filterType: _filterType,
+              touPerDay: touPerDay,
+            ),
+            filterType: _filterType,
+          ),
+          const SizedBox(height: AppTheme.spacing20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  Text(
+                    _getChartTitle(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
+                  Text(
+                    'Tap a point for details',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Icon(
+                    Icons.schedule_outlined,
+                    size: 11,
+                    color: AppColors.textTertiary,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    _formatRefreshTime(_lastRefreshed),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: IconButton(
+                      onPressed: () => _handleRefresh(meterId),
+                      padding: EdgeInsets.zero,
+                      tooltip: 'Refresh data',
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (_filterType == FilterType.day)
+                AmiDayChart(
+                  data: data.hourlyData,
+                  selectedHour: _selectedIndex,
+                  onSelectHour: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                )
+              else
+                AmiPeriodChart(
+                  data: data.dailyData,
+                  filterType: _filterType,
+                  selectedIndex: _selectedIndex,
+                  onSelectIndex: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                  touPerDay: touPerDay.isNotEmpty ? touPerDay : null,
+                  showLoading: isTouLoading,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacing20),
+          if (_selectedIndex != null && data.selectedDetail != null)
+            AmiDetailCard(
+              detail: data.selectedDetail!,
+              onClose: () {
+                setState(() {
+                  _selectedIndex = null;
+                });
+              },
+            ),
+          const SizedBox(height: AppTheme.spacing20),
+          _buildTimeOfUseSection(
+            context,
+            filterType: _filterType,
+            dayTou: _filterType == FilterType.day
+                ? computeTouFromHourly(data.hourlyData)
+                : null,
+            rangeTou: _filterType == FilterType.day ? null : touTotal,
+          ),
+        ],
+      );
+
   Widget _buildTimeOfUseSection(
     BuildContext context, {
     required FilterType filterType,
@@ -557,7 +557,6 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     TouConsumption? rangeTou,
   }) {
     final tou = dayTou ?? rangeTou;
-    final isMobile = MediaQuery.of(context).size.width < AppTheme.tabletBreakpoint;
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacing16),
       decoration: BoxDecoration(
@@ -621,67 +620,54 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
               padding: EdgeInsets.all(AppTheme.spacing12),
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (isMobile)
-            Column(
-              children: [
-                _buildTimeOfUsePeriod(
-                  context,
-                  'Off-Peak',
-                  '12:00 AM - 10:00 AM',
-                  AppColors.primary,
-                  tou.offPeakKwh,
-                ),
-                const SizedBox(height: AppTheme.spacing12),
-                _buildTimeOfUsePeriod(
-                  context,
-                  'Peak',
-                  '11:00 AM - 8:00 PM',
-                  AppColors.info,
-                  tou.peakKwh,
-                ),
-                const SizedBox(height: AppTheme.spacing12),
-                _buildTimeOfUsePeriod(
-                  context,
-                  'Mid-Peak',
-                  '9:00 PM - 11:00 PM',
-                  AppColors.chart3,
-                  tou.midPeakKwh,
-                ),
-              ],
-            )
           else
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTimeOfUsePeriod(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final useColumn = constraints.maxWidth < 640;
+                final periods = [
+                  _buildTimeOfUsePeriod(
                     context,
                     'Off-Peak',
                     '12:00 AM - 10:00 AM',
                     AppColors.primary,
                     tou.offPeakKwh,
                   ),
-                ),
-                const SizedBox(width: AppTheme.spacing12),
-                Expanded(
-                  child: _buildTimeOfUsePeriod(
+                  _buildTimeOfUsePeriod(
                     context,
                     'Peak',
                     '11:00 AM - 8:00 PM',
                     AppColors.info,
                     tou.peakKwh,
                   ),
-                ),
-                const SizedBox(width: AppTheme.spacing12),
-                Expanded(
-                  child: _buildTimeOfUsePeriod(
+                  _buildTimeOfUsePeriod(
                     context,
                     'Mid-Peak',
                     '9:00 PM - 11:00 PM',
                     AppColors.chart3,
                     tou.midPeakKwh,
                   ),
-                ),
-              ],
+                ];
+                if (useColumn) {
+                  return Column(
+                    children: [
+                      periods[0],
+                      const SizedBox(height: AppTheme.spacing12),
+                      periods[1],
+                      const SizedBox(height: AppTheme.spacing12),
+                      periods[2],
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: periods[0]),
+                    const SizedBox(width: AppTheme.spacing12),
+                    Expanded(child: periods[1]),
+                    const SizedBox(width: AppTheme.spacing12),
+                    Expanded(child: periods[2]),
+                  ],
+                );
+              },
             ),
         ],
       ),
@@ -698,40 +684,46 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       Container(
         padding: const EdgeInsets.all(AppTheme.spacing12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: AppTheme.spacing12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(fontWeight: FontWeight.w500),
+            Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: AppTheme.spacing8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        time,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    time,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+            const SizedBox(height: AppTheme.spacing8),
             Text(
               '${kwh.toStringAsFixed(1)} kWh',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -880,6 +872,29 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     return '${months[date.month - 1]} ${date.day}';
   }
 
+  DailyStats _applyBucketSummary(
+    DailyStats computed,
+    AmiBucketSummary summary, {
+    List<String>? monthNames,
+  }) {
+    var peakDate = computed.peakDate;
+    if (summary.peakDate != null) {
+      peakDate = formatAmiPeakDate(summary.peakDate!);
+    } else if (summary.peakMonth != null &&
+        monthNames != null &&
+        summary.peakMonth! >= 1 &&
+        summary.peakMonth! <= 12) {
+      peakDate = monthNames[summary.peakMonth! - 1];
+    }
+    return DailyStats(
+      totalKWh: summary.totalKwh ?? computed.totalKWh,
+      estimatedCost: computed.estimatedCost,
+      avgKWh: summary.avgKwh ?? computed.avgKWh,
+      peakKWh: summary.peakKwh ?? computed.peakKWh,
+      peakDate: peakDate,
+    );
+  }
+
   /// Transform IntervalUsageEntryDto to IntervalReading
   IntervalReading _dtoToIntervalReading(IntervalUsageEntryDto dto) =>
       IntervalReading(
@@ -968,7 +983,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     if (_filterType == FilterType.week) {
       final range = _getWeekRange();
       final dailyAsync = ref.watch(
-        amiDailyRangeProvider((
+        amiDailyRangeRowsProvider((
           meterId: meterId,
           startDate: range.start,
           endDate: range.end,
@@ -976,12 +991,12 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       );
 
       return dailyAsync.when(
-        data: (dailyUsages) {
+        data: (result) {
           // Transform DTOs to DailyReading and normalize into a fixed 7-day week.
           final startDay = DateTime(range.start.year, range.start.month, range.start.day);
           final endDay = DateTime(range.end.year, range.end.month, range.end.day);
           final byDay = <String, DailyReading>{};
-          for (final dto in dailyUsages) {
+          for (final dto in result.days.map((row) => row.toDto())) {
             final reading = _dtoToDailyReading(dto, meterIdStr);
             final parsed =
                 DateTime.tryParse(reading.readDate.trim().split(RegExp('[T ]')).first);
@@ -1006,7 +1021,10 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
                   ),
             );
           }
-          final stats = calculateDailyStats(dailyData);
+          final stats = _applyBucketSummary(
+            calculateDailyStats(dailyData),
+            result.summary,
+          );
           final dateLabel = formatDateRange(range.start, range.end);
 
           DayDetail? selectedDetail;
@@ -1037,7 +1055,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     if (_filterType == FilterType.month) {
       final monthRange = getMonthRange(_monthDate);
       final dailyAsync = ref.watch(
-        amiDailyRangeProvider((
+        amiDailyRangeRowsProvider((
           meterId: meterId,
           startDate: monthRange.start,
           endDate: monthRange.end,
@@ -1045,12 +1063,12 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       );
 
       return dailyAsync.when(
-        data: (dailyUsages) {
+        data: (result) {
           // Normalize to a full month, marking days with no reads as missing.
           final monthStart = DateTime(monthRange.start.year, monthRange.start.month, monthRange.start.day);
           final monthEnd = DateTime(monthRange.end.year, monthRange.end.month, monthRange.end.day);
           final byDayMap = <String, DailyReading>{};
-          for (final dto in dailyUsages) {
+          for (final dto in result.days.map((row) => row.toDto())) {
             final reading = _dtoToDailyReading(dto, meterIdStr);
             final parsed = DateTime.tryParse(reading.readDate.trim().split(RegExp(r'[\sT]')).first);
             if (parsed == null) continue;
@@ -1075,7 +1093,10 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             );
           }
 
-          final stats = calculateDailyStats(dailyData);
+          final stats = _applyBucketSummary(
+            calculateDailyStats(dailyData),
+            result.summary,
+          );
           final dateLabel = _formatMonthYear(_monthDate);
 
           DayDetail? selectedDetail;
@@ -1107,11 +1128,13 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
 
     // Year view - use MonthlyTotals endpoint
     final monthlyAsync = ref.watch(
-      amiMonthlyTotalsProvider((meterId: meterId, year: _yearDate.year)),
+      amiMonthlyTotalsResultProvider((meterId: meterId, year: _yearDate.year)),
     );
 
     return monthlyAsync.when(
-      data: (monthlyUsages) {
+      data: (result) {
+        final monthlyRows = result.months;
+        final monthlyUsages = monthlyRows.map((row) => row.toDto()).toList();
         if (monthlyUsages.isEmpty) {
           // Avoid reduce/firstWhere on empty; show empty chart state upstream.
           final stats = DailyStats(
@@ -1130,15 +1153,12 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           ));
         }
 
-        // Transform MonthlyUsageEntryDto to DailyReading for chart
-        final monthlyData = monthlyUsages
-            .map((dto) => _monthlyDtoToDailyReading(dto, meterIdStr))
-            .toList();
-
-        // Calculate stats from monthly data
-        final monthlyTotals = <int, double>{};
+        // Transform monthly totals into a fixed 12-bar year chart.
+        final byMonth = <int, MonthlyUsageEntryDto>{};
         for (final dto in monthlyUsages) {
-          monthlyTotals[dto.month - 1] = dto.monthlyUsageKwh;
+          if (dto.month >= 1 && dto.month <= 12) {
+            byMonth[dto.month] = dto;
+          }
         }
 
         const monthNames = [
@@ -1156,33 +1176,78 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           'Dec',
         ];
 
-        final totalKWh = monthlyTotals.values.fold<double>(0, (a, b) => a + b);
-        final avgKWh = monthlyTotals.isEmpty ? 0.0 : totalKWh / monthlyTotals.length;
-        final peakMonth = monthlyTotals.entries.reduce(
-          (max, entry) => entry.value > max.value ? entry : max,
-        );
-
-        final stats = DailyStats(
-          totalKWh: double.parse(totalKWh.toStringAsFixed(2)),
-          estimatedCost: 0, // kept in model; intentionally not shown in UI
-          avgKWh: double.parse(avgKWh.toStringAsFixed(2)),
-          peakKWh: double.parse(peakMonth.value.toStringAsFixed(2)),
-          peakDate: monthNames[peakMonth.key],
-        );
-
-          MonthDetail? selectedDetail;
-          if (_selectedIndex != null && _selectedIndex! < monthlyData.length) {
-            final monthIndex = _selectedIndex!;
-            final monthDto = monthlyUsages.firstWhere(
-              (dto) => dto.month - 1 == monthIndex,
-              orElse: () => monthlyUsages.first,
+        final lastSelectable = AmiUsageDateLimits.lastSelectableDate;
+        final cutoffMonth = DateTime(lastSelectable.year, lastSelectable.month, 1);
+        final monthlyData = <DailyReading>[];
+        for (var month = 1; month <= 12; month++) {
+          final dto = byMonth[month];
+          final monthDate = DateTime(_yearDate.year, month, 1);
+          if (dto == null) {
+            monthlyData.add(
+              DailyReading(
+                meter: meterIdStr,
+                readDate:
+                    '${_yearDate.year}-${month.toString().padLeft(2, '0')}-01 00:00:00.000',
+                kWhUsed: '0',
+                missing: !monthDate.isBefore(cutoffMonth),
+              ),
             );
+          } else {
+            monthlyData.add(_monthlyDtoToDailyReading(dto, meterIdStr));
+          }
+        }
+
+        final monthsWithUsage = byMonth.values
+            .where((dto) => dto.monthlyUsageKwh > 0)
+            .toList();
+        if (monthsWithUsage.isEmpty) {
+          final stats = DailyStats(
+            totalKWh: 0,
+            estimatedCost: 0,
+            avgKWh: 0,
+            peakKWh: 0,
+            peakDate: '-',
+          );
+          return AsyncValue.data((
+            dailyData: monthlyData,
+            hourlyData: <HourlyData>[],
+            stats: stats,
+            dateLabel: _yearDate.year.toString(),
+            selectedDetail: null,
+          ));
+        }
+
+        final totalKWh =
+            monthsWithUsage.fold<double>(0, (sum, dto) => sum + dto.monthlyUsageKwh);
+        final avgKWh = totalKWh / monthsWithUsage.length;
+        final peak = monthsWithUsage.reduce(
+          (a, b) => a.monthlyUsageKwh > b.monthlyUsageKwh ? a : b,
+        );
+
+        final stats = _applyBucketSummary(
+          DailyStats(
+            totalKWh: double.parse(totalKWh.toStringAsFixed(2)),
+            estimatedCost: 0,
+            avgKWh: double.parse(avgKWh.toStringAsFixed(2)),
+            peakKWh: double.parse(peak.monthlyUsageKwh.toStringAsFixed(2)),
+            peakDate: monthNames[peak.month - 1],
+          ),
+          result.summary,
+          monthNames: monthNames,
+        );
+
+        MonthDetail? selectedDetail;
+        if (_selectedIndex != null && _selectedIndex! < monthlyData.length) {
+          final monthIndex = _selectedIndex!;
+          final monthDto = byMonth[monthIndex + 1];
+          if (monthDto != null && !monthlyData[monthIndex].missing) {
             selectedDetail = MonthDetail(
               month: monthNames[monthIndex],
               year: _yearDate.year,
               kWh: monthDto.monthlyUsageKwh,
             );
           }
+        }
 
         return AsyncValue.data((
           dailyData: monthlyData,

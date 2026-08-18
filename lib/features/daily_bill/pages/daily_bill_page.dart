@@ -125,31 +125,50 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
           ),
           const SizedBox(height: AppTheme.spacing16),
 
-          // Peak & Lowest tiles
-          Row(
-            children: [
-              Expanded(
-                child: _buildPeakTile(dailyBillState.currentConsumption),
-              ),
-              const SizedBox(width: AppTheme.spacing16),
-              Expanded(child: _buildLowTile(dailyBillState.currentConsumption)),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacing16),
-
-          // Average/Interval and vs Recent Average tiles
-          Row(
-            children: [
-              Expanded(
-                child: _buildAverageTile(dailyBillState.currentConsumption),
-              ),
-              const SizedBox(width: AppTheme.spacing16),
-              Expanded(
-                child: _buildProjectedMonthlyTile(
-                  dailyBillState.currentConsumption,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stack = constraints.maxWidth < 480;
+              final peakLow = [
+                _buildPeakTile(dailyBillState.currentConsumption),
+                _buildLowTile(dailyBillState.currentConsumption),
+              ];
+              final avgProjected = [
+                _buildAverageTile(dailyBillState.currentConsumption),
+                _buildProjectedMonthlyTile(dailyBillState.currentConsumption),
+              ];
+              if (stack) {
+                return Column(
+                  children: [
+                    peakLow[0],
+                    const SizedBox(height: AppTheme.spacing16),
+                    peakLow[1],
+                    const SizedBox(height: AppTheme.spacing16),
+                    avgProjected[0],
+                    const SizedBox(height: AppTheme.spacing16),
+                    avgProjected[1],
+                  ],
+                );
+              }
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: peakLow[0]),
+                      const SizedBox(width: AppTheme.spacing16),
+                      Expanded(child: peakLow[1]),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spacing16),
+                  Row(
+                    children: [
+                      Expanded(child: avgProjected[0]),
+                      const SizedBox(width: AppTheme.spacing16),
+                      Expanded(child: avgProjected[1]),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppTheme.spacing16),
 

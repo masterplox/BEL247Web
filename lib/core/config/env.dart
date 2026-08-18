@@ -25,6 +25,15 @@ class EnvConfig {
   /// AMI mock flag is also hard-disabled – AMI always uses live APIs.
   static bool get useMockAmiUsage => false;
 
+  /// When true, mobile phone visitors are blocked from the login page and shown
+  /// the "download the app" landing instead. Tablets are never blocked.
+  ///
+  /// Disabled by default so phones can sign in to the web portal. Flip to `true`
+  /// here, or pass `--dart-define=BLOCK_MOBILE_PHONES=true` at build time, to
+  /// bring the block back.
+  static bool get blockMobilePhones =>
+      const bool.fromEnvironment('BLOCK_MOBILE_PHONES');
+
   static String get encryptionKey {
     const key = String.fromEnvironment('ENCRYPTION_KEY');
     // If not provided via --dart-define, use default value

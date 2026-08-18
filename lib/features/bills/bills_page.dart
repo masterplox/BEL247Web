@@ -10,7 +10,6 @@ import '../../core/widgets/app_page_scaffold.dart';
 import '../../core/widgets/app_responsive_layout.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../data/models/user.dart';
-import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import 'state/bills_providers.dart' as bills_state;
 import 'widgets/account_ledger_widget.dart';
@@ -51,92 +50,21 @@ class DesktopBillsLayout extends ConsumerWidget {
   const DesktopBillsLayout({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        // padding: EdgeInsets.all(AppTheme.spacing24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // BillsHeader(),
-            // SizedBox(height: AppTheme.spacing24),
-            // Row(
-            //   crossAxisAlignment: CrossAxisAlignment.start,
-            //   children: [
-            //     Expanded(
-            //       flex: 1,
-            //       child: Column(
-            //         children: [
-            //           AccountSummaryCard(),
-            //           SizedBox(height: AppTheme.spacing16),
-            //           PaymentCard(),
-            //         ],
-            //       ),
-            //     ),
-            //     SizedBox(width: AppTheme.spacing16),
-            //     Expanded(
-            //       flex: 2,
-            //       child: AccountLedgerCard(),
-            //     ),
-            //   ],
-            // ),
-            AccountLedgerCard(),
-          ],
-        ),
-      );
+  Widget build(BuildContext context, WidgetRef ref) => const AccountLedgerCard();
 }
 
 class TabletBillsLayout extends ConsumerWidget {
   const TabletBillsLayout({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        // padding: EdgeInsets.all(AppTheme.spacing20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // BillsHeader(),
-            // SizedBox(height: AppTheme.spacing20),
-            // Row(
-            //   crossAxisAlignment: CrossAxisAlignment.start,
-            //   children: [
-            //     Expanded(
-            //       child: AccountSummaryCard(),
-            //     ),
-            //     SizedBox(width: AppTheme.spacing16),
-            //     Expanded(
-            //       child: PaymentCard(),
-            //     ),
-            //   ],
-            // ),
-            // SizedBox(height: AppTheme.spacing20),
-            AccountLedgerCard(),
-          ],
-        ),
-      );
+  Widget build(BuildContext context, WidgetRef ref) => const AccountLedgerCard();
 }
 
 class MobileBillsLayout extends ConsumerWidget {
   const MobileBillsLayout({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => const SingleChildScrollView(
-        // padding: EdgeInsets.all(AppTheme.spacing16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            //BillsHeader(),
-            SizedBox(height: AppTheme.spacing16),
-            Column(
-              children: [
-                // AccountSummaryCard(),
-                // SizedBox(height: AppTheme.spacing16),
-                // PaymentCard(),
-                // SizedBox(height: AppTheme.spacing16),
-                AccountLedgerCard(),
-              ],
-            ),
-          ],
-        ),
-      );
+  Widget build(BuildContext context, WidgetRef ref) => const AccountLedgerCard();
 }
 
 class BillsHeader extends StatelessWidget {
@@ -241,9 +169,7 @@ class AccountLedgerCard extends ConsumerWidget {
     final transactionHistoryAsync = ref.watch(bills_state.transactionHistoryProvider);
     
     return AppCard(
-      child: SizedBox(
-        height: 600, // Fixed height for the card
-        child: billsAsync.when(
+      child: billsAsync.when(
           loading: () => const AccountLedgerWidget(
             bills: [],
             isLoading: true,
@@ -294,7 +220,6 @@ class AccountLedgerCard extends ConsumerWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }

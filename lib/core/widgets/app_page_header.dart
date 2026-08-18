@@ -17,33 +17,52 @@ class AppPageHeader extends StatelessWidget {
   final List<Widget>? actions;
 
   @override
-  Widget build(BuildContext context) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 640;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: isNarrow ? 20 : 28,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                  if (actions != null)
+                    Flexible(
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: AppTheme.spacing8,
+                        runSpacing: AppTheme.spacing8,
+                        children: actions!,
+                      ),
+                    ),
+                ],
               ),
-            ),
-            if (actions != null) ...actions!,
-          ],
-        ),
-        if (subtitle != null) ...[
-          const SizedBox(height: AppTheme.spacing8),
-          Text(
-            subtitle!,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
+              if (subtitle != null) ...[
+                const SizedBox(height: AppTheme.spacing8),
+                Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
-          ),
-        ],
-      ],
-    );
+              ],
+            ],
+          );
+        },
+      );
 }
 

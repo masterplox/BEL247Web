@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_card.dart';
-import '../../../data/models/billing_period.dart';
+import '../../../data/models/api_response_dtos.dart';
+import '../../../data/models/usage_dashboard_cards.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../state/ami_dashboard_usage_providers.dart'
+    show amiDashboardMonthlyTotalsProvider, usageDashboardCardsProvider;
 import '../state/billing_period_providers.dart';
 
 /// Dashboard usage trend chart for AMI meters.
 ///
-/// Mirrors `ConsumptionChartWidget` but is scoped to billing periods: the
-/// "Period" view plots days inside the current cycle, the "History" view plots
-/// one point per completed billing period.
+/// Period plots DailyRangeBucket days in the current billed window. History
+/// plots MonthlyTotalsBucket months for the current year.
 class AmiConsumptionChartWidget extends ConsumerStatefulWidget {
   const AmiConsumptionChartWidget({super.key});
 
@@ -27,80 +29,117 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
 
   @override
   Widget build(BuildContext context) {
-    final periodsAsync = ref.watch(billingPeriodsProvider);
+    final cardsAsync = ref.watch(usageDashboardCardsProvider);
 
-    final AsyncValue<List<Map<String, dynamic>>> chartDataAsync =
-        periodsAsync.whenData(
-      (result) => _range == _AmiTrendRange.period
-          ? _preparePeriodChartData(result)
-          : _prepareHistoryChartData(result),
-    );
+    if (_range == _AmiTrendRange.period) {
+      final trendAsync = ref.watch(amiBillingPeriodTrendProvider);
+      return trendAsync.when(
+        loading: () => _buildChartCard(
+          context,
+          _rangeLabel(cards: cardsAsync.valueOrNull),
+          const [],
+          chartLoading: true,
+        ),
+        error: (_, __) => _buildChartCard(
+          context,
+          _rangeLabel(cards: cardsAsync.valueOrNull),
+          const [],
+        ),
+        data: (rows) => _buildChartCard(
+          context,
+          _rangeLabel(cards: cardsAsync.valueOrNull),
+          _preparePeriodChartDataFromDaily(rows),
+        ),
+      );
+    }
 
-    final rangeLabel = _rangeLabel(periodsAsync.valueOrNull);
-
-    return chartDataAsync.when(
-      loading: () => _buildLoadingCard(context),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (chartData) {
-        final hasData = !_isChartDataEffectivelyEmpty(chartData);
-        return AppCard(
-          padding: const EdgeInsets.all(AppTheme.spacing20),
-          showBorder: true,
-          borderWidth: 1,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Usage Trend (kWh)',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                      ),
-                      const SizedBox(height: AppTheme.spacing4),
-                      Text(
-                        rangeLabel,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                      ),
-                    ],
-                  ),
-                  _buildRangeToggle(context),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spacing16),
-              SizedBox(
-                height: 160,
-                child: hasData
-                    ? LineChart(_buildLineChartData(chartData))
-                    : _buildEmptyChartArea(context),
-              ),
-              const SizedBox(height: AppTheme.spacing16),
-            ],
-          ),
-        );
-      },
+    final historyAsync = ref.watch(amiDashboardMonthlyTotalsProvider);
+    return historyAsync.when(
+      loading: () => _buildChartCard(
+        context,
+        _rangeLabel(),
+        const [],
+        chartLoading: true,
+      ),
+      error: (_, __) => _buildChartCard(context, _rangeLabel(), const []),
+      data: (rows) => _buildChartCard(
+        context,
+        _rangeLabel(historyRows: rows),
+        _prepareHistoryChartDataFromMonthly(rows),
+      ),
     );
   }
 
-  String _rangeLabel(BillingPeriodsResult? result) {
-    if (result == null) return '';
+  Widget _buildChartCard(
+    BuildContext context,
+    String rangeLabel,
+    List<Map<String, dynamic>> chartData, {
+    bool chartLoading = false,
+  }) {
+    final hasData = !_isChartDataEffectivelyEmpty(chartData);
+    return AppCard(
+      padding: const EdgeInsets.all(AppTheme.spacing20),
+      showBorder: true,
+      borderWidth: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Usage Trend (kWh)',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing4),
+                  Text(
+                    rangeLabel,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                  ),
+                ],
+              ),
+              _buildRangeToggle(context),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacing16),
+          SizedBox(
+            height: 160,
+            child: chartLoading
+                ? const Center(child: CircularProgressIndicator())
+                : hasData
+                    ? LineChart(_buildLineChartData(chartData))
+                    : _buildEmptyChartArea(context),
+          ),
+          const SizedBox(height: AppTheme.spacing16),
+        ],
+      ),
+    );
+  }
 
+  String _rangeLabel({
+    UsageDashboardCardsResult? cards,
+    List<MonthlyUsageEntryDto>? historyRows,
+  }) {
     if (_range == _AmiTrendRange.period) {
-      return result.current?.label ?? '';
+      return cards?.currentPeriodLabel.trim() ?? '';
     }
 
-    final closed = result.closedPeriods;
-    if (closed.isEmpty) return '';
-    return '${closed.length} completed billing periods';
+    final year = DateTime.now().year;
+    if (historyRows == null) return '$year';
+    final months = historyRows
+        .where((row) => row.month >= 1 && row.month <= 12 && row.monthlyUsageKwh > 0)
+        .length;
+    if (months == 0) return '$year';
+    return months == 1 ? '1 month in $year' : '$months months in $year';
   }
 
   bool _isChartDataEffectivelyEmpty(List<Map<String, dynamic>> chartData) =>
@@ -121,7 +160,9 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
               ),
               const SizedBox(height: AppTheme.spacing12),
               Text(
-                'No usage data for this period yet',
+                _range == _AmiTrendRange.history
+                    ? 'No monthly usage history yet'
+                    : 'No usage data for this period yet',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
@@ -140,13 +181,6 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
             ],
           ),
         ),
-      );
-
-  Widget _buildLoadingCard(BuildContext context) => const AppCard(
-        padding: EdgeInsets.all(AppTheme.spacing20),
-        showBorder: true,
-        borderWidth: 1,
-        child: Center(child: CircularProgressIndicator()),
       );
 
   Widget _buildRangeToggle(BuildContext context) => Container(
@@ -204,46 +238,67 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
         ),
       );
 
-  /// One point per completed billing period.
-  List<Map<String, dynamic>> _prepareHistoryChartData(
-    BillingPeriodsResult result,
-  ) =>
-      result.closedPeriods
-          .map(
-            (period) => {
-              'label': period.label,
-              'consumption': period.usageKwh,
-            },
-          )
-          .toList();
-
-  /// One point per day inside the current billing period.
-  List<Map<String, dynamic>> _preparePeriodChartData(
-    BillingPeriodsResult result,
+  /// One point per month from MonthlyTotalsBucket for the current year.
+  List<Map<String, dynamic>> _prepareHistoryChartDataFromMonthly(
+    List<MonthlyUsageEntryDto> rows,
   ) {
-    // De-dupe by date, keep the max for a day to avoid double counting.
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final byMonth = <int, double>{};
+    for (final row in rows) {
+      if (row.month < 1 || row.month > 12) continue;
+      if (row.monthlyUsageKwh <= 0) continue;
+      final previous = byMonth[row.month];
+      if (previous == null || row.monthlyUsageKwh > previous) {
+        byMonth[row.month] = row.monthlyUsageKwh;
+      }
+    }
+    final months = byMonth.keys.toList()..sort();
+    return [
+      for (final month in months)
+        {
+          'label': monthNames[month - 1],
+          'consumption': byMonth[month] ?? 0.0,
+        },
+    ];
+  }
+
+  /// One point per day from DailyRangeBucket totals.
+  List<Map<String, dynamic>> _preparePeriodChartDataFromDaily(
+    List<DailyUsageEntryDto> rows,
+  ) {
     final byDay = <DateTime, double>{};
-    for (final r in result.currentPeriodDaily) {
-      final dateStr = r.usageDate.trim().split(RegExp('[T ]')).first;
+    for (final row in rows) {
+      final dateStr = row.usageDate.trim().split(RegExp('[T ]')).first;
       final d = DateTime.tryParse(dateStr);
-      if (d == null) continue;
+      if (d == null || d.year < 1900) continue;
       final day = DateTime(d.year, d.month, d.day);
       final prev = byDay[day];
-      if (prev == null || r.dailyUsageKwh > prev) {
-        byDay[day] = r.dailyUsageKwh;
+      if (prev == null || row.dailyUsageKwh > prev) {
+        byDay[day] = row.dailyUsageKwh;
       }
     }
 
-    final days = byDay.keys.toList()..sort((a, b) => a.compareTo(b));
-    return days
-        .map((d) {
-          final kwh = byDay[d] ?? 0.0;
-          return {
-            'label': d.day.toString(),
-            'consumption': kwh,
-          };
-        })
-        .toList();
+    final days = byDay.keys.toList()..sort();
+    return [
+      for (final d in days)
+        {
+          'label': '${d.month}/${d.day}',
+          'consumption': byDay[d] ?? 0.0,
+        },
+    ];
   }
 
   LineChartData _buildLineChartData(List<Map<String, dynamic>> chartData) {
@@ -275,9 +330,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    _range == _AmiTrendRange.period
-                        ? _formatOrdinalDay(chartData[index]['label'] as String)
-                        : chartData[index]['label'] as String,
+                    chartData[index]['label'] as String,
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 10,
@@ -347,22 +400,6 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
         ),
       ),
     );
-  }
-
-  String _formatOrdinalDay(String dayText) {
-    final day = int.tryParse(dayText);
-    if (day == null) return dayText;
-    if (day >= 11 && day <= 13) return '${day}th';
-    switch (day % 10) {
-      case 1:
-        return '${day}st';
-      case 2:
-        return '${day}nd';
-      case 3:
-        return '${day}rd';
-      default:
-        return '${day}th';
-    }
   }
 }
 

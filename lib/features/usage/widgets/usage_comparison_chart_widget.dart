@@ -343,13 +343,13 @@ class _UsageComparisonChartWidgetState
 
           // Legend
           const SizedBox(height: AppTheme.spacing16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppTheme.spacing16,
+            runSpacing: AppTheme.spacing8,
             children: [
               _buildLegendItem(context, yearTwoLabel, colorYearTwo),
-              const SizedBox(width: AppTheme.spacing16),
               _buildLegendItem(context, lastYearLabel, colorLastYear),
-              const SizedBox(width: AppTheme.spacing16),
               _buildLegendItem(context, thisYearLabel, colorThisYear),
             ],
           ),

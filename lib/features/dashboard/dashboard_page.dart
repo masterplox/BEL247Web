@@ -13,7 +13,7 @@ import '../../../core/widgets/app_page_scaffold.dart';
 import '../../../features/usage/state/meter_readings_providers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import 'state/billing_period_providers.dart';
+import 'state/ami_dashboard_usage_providers.dart' show usageDashboardCardsProvider;
 import 'widgets/account_details_widget.dart';
 import 'widgets/account_verification_banner.dart';
 import 'widgets/ami_insights_disclaimer_banner.dart';
@@ -66,7 +66,7 @@ class DashboardPage extends ConsumerWidget {
 
         final header = LayoutBuilder(
           builder: (context, constraints) {
-            final isMobile = constraints.maxWidth < 640;
+            final isMobile = constraints.maxWidth < AppTheme.tabletBreakpoint;
             if (isMobile) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,6 +77,8 @@ class DashboardPage extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                           fontSize: 20,
                         ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppTheme.spacing4),
                   Text(
@@ -85,6 +87,8 @@ class DashboardPage extends ConsumerWidget {
                           color: AppColors.textSecondary,
                           fontSize: 13,
                         ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppTheme.spacing8),
                   
@@ -99,43 +103,54 @@ class DashboardPage extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      greetingTitle,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 20,
-                          ),
-                    ),
-                    const SizedBox(height: AppTheme.spacing4),
-                    Text(
-                      'Track usage, view balances, and manage your account all in one place.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                          ),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greetingTitle,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppTheme.spacing4),
+                      Text(
+                        'Track usage, view balances, and manage your account all in one place.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-                // Room for a future compact account switcher on larger screens
               ],
             );
           },
         );
 
-        final showReadingsSection = meterDataSource == MeterDataSource.ami
-            ? ref.watch(hasBillingPeriodUsageProvider).maybeWhen(
-                data: (hasData) => hasData,
+        final showAmiCards = meterDataSource == MeterDataSource.ami
+            ? ref.watch(usageDashboardCardsProvider).maybeWhen(
+                data: (cards) => cards.hasUsageData,
                 loading: () => true,
                 orElse: () => false,
               )
-            : ref.watch(meterReadingsThisYearProvider).maybeWhen(
+            : false;
+        final showAmiChart = meterDataSource == MeterDataSource.ami;
+        final showLegacyReadings = meterDataSource != MeterDataSource.ami
+            ? ref.watch(meterReadingsThisYearProvider).maybeWhen(
                 data: (readings) => readings.isNotEmpty,
                 loading: () => true,
                 orElse: () => false,
-              );
+              )
+            : false;
+        final showReadingsSection =
+            showAmiCards || showAmiChart || showLegacyReadings;
 
         final grid = LayoutBuilder(
           builder: (context, constraints) {
@@ -162,15 +177,20 @@ class DashboardPage extends ConsumerWidget {
                       children: [
                         if (showReadingsSection) ...[
                           if (meterDataSource == MeterDataSource.ami) ...[
-                            const AmiUsageStatsWidget(),
-                            const SizedBox(height: AppTheme.spacing16),
-                            const AmiConsumptionChartWidget(),
+                            if (showAmiCards) ...[
+                              const AmiUsageStatsWidget(),
+                              const SizedBox(height: AppTheme.spacing16),
+                            ],
+                            if (showAmiChart) ...[
+                              const AmiConsumptionChartWidget(),
+                              const SizedBox(height: AppTheme.spacing16),
+                            ],
                           ] else ...[
                             const UsageStatsWidget(),
                             const SizedBox(height: AppTheme.spacing16),
                             const ConsumptionChartWidget(),
+                            const SizedBox(height: AppTheme.spacing16),
                           ],
-                          const SizedBox(height: AppTheme.spacing16),
                         ],
                         const AccountDetailsWidget(),
                       ],
@@ -188,15 +208,20 @@ class DashboardPage extends ConsumerWidget {
                 const SizedBox(height: AppTheme.spacing16),
                 if (showReadingsSection) ...[
                   if (meterDataSource == MeterDataSource.ami) ...[
-                    const AmiUsageStatsWidget(),
-                    const SizedBox(height: AppTheme.spacing16),
-                    const AmiConsumptionChartWidget(),
+                    if (showAmiCards) ...[
+                      const AmiUsageStatsWidget(),
+                      const SizedBox(height: AppTheme.spacing16),
+                    ],
+                    if (showAmiChart) ...[
+                      const AmiConsumptionChartWidget(),
+                      const SizedBox(height: AppTheme.spacing16),
+                    ],
                   ] else ...[
                     const UsageStatsWidget(),
                     const SizedBox(height: AppTheme.spacing16),
                     const ConsumptionChartWidget(),
+                    const SizedBox(height: AppTheme.spacing16),
                   ],
-                  const SizedBox(height: AppTheme.spacing16),
                 ],
                 const AccountDetailsWidget(),
               ],

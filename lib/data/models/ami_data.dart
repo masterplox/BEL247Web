@@ -325,7 +325,8 @@ HourlyStats calculateHourlyStats(List<HourlyData> hourlyData) {
 
 /// Calculate statistics for daily data
 DailyStats calculateDailyStats(List<DailyReading> dailyReadings) {
-  if (dailyReadings.isEmpty) {
+  final actual = dailyReadings.where((d) => !d.missing).toList();
+  if (actual.isEmpty) {
     return DailyStats(
       totalKWh: 0,
       estimatedCost: 0,
@@ -334,13 +335,16 @@ DailyStats calculateDailyStats(List<DailyReading> dailyReadings) {
       peakDate: '-',
     );
   }
-  final values = dailyReadings.map((d) => double.tryParse(d.kWhUsed) ?? 0.0).toList();
+  final values = actual.map((d) => double.tryParse(d.kWhUsed) ?? 0.0).toList();
   final totalKWh = values.fold<double>(0, (sum, v) => sum + v);
   final estimatedCost = totalKWh * ratePerKwh;
-  final avgKWh = totalKWh / values.length;
+  final avgKWh = totalKWh / actual.length;
   final maxIndex = values.indexOf(values.reduce((a, b) => a > b ? a : b));
-  final peakReading = dailyReadings[maxIndex];
-  final peakDate = DateTime.tryParse(peakReading.readDate.split(' ')[0]) ?? DateTime.now();
+  final peakReading = actual[maxIndex];
+  final peakDate = DateTime.tryParse(
+        peakReading.readDate.trim().split(RegExp('[T ]')).first,
+      ) ??
+      DateTime.now();
 
   return DailyStats(
     totalKWh: double.parse(totalKWh.toStringAsFixed(2)),
@@ -378,11 +382,13 @@ String formatDateRange(DateTime start, DateTime end) {
   return '$startStr - $endStr, ${end.year}';
 }
 
-String _formatDate(DateTime date) {
+String formatAmiPeakDate(DateTime date) {
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return '${weekdays[date.weekday % 7]}, ${months[date.month - 1]} ${date.day}';
+  return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
 }
+
+String _formatDate(DateTime date) => formatAmiPeakDate(date);
 
 String _formatShortDate(DateTime date) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

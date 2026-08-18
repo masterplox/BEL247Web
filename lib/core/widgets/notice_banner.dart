@@ -36,7 +36,7 @@ class NoticeBanner extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.spacing16,
-            vertical: AppTheme.spacing12,
+            vertical: AppTheme.spacing8,
           ),
           child: Row(
             children: [

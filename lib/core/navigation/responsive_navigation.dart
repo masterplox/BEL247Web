@@ -214,25 +214,39 @@ class _Sidebar extends StatelessWidget {
           ),
         ),
       ),
-      child: Column(
-        children: [
-          _SidebarHeader(
-            isExpanded: navigation.isSidebarOpen,
-            onToggle: navigationNotifier.toggleSidebar,
-          ),
-          AccountSwitcherCard(
-            isExpanded: navigation.isSidebarOpen,
-          ),
-          Expanded(
-            child: _SidebarMenu(
-              navigation: navigation,
-              navigationNotifier: navigationNotifier,
+      // At high zoom the logo, account switcher, and profile would otherwise
+      // pin and clip the nav items with no way to scroll. Scroll the whole
+      // sidebar, and pin the profile to the bottom only when height allows.
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SidebarHeader(
+                      isExpanded: navigation.isSidebarOpen,
+                      onToggle: navigationNotifier.toggleSidebar,
+                    ),
+                    AccountSwitcherCard(
+                      isExpanded: navigation.isSidebarOpen,
+                    ),
+                    _SidebarMenu(
+                      navigation: navigation,
+                      navigationNotifier: navigationNotifier,
+                    ),
+                  ],
+                ),
+                _SidebarFooter(
+                  isExpanded: navigation.isSidebarOpen,
+                ),
+              ],
             ),
           ),
-          _SidebarFooter(
-            isExpanded: navigation.isSidebarOpen,
-          ),
-        ],
+        ),
       ),
     );
 }
@@ -248,15 +262,35 @@ class _SidebarHeader extends StatelessWidget {
   final VoidCallback onToggle;
 
   @override
-  Widget build(BuildContext context) => Container(
-      height: 64,
+  Widget build(BuildContext context) {
+    // Material 3 IconButton keeps a 48px tap target even when
+    // `constraints`/`padding` are tightened, which overflows the 72px rail.
+    final toggle = Tooltip(
+      message: isExpanded ? 'Collapse sidebar' : 'Expand sidebar',
+      child: InkWell(
+        onTap: onToggle,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Icon(
+            isExpanded ? Icons.chevron_left : Icons.chevron_right,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: 56),
       padding: EdgeInsets.symmetric(
         horizontal: isExpanded ? AppTheme.spacing16 : AppTheme.spacing4,
         vertical: AppTheme.spacing8,
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment:
+            isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -281,23 +315,11 @@ class _SidebarHeader extends StatelessWidget {
             ),
           ] else
             const SizedBox(width: AppTheme.spacing4),
-          IconButton(
-            onPressed: onToggle,
-            icon: Icon(
-              isExpanded ? Icons.chevron_left : Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 20,
-            ),
-            tooltip: isExpanded ? 'Collapse sidebar' : 'Expand sidebar',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 28,
-              minHeight: 28,
-            ),
-          ),
+          toggle,
         ],
       ),
     );
+  }
 }
 
 /// Sidebar menu items
@@ -313,36 +335,34 @@ class _SidebarMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(navigationItemsProvider);
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing8),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final isSelected = navigation.selectedIndex == index;
-
-        return SidebarNavItem(
-          label: item.label,
-          icon: item.icon,
-          activeIcon: item.activeIcon,
-          badge: item.badge,
-          isSelected: isSelected,
-          isExpanded: navigation.isSidebarOpen,
-          onTap: () {
-            final from = AppPageNames.navigationSubtypeForRoute(
-              GoRouterState.of(context).matchedLocation,
-            );
-            final to = AppPageNames.navigationSubtypeForRoute(item.route);
-            if (from != to) {
-              ref.read(deviceEventsRepositoryProvider).logInteractionOpen(
-                    destinationPageName: to,
-                    sourcePageName: from,
-                  );
-            }
-            navigationNotifier.setSelectedIndex(index);
-            context.go(item.route);
-          },
-        );
-      },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var index = 0; index < items.length; index++)
+          SidebarNavItem(
+            label: items[index].label,
+            icon: items[index].icon,
+            activeIcon: items[index].activeIcon,
+            badge: items[index].badge,
+            isSelected: navigation.selectedIndex == index,
+            isExpanded: navigation.isSidebarOpen,
+            onTap: () {
+              final item = items[index];
+              final from = AppPageNames.navigationSubtypeForRoute(
+                GoRouterState.of(context).matchedLocation,
+              );
+              final to = AppPageNames.navigationSubtypeForRoute(item.route);
+              if (from != to) {
+                ref.read(deviceEventsRepositoryProvider).logInteractionOpen(
+                      destinationPageName: to,
+                      sourcePageName: from,
+                    );
+              }
+              navigationNotifier.setSelectedIndex(index);
+              context.go(item.route);
+            },
+          ),
+      ],
     );
   }
 }
@@ -366,7 +386,7 @@ class _SidebarFooter extends ConsumerWidget {
     final userEmail = userSession?.email ?? 'asdf@fasd';
 
     return Container(
-      padding: const EdgeInsets.all(AppTheme.spacing16),
+      padding: const EdgeInsets.all(AppTheme.spacing12),
       decoration: const BoxDecoration(
         border: Border(
           top: BorderSide(
@@ -378,70 +398,88 @@ class _SidebarFooter extends ConsumerWidget {
       child: isExpanded
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Signed in as',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                ),
-                const SizedBox(height: AppTheme.spacing8),
-                Text(
-                  userName,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: AppTheme.spacing4),
-                Text(
-                  userEmail,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                ),
-                const SizedBox(height: AppTheme.spacing12),
-                TextButton.icon(
-                  onPressed: () => context.go('/account/reset-password'),
-                  icon: const Icon(Icons.lock_reset, size: 16),
-                  label: const Text('Change password'),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing12,
-                      vertical: AppTheme.spacing8,
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppColors.primary,
+                      child: Icon(Icons.person, color: AppColors.white, size: 16),
                     ),
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userName,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            userEmail,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppTheme.spacing8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await ref.read(authNotifierProvider.notifier).logout();
-                    if (context.mounted) {
-                      context.go('/login');
-                    }
-                  },
-                  icon: const Icon(
-                    Icons.arrow_forward,
-                    size: 16,
-                    color: AppColors.error,
-                  ),
-                  label: Text(
-                    'Sign Out',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w600,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => context.go('/account/reset-password'),
+                      icon: const Icon(Icons.lock_reset, size: 14),
+                      label: const Text('Change password', style: TextStyle(fontSize: 11)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing8,
+                          vertical: AppTheme.spacing4,
                         ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.error, width: 1),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing12,
-                      vertical: AppTheme.spacing8,
+                        minimumSize: const Size(0, 28),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        alignment: Alignment.centerLeft,
+                      ),
                     ),
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
+                    const SizedBox(height: AppTheme.spacing4),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await ref.read(authNotifierProvider.notifier).logout();
+                        if (context.mounted) {
+                          context.go('/login');
+                        }
+                      },
+                      icon: const Icon(Icons.logout, size: 14, color: AppColors.error),
+                      label: Text(
+                        'Sign Out',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.error, width: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing8,
+                          vertical: AppTheme.spacing4,
+                        ),
+                        minimumSize: const Size(0, 28),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             )

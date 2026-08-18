@@ -24,7 +24,11 @@ class CenteredContent extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                padding: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth < 400
+                      ? AppTheme.spacing8
+                      : horizontalPadding,
+                ),
                 child: child,
               ),
             ),

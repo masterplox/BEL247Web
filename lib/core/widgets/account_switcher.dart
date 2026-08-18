@@ -220,7 +220,7 @@ class AccountSwitcherCard extends ConsumerWidget {
                                   color: AppColors.textSecondary,
                                   fontSize: 12,
                                 ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -263,6 +263,7 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
   ConnectedAccountActionResult? _feedback;
   String? _busyAccountId;
   Timer? _feedbackDismissTimer;
+  bool _filtersExpanded = false;
 
   @override
   void dispose() {
@@ -371,8 +372,9 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radius12),
         ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
         child: Container(
-          width: 500,
+          constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(AppTheme.spacing32),
           child: const Column(
             mainAxisSize: MainAxisSize.min,
@@ -388,25 +390,33 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
 
     final filteredAccounts = _getFilteredAndSortedAccounts(accounts);
 
-    final screenW = MediaQuery.sizeOf(context).width;
-    final screenH = MediaQuery.sizeOf(context).height;
+    final media = MediaQuery.of(context);
+    final screenW = media.size.width;
+    final screenH = media.size.height;
     final dialogMaxW = screenW > 624 ? 600.0 : (screenW - 24).clamp(280.0, 600.0);
-    final dialogMaxH = screenH * 0.9 < 700 ? screenH * 0.9 : 700.0;
+    final verticalInset = screenH < 500 ? 8.0 : 16.0;
+    final dialogMaxH = (screenH - verticalInset * 2).clamp(280.0, 700.0);
+    final compact = dialogMaxH < 480;
+    final searchHint = screenW < 420
+        ? 'Search accounts...'
+        : 'Search by address, customer number, account number, nickname, or type...';
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius12),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-      child: Container(
+      insetPadding: EdgeInsets.symmetric(horizontal: 12, vertical: verticalInset),
+      clipBehavior: Clip.hardEdge,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radius12),
+        child: SizedBox(
         width: dialogMaxW,
-        constraints: BoxConstraints(maxHeight: dialogMaxH),
+        height: dialogMaxH,
         child: Column(
-          mainAxisSize: MainAxisSize.max,
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
+              padding: EdgeInsets.all(compact ? AppTheme.spacing12 : AppTheme.spacing16),
               decoration: const BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -417,13 +427,16 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
               ),
               child: Row(
                 children: [
-                  Text(
-                    'Switch Account',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Expanded(
+                    child: Text(
+                      'Switch Account',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
@@ -441,144 +454,197 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                 result: _feedback!,
                 onDismiss: _dismissFeedback,
               ),
-            // Search field
-            Padding(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search by address, customer number, account number, nickname, or type...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius8),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() => _searchQuery = value);
-                },
-              ),
-            ),
-            // Filters and Sorting (label + wrap so narrow screens don't overflow)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Status:',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: AppTheme.spacing8),
-                  Wrap(
-                    spacing: AppTheme.spacing8,
-                    runSpacing: AppTheme.spacing8,
-                    children: [
-                      _StatusChip(
-                        label: 'All',
-                        isSelected: _statusFilter == null,
-                        onTap: () => setState(() => _statusFilter = null),
-                      ),
-                      _StatusChip(
-                        label: 'Paid',
-                        isSelected: _statusFilter == AccountStatus.paid,
-                        onTap: () => setState(() => _statusFilter = AccountStatus.paid),
-                        color: AppColors.success,
-                      ),
-                      _StatusChip(
-                        label: 'Due',
-                        isSelected: _statusFilter == AccountStatus.due,
-                        onTap: () => setState(() => _statusFilter = AccountStatus.due),
-                        color: AppColors.warning,
-                      ),
-                      _StatusChip(
-                        label: 'Overdue',
-                        isSelected: _statusFilter == AccountStatus.overdue,
-                        onTap: () => setState(() => _statusFilter = AccountStatus.overdue),
-                        color: AppColors.error,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spacing12),
-                  Text(
-                    'Sort by:',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: AppTheme.spacing8),
-                  Wrap(
-                    spacing: AppTheme.spacing4,
-                    runSpacing: AppTheme.spacing8,
-                    children: [
-                      _SortButton(
-                        icon: Icons.account_balance_wallet,
-                        label: 'Balance',
-                        isActive: _sortField == AccountSortField.balance,
-                        isAscending: _sortAscending,
-                        onTap: () {
-                          setState(() {
-                            if (_sortField == AccountSortField.balance) {
-                              _sortAscending = !_sortAscending;
-                            } else {
-                              _sortField = AccountSortField.balance;
-                              _sortAscending = true;
-                            }
-                          });
-                        },
-                      ),
-                      _SortButton(
-                        icon: Icons.location_on,
-                        label: 'Address',
-                        isActive: _sortField == AccountSortField.address,
-                        isAscending: _sortAscending,
-                        onTap: () {
-                          setState(() {
-                            if (_sortField == AccountSortField.address) {
-                              _sortAscending = !_sortAscending;
-                            } else {
-                              _sortField = AccountSortField.address;
-                              _sortAscending = true;
-                            }
-                          });
-                        },
-                      ),
-                      _SortButton(
-                        icon: Icons.numbers,
-                        label: 'Account #',
-                        isActive: _sortField == AccountSortField.accountNumber,
-                        isAscending: _sortAscending,
-                        onTap: () {
-                          setState(() {
-                            if (_sortField == AccountSortField.accountNumber) {
-                              _sortAscending = !_sortAscending;
-                            } else {
-                              _sortField = AccountSortField.accountNumber;
-                              _sortAscending = true;
-                            }
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppTheme.spacing8),
-            // Accounts list
+            // Scrollable body: search + filters + accounts list
             Expanded(
-              child: filteredAccounts.isEmpty
-                  ? Padding(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 8),
+                itemCount: filteredAccounts.isEmpty ? 3 : filteredAccounts.length + 2,
+                itemBuilder: (context, index) {
+                  // item 0: search field
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.all(AppTheme.spacing16),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: searchHint,
+                          hintMaxLines: 1,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radius8),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                        },
+                      ),
+                    );
+                  }
+                  // item 1: collapsible filters and sorting
+                  if (index == 1) {
+                    final hasActiveFilter = _statusFilter != null || _sortField != AccountSortField.none;
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spacing16, 0, AppTheme.spacing16, AppTheme.spacing8,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          InkWell(
+                            onTap: () => setState(() => _filtersExpanded = !_filtersExpanded),
+                            borderRadius: BorderRadius.circular(AppTheme.radius8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing4),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'Filter & Sort',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: hasActiveFilter ? AppColors.primary : null,
+                                        ),
+                                  ),
+                                  if (hasActiveFilter) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ],
+                                  const Spacer(),
+                                  Icon(
+                                    _filtersExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                    size: 18,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (_filtersExpanded) ...[
+                            const SizedBox(height: AppTheme.spacing8),
+                            Text(
+                              'Status:',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: AppTheme.spacing8),
+                            Wrap(
+                              spacing: AppTheme.spacing8,
+                              runSpacing: AppTheme.spacing8,
+                              children: [
+                                _StatusChip(
+                                  label: 'All',
+                                  isSelected: _statusFilter == null,
+                                  onTap: () => setState(() => _statusFilter = null),
+                                ),
+                                _StatusChip(
+                                  label: 'Paid',
+                                  isSelected: _statusFilter == AccountStatus.paid,
+                                  onTap: () => setState(() => _statusFilter = AccountStatus.paid),
+                                  color: AppColors.success,
+                                ),
+                                _StatusChip(
+                                  label: 'Due',
+                                  isSelected: _statusFilter == AccountStatus.due,
+                                  onTap: () => setState(() => _statusFilter = AccountStatus.due),
+                                  color: AppColors.warning,
+                                ),
+                                _StatusChip(
+                                  label: 'Overdue',
+                                  isSelected: _statusFilter == AccountStatus.overdue,
+                                  onTap: () => setState(() => _statusFilter = AccountStatus.overdue),
+                                  color: AppColors.error,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppTheme.spacing12),
+                            Text(
+                              'Sort by:',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: AppTheme.spacing8),
+                            Wrap(
+                              spacing: AppTheme.spacing4,
+                              runSpacing: AppTheme.spacing8,
+                              children: [
+                                _SortButton(
+                                  icon: Icons.account_balance_wallet,
+                                  label: 'Balance',
+                                  isActive: _sortField == AccountSortField.balance,
+                                  isAscending: _sortAscending,
+                                  onTap: () {
+                                    setState(() {
+                                      if (_sortField == AccountSortField.balance) {
+                                        _sortAscending = !_sortAscending;
+                                      } else {
+                                        _sortField = AccountSortField.balance;
+                                        _sortAscending = true;
+                                      }
+                                    });
+                                  },
+                                ),
+                                _SortButton(
+                                  icon: Icons.location_on,
+                                  label: 'Address',
+                                  isActive: _sortField == AccountSortField.address,
+                                  isAscending: _sortAscending,
+                                  onTap: () {
+                                    setState(() {
+                                      if (_sortField == AccountSortField.address) {
+                                        _sortAscending = !_sortAscending;
+                                      } else {
+                                        _sortField = AccountSortField.address;
+                                        _sortAscending = true;
+                                      }
+                                    });
+                                  },
+                                ),
+                                _SortButton(
+                                  icon: Icons.numbers,
+                                  label: 'Account #',
+                                  isActive: _sortField == AccountSortField.accountNumber,
+                                  isAscending: _sortAscending,
+                                  onTap: () {
+                                    setState(() {
+                                      if (_sortField == AccountSortField.accountNumber) {
+                                        _sortAscending = !_sortAscending;
+                                      } else {
+                                        _sortField = AccountSortField.accountNumber;
+                                        _sortAscending = true;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppTheme.spacing8),
+                          ],
+                          const Divider(height: 1),
+                          const SizedBox(height: AppTheme.spacing8),
+                        ],
+                      ),
+                    );
+                  }
+                  // item 2: empty state
+                  if (filteredAccounts.isEmpty) {
+                    return Padding(
                       padding: const EdgeInsets.all(AppTheme.spacing32),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -597,36 +663,36 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                           ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
-                      itemCount: filteredAccounts.length,
-                      itemBuilder: (context, index) {
-                        final account = filteredAccounts[index];
-                        final isSelected = account.id == activeAccountId;
-
-                        return _AccountCard(
-                          account: account,
-                          isSelected: isSelected,
-                          menuEnabled: _busyAccountId == null,
-                          isBusy: _busyAccountId == account.id,
-                          onTap: _busyAccountId == null
-                              ? () {
-                                  ref
-                                      .read(accountSwitcherProvider.notifier)
-                                      .switchAccount(account.id);
-                                  Navigator.of(context, rootNavigator: true).pop();
-                                }
-                              : null,
-                          onEditNickname: () => _handleEditNickname(account),
-                          onRemove: () => _handleRemoveAccount(account),
-                        );
-                      },
+                    );
+                  }
+                  // items 2+: account cards
+                  final account = filteredAccounts[index - 2];
+                  final isSelected = account.id == activeAccountId;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing16),
+                    child: _AccountCard(
+                      account: account,
+                      isSelected: isSelected,
+                      menuEnabled: _busyAccountId == null,
+                      isBusy: _busyAccountId == account.id,
+                      onTap: _busyAccountId == null
+                          ? () {
+                              ref
+                                  .read(accountSwitcherProvider.notifier)
+                                  .switchAccount(account.id);
+                              Navigator.of(context, rootNavigator: true).pop();
+                            }
+                          : null,
+                      onEditNickname: () => _handleEditNickname(account),
+                      onRemove: () => _handleRemoveAccount(account),
                     ),
+                  );
+                },
+              ),
             ),
             // Sticky Connect Account Button
             Container(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
+              padding: EdgeInsets.all(compact ? AppTheme.spacing12 : AppTheme.spacing16),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
                 border: const Border(
@@ -643,7 +709,9 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
                   icon: const Icon(Icons.add),
                   label: const Text('Connect Account'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing12),
+                    padding: EdgeInsets.symmetric(
+                      vertical: compact ? AppTheme.spacing8 : AppTheme.spacing12,
+                    ),
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
                   ),
@@ -651,6 +719,7 @@ class _AccountSwitcherDialogState extends ConsumerState<_AccountSwitcherDialog> 
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -915,6 +984,8 @@ class _AccountCard extends StatelessWidget {
                                   color: AppColors.textSecondary,
                                   fontSize: 12,
                                 ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           Text(
@@ -922,6 +993,8 @@ class _AccountCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           Text(
@@ -930,6 +1003,8 @@ class _AccountCard extends StatelessWidget {
                                   color: AppColors.textSecondary,
                                   fontSize: 12,
                                 ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -1199,49 +1274,73 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
   }
 
   @override
-  Widget build(BuildContext context) => Dialog(
+  Widget build(BuildContext context) {
+    final screenH = MediaQuery.sizeOf(context).height;
+    return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius12),
       ),
-      child: Container(
-        width: 500,
-        padding: const EdgeInsets.all(AppTheme.spacing24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          maxHeight: screenH * 0.88,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Row(
-                children: [
-                  Text(
-                    'Connect Account',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                            if (_isSuccess) {
-                              _handleSuccessOkay();
-                            } else {
-                              Navigator.of(context, rootNavigator: true).pop();
-                            }
-                          },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+              // Header — always visible
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spacing24, AppTheme.spacing20,
+                  AppTheme.spacing16, AppTheme.spacing16,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                      'Connect Account',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              if (_isSuccess) {
+                                _handleSuccessOkay();
+                              } else {
+                                Navigator.of(context, rootNavigator: true).pop();
+                              }
+                            },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppTheme.spacing24),
+              // Scrollable body
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spacing24, 0,
+                    AppTheme.spacing24, AppTheme.spacing24,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
               if (_isSuccess) ...[
                 Container(
                   width: double.infinity,
@@ -1446,14 +1545,15 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
               ],
               const SizedBox(height: AppTheme.spacing24),
               // Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: AppTheme.spacing12,
+                runSpacing: AppTheme.spacing8,
                 children: [
                   TextButton(
                     onPressed: _isLoading ? null : () => Navigator.of(context, rootNavigator: true).pop(),
                     child: const Text('Cancel'),
                   ),
-                  const SizedBox(width: AppTheme.spacing12),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
@@ -1474,11 +1574,16 @@ class _ConnectAccountFormDialogState extends ConsumerState<_ConnectAccountFormDi
                 ],
               ),
               ],
-            ],
-          ),
-        ),
-      ),
-    );
+                    ],        // inner scrollable Column children
+                  ),          // inner Column
+                ),            // SingleChildScrollView
+              ),              // Flexible
+            ],                // outer Column children
+          ),                  // outer Column
+        ),                    // Form
+      ),                      // ConstrainedBox
+    );                        // Dialog
+  }
 }
 
 /// Enum for account sort fields

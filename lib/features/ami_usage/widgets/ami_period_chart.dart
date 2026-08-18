@@ -410,7 +410,7 @@ class AmiPeriodChart extends StatelessWidget {
       SizedBox(width: 5),
       Expanded(
         child: Text(
-          'Readings for highlighted periods are still on their way — check back in 24 to 48 hours for the full picture.',
+          'Some usage readings are not ready yet. Your meter data for these times is still being collected and should appear within 1 to 2 days — please check back soon.',
           style: TextStyle(
             color: AppColors.textTertiary,
             fontSize: 11,

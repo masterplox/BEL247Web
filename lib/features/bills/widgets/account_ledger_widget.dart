@@ -85,9 +85,11 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
   Widget build(BuildContext context) {
     final allEntries = _buildLedgerEntries();
     final filteredEntries = _applyFilters(allEntries);
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    
-    return Column(
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 720;
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -187,19 +189,22 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
         else if (filteredEntries.isEmpty)
           _buildEmptyState(context)
         else
-          Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: filteredEntries.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final entry = filteredEntries[index];
-                final isExpanded = _expandedItems.contains(entry.id);
-                return _buildLedgerRow(context, entry, isExpanded, isMobile: isMobile);
-              },
-            ),
+          Column(
+            children: [
+              for (var i = 0; i < filteredEntries.length; i++) ...[
+                if (i > 0) const Divider(height: 1),
+                _buildLedgerRow(
+                  context,
+                  filteredEntries[i],
+                  _expandedItems.contains(filteredEntries[i].id),
+                  isMobile: isMobile,
+                ),
+              ],
+            ],
           ),
       ],
+        );
+      },
     );
   }
 

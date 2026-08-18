@@ -128,42 +128,49 @@ class MonthDetailCardsWidget extends ConsumerWidget {
         children: [
           // Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.spacing8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppTheme.radius8),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spacing8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$selectedMonth Breakdown',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.spacing8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radius8),
                       ),
-                      Text(
-                        'Comparing $yearTwoLabel, $lastYearLabel and $thisYearLabel',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11,
-                            ),
+                      child: const Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: AppColors.primary,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(width: AppTheme.spacing8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$selectedMonth Breakdown',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Comparing $yearTwoLabel, $lastYearLabel and $thisYearLabel',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.close, size: 20),

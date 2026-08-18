@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/feature_providers.dart' show accountSwitcherProvider;
 import '../../../data/models/ami_data.dart' show ratePerKwh;
 import '../../../data/models/api_response_dtos.dart';
+import '../../../data/models/usage_dashboard_cards.dart';
 import '../../ami_usage/state/ami_usage_providers.dart';
 
 /// Parse the active account meter number into an AMI meterId (int).
@@ -13,6 +14,18 @@ final amiDashboardMeterIdProvider = Provider<int?>((ref) {
   if (meterNumber == null) return null;
   final digitsOnly = meterNumber.replaceAll(RegExp(r'\D'), '');
   return int.tryParse(digitsOnly);
+});
+
+/// Four billing-period dashboard cards from `/AMI/UsageDashboardCards`.
+final usageDashboardCardsProvider =
+    FutureProvider<UsageDashboardCardsResult>((ref) async {
+  final meterId = ref.watch(amiDashboardMeterIdProvider);
+  if (meterId == null || meterId == 0) {
+    return const UsageDashboardCardsResult.empty();
+  }
+
+  final repository = ref.watch(amiUsageRepositoryProvider);
+  return repository.fetchUsageDashboardCards(meterId: meterId);
 });
 
 /// Fetch AMI daily data for the current month (month-to-date).
@@ -84,9 +97,10 @@ final amiDashboardMonthlyTotalsProvider = FutureProvider<List<MonthlyUsageEntryD
   if (meterId == null || meterId == 0) return [];
 
   final year = DateTime.now().year;
-  return ref.watch(
+  final rows = await ref.watch(
     amiMonthlyTotalsProvider((meterId: meterId, year: year)).future,
   );
+  return rows.map((row) => row.toDto()).toList();
 });
 
 /// Combined dashboard stats for AMI meters (mirrors the legacy monthly widget intent).
