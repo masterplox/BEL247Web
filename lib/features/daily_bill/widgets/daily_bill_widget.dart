@@ -105,19 +105,20 @@ class DailyBillWidget extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppTheme.spacing12),
-              Text(
-                'Estimated Cost',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-              ),
-              Text(
-                'BZ\$${dailyConsumption!.cost.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // Text(
+              //   'Estimated Cost',
+              //   style: Theme.of(
+              //     context,
+              //   ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              // ),
+              // Text(
+              //   'BZ\$${dailyConsumption!.cost.toStringAsFixed(2)}',
+              //   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              //     color: AppColors.textPrimary,
+              //     fontWeight: FontWeight.w700,
+              //   ),
+              // ),
             ],
           ),
         ),

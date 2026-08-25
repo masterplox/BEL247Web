@@ -135,7 +135,9 @@ class DailyConsumptionChart extends ConsumerWidget {
                 if (index < consumptionData!.length) {
                   final data = consumptionData![index];
                   return LineTooltipItem(
-                    '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh\n\$${data.cost.toStringAsFixed(2)}',
+                    // Dollar amounts are hidden in this version. They will be shown in a future release.
+                    // '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh\n\$${data.cost.toStringAsFixed(2)}',
+                    '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh',
                     const TextStyle(), // Will be styled by buildLineTooltipData
                   );
                 }

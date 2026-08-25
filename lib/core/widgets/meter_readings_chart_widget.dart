@@ -261,7 +261,8 @@ class MeterReadingsChartWidget extends ConsumerWidget {
                   final tooltipText = [
                     '$label - $monthName',
                     'Consumption: ${value.toStringAsFixed(2)} kWh',
-                    'Amount: BZ\$${monthData.amount.toStringAsFixed(2)}',
+                    // Dollar amounts are hidden in this version. They will be shown in a future release.
+                    // 'Amount: BZ\$${monthData.amount.toStringAsFixed(2)}',
                     'Avg Usage: ${monthData.averageUsage.toStringAsFixed(2)} kWh/day',
                     'Days: ${monthData.days}',
                   ].join('\n');

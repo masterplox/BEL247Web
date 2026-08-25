@@ -239,9 +239,11 @@ class EnergyPricesWidget extends StatelessWidget {
           ),
           DataCell(
             AppText(
-              row.priceSignal != null 
-                  ? 'BZ\$${row.priceSignal!.toStringAsFixed(3)}'
-                  : '-',
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // row.priceSignal != null
+              //     ? 'BZ\$${row.priceSignal!.toStringAsFixed(3)}'
+              //     : '-',
+              '-',
               style: AppTextStyle.caption,
             ),
           ),

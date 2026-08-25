@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/utils/formatting_utils.dart';
+// Dollar amounts are hidden in this version. They will be shown in a future release.
+// import '../../../core/utils/formatting_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -427,7 +428,9 @@ class UsageSummaryCards extends StatelessWidget {
                     ),
                     const SizedBox(height: AppTheme.spacing4),
                     Text(
-                      FormattingUtils.formatCurrency(costSaved.abs()),
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // FormattingUtils.formatCurrency(costSaved.abs()),
+                      '',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,

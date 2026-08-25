@@ -136,7 +136,9 @@ class BillingHistoryList extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              r'$' '${bill.amounts.totalAmount.toStringAsFixed(2)}',
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // r'$' '${bill.amounts.totalAmount.toStringAsFixed(2)}',
+              '',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _getAmountColor(bill.paymentStatus),

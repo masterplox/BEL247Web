@@ -61,14 +61,15 @@ class AccountBalanceWidget extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     // Balance amount
-                    Text(
-                      'BZ\$${_formatAmount(accountBalance.currentBalance)}',
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 32,
-                          ),
-                    ),
+                    // Dollar amounts are hidden in this version. They will be shown in a future release.
+                    // Text(
+                    //   'BZ\$${_formatAmount(accountBalance.currentBalance)}',
+                    //   style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    //         color: AppColors.primary,
+                    //         fontWeight: FontWeight.bold,
+                    //         fontSize: 32,
+                    //       ),
+                    // ),
                     const SizedBox(width: AppTheme.spacing12),
                     // Status badge
                     Container(
@@ -97,7 +98,8 @@ class AccountBalanceWidget extends StatelessWidget {
       ),
     );
 
-  String _formatAmount(double amount) => amount.abs().toStringAsFixed(2);
+  // Dollar amounts are hidden in this version. They will be shown in a future release.
+  // String _formatAmount(double amount) => amount.abs().toStringAsFixed(2);
 
   String _formatLastUpdated() {
     final now = DateTime.now();

@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
-import '../../../data/models/ami_data.dart' show ratePerKwh;
+// Dollar amounts are hidden in this version. They will be shown in a future release.
+// import '../../../data/models/ami_data.dart' show ratePerKwh;
 import '../../../data/models/usage_dashboard_cards.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -149,11 +150,12 @@ class AmiUsageStatsWidget extends ConsumerWidget {
               label: 'Consumption',
               value: '${stats.currentPeriodKWh.toStringAsFixed(2)} kWh',
             ),
-            _DetailItem(
-              label: 'Est. Amount',
-              value:
-                  '\$${(stats.currentPeriodKWh * ratePerKwh).toStringAsFixed(2)}',
-            ),
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // _DetailItem(
+            //   label: 'Est. Amount',
+            //   value:
+            //       '\$${(stats.currentPeriodKWh * ratePerKwh).toStringAsFixed(2)}',
+            // ),
             if (stats.daysElapsed > 0)
               _DetailItem(
                 label: 'Daily Average',

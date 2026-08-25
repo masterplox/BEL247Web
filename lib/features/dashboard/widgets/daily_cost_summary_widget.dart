@@ -121,14 +121,15 @@ class DailyCostSummaryWidget extends StatelessWidget {
                   // 7-day line graph
                   _build7DayChart(context),
                   const SizedBox(height: AppTheme.spacing12),
-                  Text(
-                    dashboardData?.dailyCostSummary.estimateDisclaimer ??
-                        '* All dollar values are estimates.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                  ),
+                  // Dollar amounts are hidden in this version. They will be shown in a future release.
+                  // Text(
+                  //   dashboardData?.dailyCostSummary.estimateDisclaimer ??
+                  //       '* All dollar values are estimates.',
+                  //   style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  //         color: AppColors.textSecondary,
+                  //         fontStyle: FontStyle.italic,
+                  //       ),
+                  // ),
                 ],
               ),
           ],
@@ -164,16 +165,17 @@ class DailyCostSummaryWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(
-                  'BZ\$${amount.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: isHighlighted
-                            ? Theme.of(context).colorScheme.primary
-                            : AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                ),
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // Text(
+                //   'BZ\$${amount.toStringAsFixed(2)}',
+                //   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                //         color: isHighlighted
+                //             ? Theme.of(context).colorScheme.primary
+                //             : AppColors.textPrimary,
+                //         fontWeight: FontWeight.bold,
+                //         fontSize: 24,
+                //       ),
+                // ),
               ],
             ),
           ],
@@ -297,7 +299,9 @@ class DailyCostSummaryWidget extends StatelessWidget {
                 final index = touchedSpot.x.toInt();
                 if (index >= 0 && index < data.length && index < dates.length) {
                   return LineTooltipItem(
-                    '\$${data[index].toStringAsFixed(2)}\n${dateFormatter.format(dates[index])}',
+                    // Dollar amounts are hidden in this version. They will be shown in a future release.
+                    // '\$${data[index].toStringAsFixed(2)}\n${dateFormatter.format(dates[index])}',
+                    dateFormatter.format(dates[index]),
                     const TextStyle(), // Will be styled by buildLineTooltipData
                   );
                 }

@@ -379,16 +379,17 @@ class _MeterReadingsChartState extends ConsumerState<MeterReadingsChart> {
                     AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: AppTheme.spacing12),
-                Expanded(
-                  child: _buildDetailCard(
-                    context,
-                    'Amount',
-                    'BZ\$${readingData.amount.toStringAsFixed(2)}',
-                    Icons.attach_money,
-                    AppColors.success,
-                  ),
-                ),
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // const SizedBox(width: AppTheme.spacing12),
+                // Expanded(
+                //   child: _buildDetailCard(
+                //     context,
+                //     'Amount',
+                //     'BZ\$${readingData.amount.toStringAsFixed(2)}',
+                //     Icons.attach_money,
+                //     AppColors.success,
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: AppTheme.spacing12),
@@ -428,16 +429,17 @@ class _MeterReadingsChartState extends ConsumerState<MeterReadingsChart> {
                     AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: AppTheme.spacing12),
-                Expanded(
-                  child: _buildDetailCard(
-                    context,
-                    'Amount',
-                    'BZ\$${readingData.amount.toStringAsFixed(2)}',
-                    Icons.attach_money,
-                    AppColors.success,
-                  ),
-                ),
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // const SizedBox(width: AppTheme.spacing12),
+                // Expanded(
+                //   child: _buildDetailCard(
+                //     context,
+                //     'Amount',
+                //     'BZ\$${readingData.amount.toStringAsFixed(2)}',
+                //     Icons.attach_money,
+                //     AppColors.success,
+                //   ),
+                // ),
                 const SizedBox(width: AppTheme.spacing12),
                 Expanded(
                   child: _buildDetailCard(

@@ -116,7 +116,8 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
               controller: _amountController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                prefixText: r'$',
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // prefixText: r'$',
                 hintText: '0.00',
                 border: OutlineInputBorder(),
               ),
@@ -345,7 +346,11 @@ class _PaymentWidgetState extends ConsumerState<PaymentWidget> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Amount: \$${amount.toStringAsFixed(2)}'),
+            Text(
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // 'Amount: \$${amount.toStringAsFixed(2)}',
+              'Amount',
+            ),
             Text('Method: $method'),
             Text('Transaction ID: TXN-${DateTime.now().millisecondsSinceEpoch}'),
             const SizedBox(height: AppTheme.spacing8),

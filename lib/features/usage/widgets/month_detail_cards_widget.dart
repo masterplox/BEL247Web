@@ -93,20 +93,23 @@ class MonthDetailCardsWidget extends ConsumerWidget {
     final consumptionYearTwo = double.tryParse(yearTwoData.consumption) ?? 0.0;
     final consumptionLast = double.tryParse(lastYearData.consumption) ?? 0.0;
     final consumptionCurrent = double.tryParse(thisYearData.consumption) ?? 0.0;
-    final costYearTwo = double.tryParse(yearTwoData.amount) ?? 0.0;
-    final costLast = double.tryParse(lastYearData.amount) ?? 0.0;
-    final costCurrent = double.tryParse(thisYearData.amount) ?? 0.0;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final costYearTwo = double.tryParse(yearTwoData.amount) ?? 0.0;
+    // final costLast = double.tryParse(lastYearData.amount) ?? 0.0;
+    // final costCurrent = double.tryParse(thisYearData.amount) ?? 0.0;
     final avgUsageYearTwo = double.tryParse(yearTwoData.averageUsage) ?? 0.0;
     final avgUsageLast = double.tryParse(lastYearData.averageUsage) ?? 0.0;
     final avgUsageCurrent = double.tryParse(thisYearData.averageUsage) ?? 0.0;
 
     // Differences focus on last year vs this year for "saved/more" messaging
     final consumptionDiff = consumptionLast - consumptionCurrent;
-    final costDiff = costLast - costCurrent;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final costDiff = costLast - costCurrent;
     final avgUsageDiff = avgUsageLast - avgUsageCurrent;
 
     final savedEnergy = consumptionDiff > 0;
-    final savedCost = costDiff > 0;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final savedCost = costDiff > 0;
     final savedAvg = avgUsageDiff > 0;
 
     final thisYearLabel = thisYearData.readYear.isNotEmpty
@@ -211,26 +214,27 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                           : 'Compared to $lastYearLabel — you used more in $thisYearLabel (same month).',
                     ),
                     const SizedBox(height: AppTheme.spacing12),
-                    _buildComparisonCard(
-                      context,
-                      title: 'Cost',
-                      icon: Icons.attach_money,
-                      iconColor: AppColors.textSecondary,
-                      yearTwoLabel: yearTwoLabel,
-                      lastYearLabel: lastYearLabel,
-                      thisYearLabel: thisYearLabel,
-                      valueYearTwo: costYearTwo,
-                      valueLast: costLast,
-                      valueCurrent: costCurrent,
-                      diff: costDiff,
-                      saved: savedCost,
-                      unit: r'$',
-                      isCurrency: true,
-                      comparisonNote: savedCost
-                          ? 'Compared to $lastYearLabel — you spent less in $thisYearLabel (same month).'
-                          : 'Compared to $lastYearLabel — you spent more in $thisYearLabel (same month).',
-                    ),
-                    const SizedBox(height: AppTheme.spacing12),
+                    // Dollar amounts are hidden in this version. They will be shown in a future release.
+                    // _buildComparisonCard(
+                    //   context,
+                    //   title: 'Cost',
+                    //   icon: Icons.attach_money,
+                    //   iconColor: AppColors.textSecondary,
+                    //   yearTwoLabel: yearTwoLabel,
+                    //   lastYearLabel: lastYearLabel,
+                    //   thisYearLabel: thisYearLabel,
+                    //   valueYearTwo: costYearTwo,
+                    //   valueLast: costLast,
+                    //   valueCurrent: costCurrent,
+                    //   diff: costDiff,
+                    //   saved: savedCost,
+                    //   unit: r'$',
+                    //   isCurrency: true,
+                    //   comparisonNote: savedCost
+                    //       ? 'Compared to $lastYearLabel — you spent less in $thisYearLabel (same month).'
+                    //       : 'Compared to $lastYearLabel — you spent more in $thisYearLabel (same month).',
+                    // ),
+                    // const SizedBox(height: AppTheme.spacing12),
                     _buildComparisonCard(
                       context,
                       title: 'Daily Avg',
@@ -276,28 +280,29 @@ class MonthDetailCardsWidget extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: AppTheme.spacing12),
-                  Expanded(
-                    child: _buildComparisonCard(
-                      context,
-                      title: 'Cost',
-                      icon: Icons.attach_money,
-                      iconColor: AppColors.textSecondary,
-                      yearTwoLabel: yearTwoLabel,
-                      lastYearLabel: lastYearLabel,
-                      thisYearLabel: thisYearLabel,
-                      valueYearTwo: costYearTwo,
-                      valueLast: costLast,
-                      valueCurrent: costCurrent,
-                      diff: costDiff,
-                      saved: savedCost,
-                      unit: r'$',
-                      isCurrency: true,
-                      comparisonNote: savedCost
-                          ? 'Compared to $lastYearLabel — you spent less in $thisYearLabel (same month).'
-                          : 'Compared to $lastYearLabel — you spent more in $thisYearLabel (same month).',
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spacing12),
+                  // Dollar amounts are hidden in this version. They will be shown in a future release.
+                  // Expanded(
+                  //   child: _buildComparisonCard(
+                  //     context,
+                  //     title: 'Cost',
+                  //     icon: Icons.attach_money,
+                  //     iconColor: AppColors.textSecondary,
+                  //     yearTwoLabel: yearTwoLabel,
+                  //     lastYearLabel: lastYearLabel,
+                  //     thisYearLabel: thisYearLabel,
+                  //     valueYearTwo: costYearTwo,
+                  //     valueLast: costLast,
+                  //     valueCurrent: costCurrent,
+                  //     diff: costDiff,
+                  //     saved: savedCost,
+                  //     unit: r'$',
+                  //     isCurrency: true,
+                  //     comparisonNote: savedCost
+                  //         ? 'Compared to $lastYearLabel — you spent less in $thisYearLabel (same month).'
+                  //         : 'Compared to $lastYearLabel — you spent more in $thisYearLabel (same month).',
+                  //   ),
+                  // ),
+                  // const SizedBox(width: AppTheme.spacing12),
                   Expanded(
                     child: _buildComparisonCard(
                       context,

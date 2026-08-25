@@ -180,8 +180,9 @@ class _BillDownloadWidgetState extends ConsumerState<BillDownloadWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppTheme.spacing4),
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
             Text(
-              'Bill #${bill.billNumber} • \$${bill.amounts.totalAmount.toStringAsFixed(2)}',
+              'Bill #${bill.billNumber}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),

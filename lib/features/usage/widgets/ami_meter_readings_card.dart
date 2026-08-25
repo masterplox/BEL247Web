@@ -630,9 +630,12 @@ class _HourlyChart extends StatelessWidget {
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final hour = group.x;
               final kwh = rod.toY;
-              final cost = kwh * 0.35;
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // final cost = kwh * 0.35;
               return BarTooltipItem(
-                '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh\nCost: BZ\$${cost.toStringAsFixed(2)}',
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh\nCost: BZ\$${cost.toStringAsFixed(2)}',
+                '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh',
                 const TextStyle(), // Will be styled by buildBarTooltipData
               );
             },
@@ -663,7 +666,8 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = daily.totalKwh;
-    final estCost = total * 0.35; // to match screenshot scale
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final estCost = total * 0.35; // to match screenshot scale
     final peak = daily.peakHourlyUsage == 0
         ? daily.hourlyBreakdown.map((h) => h.kwh).reduce((a, b) => a > b ? a : b)
         : daily.peakHourlyUsage;
@@ -697,9 +701,10 @@ class _SummaryRow extends StatelessWidget {
                         child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true),
                       ),
                       const SizedBox(width: AppTheme.spacing12),
-                      Expanded(
-                        child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}'),
-                      ),
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // Expanded(
+                      //   child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}'),
+                      // ),
                     ],
                   ),
                   const SizedBox(height: AppTheme.spacing12),
@@ -722,8 +727,9 @@ class _SummaryRow extends StatelessWidget {
                 children: [
                   Expanded(child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true)),
                   const SizedBox(width: AppTheme.spacing16),
-                  Expanded(child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
-                  const SizedBox(width: AppTheme.spacing16),
+                  // Dollar amounts are hidden in this version. They will be shown in a future release.
+                  // Expanded(child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
+                  // const SizedBox(width: AppTheme.spacing16),
                   Expanded(child: _statTile(context, 'Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
                   const SizedBox(width: AppTheme.spacing16),
                   Expanded(child: _statTile(context, 'Average usage', '${avg.toStringAsFixed(2)} kWh')),
@@ -1076,10 +1082,11 @@ class _SummaryRowFromDays extends StatelessWidget {
                           Expanded(
                             child: _SummaryRow._statTileStatic('Total kWh', 'N/A', highlighted: true),
                           ),
-                          const SizedBox(width: AppTheme.spacing12),
-                          Expanded(
-                            child: _SummaryRow._statTileStatic('Est. Cost', 'N/A'),
-                          ),
+                          // Dollar amounts are hidden in this version. They will be shown in a future release.
+                          // const SizedBox(width: AppTheme.spacing12),
+                          // Expanded(
+                          //   child: _SummaryRow._statTileStatic('Est. Cost', 'N/A'),
+                          // ),
                         ],
                       ),
                       const SizedBox(height: AppTheme.spacing12),
@@ -1102,8 +1109,9 @@ class _SummaryRowFromDays extends StatelessWidget {
                     children: [
                       Expanded(child: _SummaryRow._statTileStatic('Total kWh', 'N/A', highlighted: true)),
                       const SizedBox(width: AppTheme.spacing16),
-                      Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'N/A')),
-                      const SizedBox(width: AppTheme.spacing16),
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'N/A')),
+                      // const SizedBox(width: AppTheme.spacing16),
                       Expanded(child: _SummaryRow._statTileStatic('Peak Usage', 'N/A')),
                       const SizedBox(width: AppTheme.spacing16),
                       Expanded(child: _SummaryRow._statTileStatic('Average usage', 'N/A')),
@@ -1118,7 +1126,8 @@ class _SummaryRowFromDays extends StatelessWidget {
       return const SizedBox.shrink();
     }
     final total = days.fold<double>(0, (sum, d) => sum + d.totalKwh);
-    final estCost = total * 0.35;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final estCost = total * 0.35;
     final peak = days.map((d) => d.totalKwh).reduce((a, b) => a > b ? a : b);
     final avg = total / days.length;
     return Column(
@@ -1147,9 +1156,10 @@ class _SummaryRowFromDays extends StatelessWidget {
                         child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true),
                       ),
                       const SizedBox(width: AppTheme.spacing12),
-                      Expanded(
-                        child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}'),
-                      ),
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // Expanded(
+                      //   child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}'),
+                      // ),
                     ],
                   ),
                   const SizedBox(height: AppTheme.spacing12),
@@ -1172,8 +1182,9 @@ class _SummaryRowFromDays extends StatelessWidget {
                 children: [
                   Expanded(child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true)),
                   const SizedBox(width: AppTheme.spacing16),
-                  Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
-                  const SizedBox(width: AppTheme.spacing16),
+                  // Dollar amounts are hidden in this version. They will be shown in a future release.
+                  // Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
+                  // const SizedBox(width: AppTheme.spacing16),
                   Expanded(child: _SummaryRow._statTileStatic('Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
                   const SizedBox(width: AppTheme.spacing16),
                   Expanded(child: _SummaryRow._statTileStatic('Average usage', '${avg.toStringAsFixed(2)} kWh')),

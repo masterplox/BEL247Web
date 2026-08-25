@@ -176,11 +176,12 @@ class AccountSummaryWidget extends ConsumerWidget {
                       color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                     ),
                     const SizedBox(height: AppTheme.spacing8),
-                    AppText(
-                      'BZ\$${balance.toStringAsFixed(2)}',
-                      style: AppTextStyle.title,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    // Dollar amounts are hidden in this version. They will be shown in a future release.
+                    // AppText(
+                    //   'BZ\$${balance.toStringAsFixed(2)}',
+                    //   style: AppTextStyle.title,
+                    //   fontWeight: FontWeight.bold,
+                    // ),
                   ],
                 ),
               ),
@@ -301,7 +302,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                     _buildFinancialItem(
                       context,
                       'Current Bill',
-                      'BZ\$${currentBill.toStringAsFixed(2)}',
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // 'BZ\$${currentBill.toStringAsFixed(2)}',
+                      '',
                       Icons.receipt,
                       AppColors.primary,
                     ),
@@ -309,7 +312,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                     _buildFinancialItem(
                       context,
                       'Past Due',
-                      'BZ\$${pastDue.toStringAsFixed(2)}',
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // 'BZ\$${pastDue.toStringAsFixed(2)}',
+                      '',
                       Icons.warning_amber_rounded,
                       pastDue > 0 ? AppColors.error : AppColors.success,
                     ),
@@ -322,7 +327,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                     child: _buildFinancialItem(
                       context,
                       'Current Bill',
-                      'BZ\$${currentBill.toStringAsFixed(2)}',
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // 'BZ\$${currentBill.toStringAsFixed(2)}',
+                      '',
                       Icons.receipt,
                       AppColors.primary,
                     ),
@@ -332,7 +339,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                     child: _buildFinancialItem(
                       context,
                       'Past Due',
-                      'BZ\$${pastDue.toStringAsFixed(2)}',
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // 'BZ\$${pastDue.toStringAsFixed(2)}',
+                      '',
                       Icons.warning_amber_rounded,
                       pastDue > 0 ? AppColors.error : AppColors.success,
                     ),
@@ -358,7 +367,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                             : 'N/A',
                         Icons.description,
                         Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
-                        subtitle: lastBillAmount > 0 ? 'BZ\$${lastBillAmount.toStringAsFixed(2)}' : null,
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // subtitle: lastBillAmount > 0 ? 'BZ\$${lastBillAmount.toStringAsFixed(2)}' : null,
+                        subtitle: null,
                       ),
                       const SizedBox(height: AppTheme.spacing12),
                       _buildFinancialItem(
@@ -369,7 +380,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                             : 'N/A',
                         Icons.payment,
                         AppColors.success,
-                        subtitle: lastPaymentAmount > 0 ? 'BZ\$${lastPaymentAmount.toStringAsFixed(2)}' : null,
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // subtitle: lastPaymentAmount > 0 ? 'BZ\$${lastPaymentAmount.toStringAsFixed(2)}' : null,
+                        subtitle: null,
                       ),
                     ],
                   );
@@ -385,7 +398,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                             : 'N/A',
                         Icons.description,
                         Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
-                        subtitle: lastBillAmount > 0 ? 'BZ\$${lastBillAmount.toStringAsFixed(2)}' : null,
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // subtitle: lastBillAmount > 0 ? 'BZ\$${lastBillAmount.toStringAsFixed(2)}' : null,
+                        subtitle: null,
                       ),
                     ),
                     const SizedBox(width: AppTheme.spacing12),
@@ -398,7 +413,9 @@ class AccountSummaryWidget extends ConsumerWidget {
                             : 'N/A',
                         Icons.payment,
                         AppColors.success,
-                        subtitle: lastPaymentAmount > 0 ? 'BZ\$${lastPaymentAmount.toStringAsFixed(2)}' : null,
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // subtitle: lastPaymentAmount > 0 ? 'BZ\$${lastPaymentAmount.toStringAsFixed(2)}' : null,
+                        subtitle: null,
                       ),
                     ),
                   ],
@@ -410,7 +427,9 @@ class AccountSummaryWidget extends ConsumerWidget {
             _buildFinancialItem(
               context,
               'Deposit',
-              'BZ\$${deposit.abs().toStringAsFixed(2)}',
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // 'BZ\$${deposit.abs().toStringAsFixed(2)}',
+              '',
               Icons.account_balance,
               deposit < 0 ? AppColors.success : AppColors.info,
               subtitle: deposit < 0 ? 'Credit' : 'Debit',

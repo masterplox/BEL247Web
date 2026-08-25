@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/account_verification_providers.dart';
 import '../../../core/providers/feature_providers.dart';
-import '../../../core/utils/formatting_utils.dart';
+// Dollar amounts are hidden in this version. They will be shown in a future release.
+// import '../../../core/utils/formatting_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../data/models/account.dart';
@@ -21,7 +22,8 @@ class BalanceCardWidget extends ConsumerStatefulWidget {
 }
 
 class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
-  bool _showBalance = true;
+  // Dollar amounts are hidden in this version. They will be shown in a future release.
+  // bool _showBalance = true;
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +44,11 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
           return const SizedBox.shrink();
         }
 
-        final balance = _parseBalance(accountDetails.balance);
-        final pastDue = _parseBalance(accountDetails.pastDue);
-        final lastBillAmount = _parseBalance(accountDetails.lastBillAmount);
-        final lastPaymentAmount = _parseBalance(accountDetails.lastPaymentAmount);
+        // Dollar amounts are hidden in this version. They will be shown in a future release.
+        // final balance = _parseBalance(accountDetails.balance);
+        // final pastDue = _parseBalance(accountDetails.pastDue);
+        // final lastBillAmount = _parseBalance(accountDetails.lastBillAmount);
+        // final lastPaymentAmount = _parseBalance(accountDetails.lastPaymentAmount);
         final status = activeAccount.status;
         final dueInText = _dueInLabel(accountDetails.dueIn);
         final statusLabel = status == AccountStatus.paid
@@ -80,31 +83,32 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                             ),
                       ),
                       const SizedBox(height: AppTheme.spacing4),
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              _showBalance ? _formatBalance(balance) : '••••••',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 32,
-                                  ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: AppTheme.spacing8),
-                          IconButton(
-                            icon: Icon(
-                              _showBalance ? Icons.visibility_off : Icons.visibility,
-                              size: 16,
-                            ),
-                            onPressed: () => setState(() => _showBalance = !_showBalance),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            color: AppColors.textSecondary,
-                          ),
-                        ],
-                      ),
+                      // Dollar amounts are hidden in this version. They will be shown in a future release.
+                      // Row(
+                      //   children: [
+                      //     Flexible(
+                      //       child: Text(
+                      //         _showBalance ? _formatBalance(balance) : '••••••',
+                      //         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      //               fontWeight: FontWeight.bold,
+                      //               fontSize: 32,
+                      //             ),
+                      //         overflow: TextOverflow.ellipsis,
+                      //       ),
+                      //     ),
+                      //     const SizedBox(width: AppTheme.spacing8),
+                      //     IconButton(
+                      //       icon: Icon(
+                      //         _showBalance ? Icons.visibility_off : Icons.visibility,
+                      //         size: 16,
+                      //       ),
+                      //       onPressed: () => setState(() => _showBalance = !_showBalance),
+                      //       padding: EdgeInsets.zero,
+                      //       constraints: const BoxConstraints(),
+                      //       color: AppColors.textSecondary,
+                      //     ),
+                      //   ],
+                      // ),
                       if (isVerified &&
                           (accountDetails.collectionStatus ?? '').isNotEmpty) ...[
                         const SizedBox(height: AppTheme.spacing4),
@@ -192,7 +196,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                         _buildStatButton(
                           context,
                           'Electricity bill this month',
-                          FormattingUtils.formatCurrency(lastBillAmount),
+                          // Dollar amounts are hidden in this version. They will be shown in a future release.
+                          // FormattingUtils.formatCurrency(lastBillAmount),
+                          '',
                           Icons.description,
                           () => _showBillDetailsDialog(
                             context,
@@ -205,7 +211,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                         _buildStatButton(
                           context,
                           'Past due',
-                          FormattingUtils.formatCurrency(pastDue),
+                          // Dollar amounts are hidden in this version. They will be shown in a future release.
+                          // FormattingUtils.formatCurrency(pastDue),
+                          '',
                           Icons.schedule,
                           null,
                         ),
@@ -213,7 +221,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                         _buildStatButton(
                           context,
                           'Last Payment',
-                          FormattingUtils.formatCurrency(lastPaymentAmount),
+                          // Dollar amounts are hidden in this version. They will be shown in a future release.
+                          // FormattingUtils.formatCurrency(lastPaymentAmount),
+                          '',
                           Icons.payment,
                           () => _showPaymentDetailsDialog(context, accountDetails),
                         ),
@@ -228,7 +238,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                             child: _buildStatButton(
                               context,
                               'Electricity bill this month',
-                              FormattingUtils.formatCurrency(lastBillAmount),
+                              // Dollar amounts are hidden in this version. They will be shown in a future release.
+                              // FormattingUtils.formatCurrency(lastBillAmount),
+                              '',
                               Icons.description,
                               () => _showBillDetailsDialog(
                                 context,
@@ -243,7 +255,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                             child: _buildStatButton(
                               context,
                               'Last Payment',
-                              FormattingUtils.formatCurrency(lastPaymentAmount),
+                              // Dollar amounts are hidden in this version. They will be shown in a future release.
+                              // FormattingUtils.formatCurrency(lastPaymentAmount),
+                              '',
                               Icons.payment,
                               () => _showPaymentDetailsDialog(context, accountDetails),
                             ),
@@ -257,7 +271,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                             child: _buildStatButton(
                               context,
                               'Past due',
-                              FormattingUtils.formatCurrency(pastDue),
+                              // Dollar amounts are hidden in this version. They will be shown in a future release.
+                              // FormattingUtils.formatCurrency(pastDue),
+                              '',
                               Icons.schedule,
                               null,
                             ),
@@ -308,7 +324,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                       const Icon(Icons.credit_card, size: 16),
                       const SizedBox(width: AppTheme.spacing8),
                       Text(
-                        'Pay ${_formatBalance(balance)}',
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // 'Pay ${_formatBalance(balance)}',
+                        'Pay',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -374,13 +392,15 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
                 ),
           ),
           const SizedBox(height: AppTheme.spacing4),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-          ),
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          if (value.isNotEmpty)
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
+            ),
           if (dueLabel != null && dueValue != null && dueValue.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spacing4),
             Row(
@@ -433,20 +453,22 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
   }
 
   /// Format balance: negative values as (amount) CR, positive as normal currency.
-  String _formatBalance(double amount) {
-    if (amount < 0) {
-      final abs = FormattingUtils.formatCurrency(amount.abs());
-      return '($abs) CR';
-    }
-    return FormattingUtils.formatCurrency(amount);
-  }
+  /// Dollar amounts are hidden in this version. They will be shown in a future release.
+  // String _formatBalance(double amount) {
+  //   if (amount < 0) {
+  //     final abs = FormattingUtils.formatCurrency(amount.abs());
+  //     return '($abs) CR';
+  //   }
+  //   return FormattingUtils.formatCurrency(amount);
+  // }
 
   void _showBillDetailsDialog(
     BuildContext context,
     EditableCustomerAccountDto accountDetails,
   ) {
-    final lastBillAmount = _parseBalance(accountDetails.lastBillAmount);
-    final pastDue = _parseBalance(accountDetails.pastDue);
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final lastBillAmount = _parseBalance(accountDetails.lastBillAmount);
+    // final pastDue = _parseBalance(accountDetails.pastDue);
 
     AppDialog.showCenter(
       context: context,
@@ -456,14 +478,15 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildDetailRow('Bill Date', accountDetails.lastBillDate ?? ''),
-          const Divider(),
-          _buildDetailRow('Bill Amount', FormattingUtils.formatCurrency(lastBillAmount)),
-          const Divider(),
-          _buildDetailRow(
-            'Past Due',
-            FormattingUtils.formatCurrency(pastDue),
-            color: pastDue > 0 ? AppColors.error : null,
-          ),
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          // const Divider(),
+          // _buildDetailRow('Bill Amount', FormattingUtils.formatCurrency(lastBillAmount)),
+          // const Divider(),
+          // _buildDetailRow(
+          //   'Past Due',
+          //   FormattingUtils.formatCurrency(pastDue),
+          //   color: pastDue > 0 ? AppColors.error : null,
+          // ),
         ],
       ),
       actions: [
@@ -476,7 +499,8 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
   }
 
   void _showPaymentDetailsDialog(BuildContext context, EditableCustomerAccountDto accountDetails) {
-    final lastPaymentAmount = _parseBalance(accountDetails.lastPaymentAmount);
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final lastPaymentAmount = _parseBalance(accountDetails.lastPaymentAmount);
 
     AppDialog.showCenter(
       context: context,
@@ -486,8 +510,9 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildDetailRow('Payment Date', accountDetails.lastPaymentDate ?? ''),
-          const Divider(),
-          _buildDetailRow('Amount Paid', FormattingUtils.formatCurrency(lastPaymentAmount)),
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          // const Divider(),
+          // _buildDetailRow('Amount Paid', FormattingUtils.formatCurrency(lastPaymentAmount)),
           const Divider(),
           _buildDetailRow('Status', 'Completed', color: AppColors.success),
         ],
@@ -533,31 +558,32 @@ class _BalanceCardWidgetState extends ConsumerState<BalanceCardWidget> {
     return '${days.abs()} days overdue';
   }
 
-  double _parseBalance(String? balanceStr) {
-    if (balanceStr == null || balanceStr.isEmpty) {
-      return 0;
-    }
-    try {
-      final isCredit = balanceStr.toUpperCase().contains('CR') ||
-          (balanceStr.contains('(') && balanceStr.contains(')'));
-      
-      final cleaned = balanceStr
-          .replaceAll(r'$', '')
-          .replaceAll('(', '')
-          .replaceAll(')', '')
-          .replaceAll('CR', '')
-          .replaceAll(',', '')
-          .trim();
-
-      var balance = double.tryParse(cleaned) ?? 0.0;
-      
-      if (isCredit && balance > 0) {
-        balance = -balance;
-      }
-      
-      return balance;
-    } catch (e) {
-      return 0;
-    }
-  }
+  // Dollar amounts are hidden in this version. They will be shown in a future release.
+  // double _parseBalance(String? balanceStr) {
+  //   if (balanceStr == null || balanceStr.isEmpty) {
+  //     return 0;
+  //   }
+  //   try {
+  //     final isCredit = balanceStr.toUpperCase().contains('CR') ||
+  //         (balanceStr.contains('(') && balanceStr.contains(')'));
+  //
+  //     final cleaned = balanceStr
+  //         .replaceAll(r'$', '')
+  //         .replaceAll('(', '')
+  //         .replaceAll(')', '')
+  //         .replaceAll('CR', '')
+  //         .replaceAll(',', '')
+  //         .trim();
+  //
+  //     var balance = double.tryParse(cleaned) ?? 0.0;
+  //
+  //     if (isCredit && balance > 0) {
+  //       balance = -balance;
+  //     }
+  //
+  //     return balance;
+  //   } catch (e) {
+  //     return 0;
+  //   }
+  // }
 }

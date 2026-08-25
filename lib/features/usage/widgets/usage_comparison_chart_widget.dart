@@ -160,7 +160,8 @@ class _UsageComparisonChartWidgetState
                               ),
                         ),
                         const SizedBox(height: AppTheme.spacing12),
-                        _buildViewToggle(context),
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // _buildViewToggle(context),
                       ],
                     )
                   : Row(
@@ -186,7 +187,8 @@ class _UsageComparisonChartWidgetState
                             ),
                           ],
                         ),
-                        _buildViewToggle(context),
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // _buildViewToggle(context),
                       ],
                     );
             },
@@ -246,9 +248,11 @@ class _UsageComparisonChartWidgetState
                       reservedSize: 50,
                       interval: maxValue > 0 ? maxValue / 4 : 1,
                       getTitlesWidget: (value, meta) => Text(
-                        _view == 'cost'
-                            ? '\$${value.toStringAsFixed(0)}'
-                            : value.toStringAsFixed(0),
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // _view == 'cost'
+                        //     ? '\$${value.toStringAsFixed(0)}'
+                        //     : value.toStringAsFixed(0),
+                        value.toStringAsFixed(0),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                               fontSize: 11,
@@ -433,7 +437,8 @@ class _UsageComparisonChartWidgetState
                               ),
                         ),
                         const SizedBox(height: AppTheme.spacing12),
-                        _buildViewToggle(context),
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // _buildViewToggle(context),
                       ],
                     )
                   : Row(
@@ -459,7 +464,8 @@ class _UsageComparisonChartWidgetState
                             ),
                           ],
                         ),
-                        _buildViewToggle(context),
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // _buildViewToggle(context),
                       ],
                     );
             },
@@ -504,6 +510,8 @@ class _UsageComparisonChartWidgetState
       ),
     );
 
+  // Dollar amounts are hidden in this version. They will be shown in a future release.
+  // ignore: unused_element
   Widget _buildViewToggle(BuildContext context) => Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -519,12 +527,13 @@ class _UsageComparisonChartWidgetState
             isSelected: _view == 'consumption',
             onTap: () => setState(() => _view = 'consumption'),
           ),
-          _buildToggleButton(
-            context,
-            label: r'Cost ($)',
-            isSelected: _view == 'cost',
-            onTap: () => setState(() => _view = 'cost'),
-          ),
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          // _buildToggleButton(
+          //   context,
+          //   label: r'Cost ($)',
+          //   isSelected: _view == 'cost',
+          //   onTap: () => setState(() => _view = 'cost'),
+          // ),
         ],
       ),
     );

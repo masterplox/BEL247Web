@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
-import '../services/cost_calculation_service.dart';
+// Dollar amounts are hidden in this version. They will be shown in a future release.
+// import '../services/cost_calculation_service.dart';
 import '../state/daily_bill_providers.dart';
 
 class DailyConsumptionBreakdownWidget extends ConsumerWidget {
@@ -19,9 +20,10 @@ class DailyConsumptionBreakdownWidget extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final costCalculation =
-        CostCalculationService.calculateDailyCost(currentConsumption);
-    final b = costCalculation.costBreakdown;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final costCalculation =
+    //     CostCalculationService.calculateDailyCost(currentConsumption);
+    // final b = costCalculation.costBreakdown;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -46,25 +48,28 @@ class DailyConsumptionBreakdownWidget extends ConsumerWidget {
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: AppTheme.spacing12),
-            _breakdownRow(
-              context,
-              'Energy Charge (${currentConsumption.totalKwh.toStringAsFixed(1)} kWh × BZ\$0.35)',
-              b.energyCharge,
-            ),
-            _breakdownRow(context, 'Service Fee', b.serviceFee),
-            const Divider(),
-            _breakdownRow(
-              context,
-              'Total Estimated Cost',
-              b.totalCost,
-              isTotal: true,
-            ),
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // _breakdownRow(
+            //   context,
+            //   'Energy Charge (${currentConsumption.totalKwh.toStringAsFixed(1)} kWh × BZ\$0.35)',
+            //   b.energyCharge,
+            // ),
+            // _breakdownRow(context, 'Service Fee', b.serviceFee),
+            // const Divider(),
+            // _breakdownRow(
+            //   context,
+            //   'Total Estimated Cost',
+            //   b.totalCost,
+            //   isTotal: true,
+            // ),
           ],
         ),
       ),
     );
   }
 
+  // Dollar amounts are hidden in this version. They will be shown in a future release.
+  // ignore: unused_element
   Widget _breakdownRow(
     BuildContext context,
     String label,
@@ -81,7 +86,9 @@ class DailyConsumptionBreakdownWidget extends ConsumerWidget {
                 ),
           ),
           Text(
-            'BZ\$${amount.toStringAsFixed(2)}',
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // 'BZ\$${amount.toStringAsFixed(2)}',
+            '',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
                 ),

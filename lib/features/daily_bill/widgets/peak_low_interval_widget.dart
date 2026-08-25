@@ -166,12 +166,13 @@ class PeakLowIntervalWidget extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
               ),
-              Text(
-                '\$${peak.cost.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // Text(
+              //   '\$${peak.cost.toStringAsFixed(2)}',
+              //   style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              //         color: AppColors.textSecondary,
+              //       ),
+              // ),
             ],
           ),
         ],
@@ -211,12 +212,13 @@ class PeakLowIntervalWidget extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
               ),
-              Text(
-                '\$${low.cost.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // Text(
+              //   '\$${low.cost.toStringAsFixed(2)}',
+              //   style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              //         color: AppColors.textSecondary,
+              //       ),
+              // ),
             ],
           ),
         ],

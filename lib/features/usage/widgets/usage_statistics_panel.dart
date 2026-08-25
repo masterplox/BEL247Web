@@ -35,14 +35,15 @@ class UsageStatisticsPanel extends ConsumerWidget {
           AppColors.primary,
         ),
         const SizedBox(height: AppTheme.spacing12),
-        _buildStatRow(
-          context,
-          'Estimated Cost',
-          '\$${stats.totalCost.toStringAsFixed(2)}',
-          Icons.attach_money,
-          AppColors.success,
-        ),
-        const SizedBox(height: AppTheme.spacing12),
+        // Dollar amounts are hidden in this version. They will be shown in a future release.
+        // _buildStatRow(
+        //   context,
+        //   'Estimated Cost',
+        //   '\$${stats.totalCost.toStringAsFixed(2)}',
+        //   Icons.attach_money,
+        //   AppColors.success,
+        // ),
+        // const SizedBox(height: AppTheme.spacing12),
         _buildStatRow(
           context,
           'Peak Usage',

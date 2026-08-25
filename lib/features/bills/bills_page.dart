@@ -145,7 +145,9 @@ class PaymentCard extends ConsumerWidget {
           ref.read(bills_state.billsRefreshProvider.notifier).refreshAll(ref);
           AppToast.success(
             context,
-            'Payment of \$${amount.toStringAsFixed(2)} submitted successfully!',
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // 'Payment of \$${amount.toStringAsFixed(2)} submitted successfully!',
+            'Payment submitted successfully!',
           );
         },
         onPaymentError: (error) {

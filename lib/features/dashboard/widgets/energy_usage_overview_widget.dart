@@ -221,12 +221,13 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
       value: widget.consumption.totalKwh,
       isHighlighted: false,
     );
-    final currentYearEstCost = _buildUsageCard(
-      context,
-      label: 'Est. Cost',
-      value: widget.consumption.cost,
-      isHighlighted: false,
-    );
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final currentYearEstCost = _buildUsageCard(
+    //   context,
+    //   label: 'Est. Cost',
+    //   value: widget.consumption.cost,
+    //   isHighlighted: false,
+    // );
     final currentYearPeakUsage = _buildUsageCard(
       context,
       label: 'Peak Usage',
@@ -247,12 +248,13 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
       value: widget.consumption.totalKwh * 0.9,
       isHighlighted: false,
     );
-    final lastYearEstCost = _buildUsageCard(
-      context,
-      label: 'Est. Cost (Last Year)',
-      value: widget.consumption.cost * 0.85,
-      isHighlighted: false,
-    );
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final lastYearEstCost = _buildUsageCard(
+    //   context,
+    //   label: 'Est. Cost (Last Year)',
+    //   value: widget.consumption.cost * 0.85,
+    //   isHighlighted: false,
+    // );
     final lastYearPeakUsage = _buildUsageCard(
       context,
       label: 'Peak Usage (Last Year)',
@@ -278,8 +280,9 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
         Row(
           children: [
             Expanded(child: currentYearTotalKwh),
-            const SizedBox(width: AppTheme.spacing16),
-            Expanded(child: currentYearEstCost),
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // const SizedBox(width: AppTheme.spacing16),
+            // Expanded(child: currentYearEstCost),
           ],
         ),
         const SizedBox(height: AppTheme.spacing16),
@@ -301,8 +304,9 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
           Row(
             children: [
               Expanded(child: lastYearTotalKwh),
-              const SizedBox(width: AppTheme.spacing16),
-              Expanded(child: lastYearEstCost),
+              // Dollar amounts are hidden in this version. They will be shown in a future release.
+              // const SizedBox(width: AppTheme.spacing16),
+              // Expanded(child: lastYearEstCost),
             ],
           ),
           const SizedBox(height: AppTheme.spacing16),

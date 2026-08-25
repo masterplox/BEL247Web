@@ -87,7 +87,8 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
       return const SizedBox.shrink();
     }
 
-    final currentPrice = todayData.price;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final currentPrice = todayData.price;
     final currentHour = DateTime.now().hour;
     final touPeriod = _getTouPeriodForHour(currentHour);
     final priceColor = _getPriceColor(touPeriod);
@@ -117,20 +118,23 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppText(
-                          r'BZ$',
+                          // Dollar amounts are hidden in this version. They will be shown in a future release.
+                          // r'BZ$',
+                          '',
                           style: AppTextStyle.title,
                           color: priceColor,
                         ),
                         const SizedBox(width: AppTheme.spacing4),
-                        Text(
-                          currentPrice.toStringAsFixed(3),
-                          style: TextStyle(
-                            fontSize: isMobile ? 36 : 64,
-                            fontWeight: FontWeight.bold,
-                            color: priceColor,
-                            height: 1,
-                          ),
-                        ),
+                        // Dollar amounts are hidden in this version. They will be shown in a future release.
+                        // Text(
+                        //   currentPrice.toStringAsFixed(3),
+                        //   style: TextStyle(
+                        //     fontSize: isMobile ? 36 : 64,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: priceColor,
+                        //     height: 1,
+                        //   ),
+                        // ),
                       ],
                     ),
                   ],
@@ -388,7 +392,9 @@ class _EnergyPriceSignalDashboardState extends State<EnergyPriceSignalDashboard>
             final index = touchedSpot.x.toInt();
             if (index >= 0 && index < prices.length) {
               return LineTooltipItem(
-                'BZ\$${prices[index].toStringAsFixed(3)}\n${DateFormat('MMM d').format(dates[index])}',
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // 'BZ\$${prices[index].toStringAsFixed(3)}\n${DateFormat('MMM d').format(dates[index])}',
+                DateFormat('MMM d').format(dates[index]),
                 const TextStyle(), // Will be styled by buildLineTooltipData
               );
             }

@@ -350,9 +350,11 @@ class UsageStatsWidget extends ConsumerWidget {
     final previous = sorted.length > 1 ? sorted[sorted.length - 2] : null;
 
     final currentConsumption = double.tryParse(current.consumption) ?? 0.0;
-    final currentAmount = double.tryParse(current.amount) ?? 0.0;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final currentAmount = double.tryParse(current.amount) ?? 0.0;
     final previousConsumption = previous != null ? (double.tryParse(previous.consumption) ?? 0.0) : 0.0;
-    final previousAmount = previous != null ? (double.tryParse(previous.amount) ?? 0.0) : 0.0;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final previousAmount = previous != null ? (double.tryParse(previous.amount) ?? 0.0) : 0.0;
 
     final consumptionDiff = previousConsumption - currentConsumption;
     final savedEnergy = consumptionDiff > 0;
@@ -371,11 +373,11 @@ class UsageStatsWidget extends ConsumerWidget {
     );
     final avgConsumption = (totalConsumption / sorted.length).round();
 
-    // Calculate yearly spend
-    final yearlySpend = sorted.fold<double>(
-      0,
-      (sum, reading) => sum + (double.tryParse(reading.amount) ?? 0.0),
-    );
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final yearlySpend = sorted.fold<double>(
+    //   0,
+    //   (sum, reading) => sum + (double.tryParse(reading.amount) ?? 0.0),
+    // );
 
     return [
       {
@@ -388,7 +390,8 @@ class UsageStatsWidget extends ConsumerWidget {
         'detailTitle': 'Current Billing Period Usage',
         'detailItems': [
           {'label': 'Consumption', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
-          {'label': 'Amount', 'value': '\$${currentAmount.toStringAsFixed(2)}'},
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          // {'label': 'Amount', 'value': '\$${currentAmount.toStringAsFixed(2)}'},
           {'label': 'Daily Average', 'value': '${(double.tryParse(current.averageUsage) ?? 0.0).toStringAsFixed(0)} kWh'},
           {'label': 'Billing Days', 'value': '${current.days} days'},
         ],
@@ -406,7 +409,8 @@ class UsageStatsWidget extends ConsumerWidget {
                 {'label': 'Last Billing Period', 'value': '${previousConsumption.toStringAsFixed(0)} kWh'},
                 {'label': 'This Billing Period', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
                 {'label': 'Difference', 'value': '${consumptionDiff.toStringAsFixed(0)} kWh'},
-                {'label': 'Cost Difference', 'value': '\$${(previousAmount - currentAmount).abs().toStringAsFixed(2)}'},
+                // Dollar amounts are hidden in this version. They will be shown in a future release.
+                // {'label': 'Cost Difference', 'value': '\$${(previousAmount - currentAmount).abs().toStringAsFixed(2)}'},
               ]
             : [
                 {'label': 'This Billing Period', 'value': '${currentConsumption.toStringAsFixed(0)} kWh'},
@@ -425,7 +429,8 @@ class UsageStatsWidget extends ConsumerWidget {
         'detailItems': [
           {'label': 'Billing Period', 'value': '${highestMonth.readMonth} ${highestMonth.readYear}'},
           {'label': 'Consumption', 'value': '${highestMonth.consumption} kWh'},
-          {'label': 'Amount', 'value': '\$${(double.tryParse(highestMonth.amount) ?? 0.0).toStringAsFixed(2)}'},
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          // {'label': 'Amount', 'value': '\$${(double.tryParse(highestMonth.amount) ?? 0.0).toStringAsFixed(2)}'},
           {'label': 'Daily Average', 'value': '${highestMonth.averageUsage} kWh'},
         ],
       },
@@ -439,7 +444,8 @@ class UsageStatsWidget extends ConsumerWidget {
         'detailTitle': 'Average Statistics',
         'detailItems': [
           {'label': 'Avg. Monthly Usage', 'value': '$avgConsumption kWh'},
-          {'label': 'Yearly Total', 'value': '\$${yearlySpend.toStringAsFixed(2)}'},
+          // Dollar amounts are hidden in this version. They will be shown in a future release.
+          // {'label': 'Yearly Total', 'value': '\$${yearlySpend.toStringAsFixed(2)}'},
           {'label': 'Months Analyzed', 'value': '${sorted.length}'},
           {'label': 'Total kWh', 'value': totalConsumption.toStringAsFixed(0)},
         ],

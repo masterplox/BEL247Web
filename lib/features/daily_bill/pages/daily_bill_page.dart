@@ -312,8 +312,9 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
 
   Widget _buildProjectedMonthlyTile(current) {
     final projectedUsage = current.totalKwh * 30;
-    final projectedCost = current.cost * 30;
-    final dailyCost = current.cost;
+    // Dollar amounts are hidden in this version. They will be shown in a future release.
+    // final projectedCost = current.cost * 30;
+    // final dailyCost = current.cost;
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -335,22 +336,24 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
               ],
             ),
             const SizedBox(height: AppTheme.spacing12),
-            Text(
-              'BZ\$${projectedCost.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: AppTheme.spacing8),
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // Text(
+            //   'BZ\$${projectedCost.toStringAsFixed(2)}',
+            //   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            //         fontWeight: FontWeight.w700,
+            //       ),
+            // ),
+            // const SizedBox(height: AppTheme.spacing8),
             Text(
               '${projectedUsage.toStringAsFixed(1)} kWh expected over 30 days',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: AppTheme.spacing4),
-            Text(
-              'Daily estimate: BZ\$${dailyCost.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            // Dollar amounts are hidden in this version. They will be shown in a future release.
+            // const SizedBox(height: AppTheme.spacing4),
+            // Text(
+            //   'Daily estimate: BZ\$${dailyCost.toStringAsFixed(2)}',
+            //   style: Theme.of(context).textTheme.bodySmall,
+            // ),
           ],
         ),
       ),

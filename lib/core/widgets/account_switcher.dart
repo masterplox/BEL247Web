@@ -998,7 +998,9 @@ class _AccountCard extends StatelessWidget {
                           ),
                           const SizedBox(height: AppTheme.spacing4),
                           Text(
-                            '${account.accountType.substring(0, 1).toUpperCase()}${account.accountType.substring(1)} • Balance: BZ\$${account.balance.toStringAsFixed(2)}',
+                            // Dollar amounts are hidden in this version. They will be shown in a future release.
+                            // '${account.accountType.substring(0, 1).toUpperCase()}${account.accountType.substring(1)} • Balance: BZ\$${account.balance.toStringAsFixed(2)}',
+                            '${account.accountType.substring(0, 1).toUpperCase()}${account.accountType.substring(1)}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: AppColors.textSecondary,
                                   fontSize: 12,
