@@ -675,7 +675,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         const SizedBox(height: AppTheme.spacing12),
         _buildPeriodSubCard(
           context,
-          title: 'Previous Period (Same Days)',
+          title: 'Previous Period (Same Number of Days)',
           startDate: visual.previousStart,
           endDate: visual.previousEnd,
           daysCompared: visual.daysCompared,
