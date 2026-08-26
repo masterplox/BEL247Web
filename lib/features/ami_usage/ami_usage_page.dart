@@ -730,7 +730,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             ),
             const SizedBox(height: AppTheme.spacing8),
             Text(
-              FormattingUtils.formatKwh(kwh),
+              FormattingUtils.formatKwhExact(kwh),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 22,

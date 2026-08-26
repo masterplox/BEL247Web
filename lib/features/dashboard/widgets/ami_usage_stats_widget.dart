@@ -210,58 +210,9 @@ class AmiUsageStatsWidget extends ConsumerWidget {
           detailTitle: 'Billing Period Comparison',
           detailSubtitle:
               'Compared over the same number of days so far, not against the full previous period',
-          detailItems: [
-            _DetailItem(
-              label: 'Current Period',
-              value: [
-                _formatPeriodRange(
-                  stats.currentStartDate,
-                  stats.currentEndDate,
-                  fallback: stats.currentPeriodLabel,
-                ),
-                FormattingUtils.formatKwh(stats.currentPeriodKWh),
-              ].where((part) => part.isNotEmpty).join(' • '),
-            ),
-            _DetailItem(
-              label: 'Previous Period to Date',
-              value: FormattingUtils.formatKwh(stats.previousPeriodToDateKWh),
-            ),
-            if (stats.daysElapsed > 0)
-              _DetailItem(
-                label: 'Days Compared',
-                value: '${stats.daysElapsed} days',
-              ),
-            _DetailItem(
-              label: 'Difference',
-              value: usedLess
-                  ? '-${FormattingUtils.formatKwh(variance.abs())}'
-                  : usedMore
-                      ? '+${FormattingUtils.formatKwh(variance.abs())}'
-                      : FormattingUtils.formatKwh(0),
-              icon: usedMore
-                  ? Icons.arrow_upward
-                  : usedLess
-                      ? Icons.arrow_downward
-                      : null,
-              valueColor: usedMore || usedLess ? varianceColor : null,
-            ),
-          ],
+          detailItems: const [],
           billedPeriods: stats.billedPeriods,
-          comparisonVisual: _ComparisonVisualData(
-            currentLabel: 'Current period',
-            currentDates: _formatPeriodRange(
-              stats.currentStartDate,
-              stats.currentEndDate,
-              fallback: stats.currentPeriodLabel,
-            ),
-            currentKwh: stats.currentPeriodKWh,
-            previousLabel: 'Same days, previous period',
-            previousDates: _previousComparisonDates(stats),
-            previousKwh: stats.previousPeriodToDateKWh,
-            varianceKwh: variance,
-            usedMore: usedMore,
-            usedLess: usedLess,
-          ),
+          comparisonVisual: _buildComparisonVisualData(stats),
         ),
       );
     }
@@ -446,25 +397,11 @@ class AmiUsageStatsWidget extends ConsumerWidget {
                           color: AppColors.textSecondary,
                         ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (item.icon != null) ...[
-                        Icon(
-                          item.icon,
-                          size: 14,
-                          color: item.valueColor ?? AppColors.textPrimary,
+                  Text(
+                    item.value,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: AppTheme.spacing4),
-                      ],
-                      Text(
-                        item.value,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: item.valueColor,
-                            ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -586,46 +523,267 @@ class AmiUsageStatsWidget extends ConsumerWidget {
     return fallback;
   }
 
-  String _previousComparisonDates(UsageDashboardCardsResult stats) {
+  _ComparisonVisualData _buildComparisonVisualData(
+    UsageDashboardCardsResult stats,
+  ) {
+    final previous = _previousBilledPeriod(stats);
+    final daysCompared = stats.daysElapsed;
+    final currentTotalDays = stats.daysInPeriod > 0
+        ? stats.daysInPeriod
+        : (stats.currentStartDate != null && stats.currentEndDate != null
+            ? stats.currentEndDate!.difference(stats.currentStartDate!).inDays + 1
+            : (daysCompared > 0 ? daysCompared : 1));
+    final previousTotalDays = previous != null && previous.days > 0
+        ? previous.days
+        : (previous?.startDate != null && previous?.endDate != null
+            ? previous!.endDate!.difference(previous.startDate!).inDays + 1
+            : currentTotalDays);
+
+    return _ComparisonVisualData(
+      currentStart: stats.currentStartDate,
+      currentEnd: stats.currentEndDate,
+      currentKwh: stats.currentPeriodKWh,
+      currentTotalDays: currentTotalDays,
+      previousStart: previous?.startDate,
+      previousEnd: previous?.endDate,
+      previousKwh: stats.previousPeriodToDateKWh,
+      previousTotalDays: previousTotalDays,
+      daysCompared: daysCompared,
+      varianceKwh: stats.varianceKWh,
+      usedMore: stats.usedMoreThanPrevious,
+      usedLess: stats.usedLessThanPrevious,
+    );
+  }
+
+  BilledPeriodSummary? _previousBilledPeriod(UsageDashboardCardsResult stats) {
     for (final period in stats.billedPeriods) {
       final sameAsCurrent = stats.currentStartDate != null &&
           period.startDate != null &&
           DateUtils.isSameDay(period.startDate, stats.currentStartDate);
       if (sameAsCurrent) continue;
-      final range = _formatPeriodRange(period.startDate, period.endDate);
-      if (range.isNotEmpty) return range;
-      if (period.rangeLabel.isNotEmpty) return period.rangeLabel;
-      if (period.label.isNotEmpty) return period.label;
+      return period;
     }
-    return stats.comparisonLabel;
+    return null;
   }
 
   Widget _buildComparisonVisual(
     BuildContext context,
     _ComparisonVisualData visual,
   ) {
-    final maxKwh = [
-      visual.currentKwh,
-      visual.previousKwh,
-    ].fold<double>(0, (highest, value) => value > highest ? value : highest);
-    final scale = maxKwh <= 0 ? 1.0 : maxKwh;
+    final differenceColor = visual.usedMore
+        ? AppColors.error
+        : visual.usedLess
+            ? AppColors.success
+            : AppColors.textSecondary;
 
+    final differenceValue = visual.usedLess
+        ? '-${FormattingUtils.formatKwh(visual.varianceKwh.abs())}'
+        : visual.usedMore
+            ? '+${FormattingUtils.formatKwh(visual.varianceKwh.abs())}'
+            : FormattingUtils.formatKwh(0);
+
+    final daysLabel = visual.daysCompared == 1 ? 'day' : 'days';
     String summary;
     if (visual.usedMore) {
       summary =
-          'You used ${FormattingUtils.formatKwh(visual.varianceKwh.abs())} more than the same days in the previous period.';
+          'You used ${FormattingUtils.formatKwh(visual.varianceKwh.abs())} more than the same ${visual.daysCompared} $daysLabel in the previous period.';
     } else if (visual.usedLess) {
       summary =
-          'You used ${FormattingUtils.formatKwh(visual.varianceKwh.abs())} less than the same days in the previous period.';
+          'You used ${FormattingUtils.formatKwh(visual.varianceKwh.abs())} less than the same ${visual.daysCompared} $daysLabel in the previous period.';
     } else {
-      summary = 'Usage matches the same days in the previous period.';
+      summary =
+          'Usage matches the same ${visual.daysCompared} $daysLabel in the previous period.';
     }
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppTheme.spacing12),
+          decoration: BoxDecoration(
+            color: AppColors.grey50,
+            borderRadius: BorderRadius.circular(AppTheme.radius8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final stats = <Widget>[
+                _buildStatColumn(
+                  context,
+                  label: 'Days Compared',
+                  value: '${visual.daysCompared} $daysLabel',
+                ),
+                _buildStatColumn(
+                  context,
+                  label: 'Current Period Usage',
+                  value: FormattingUtils.formatKwh(visual.currentKwh),
+                ),
+                _buildStatColumn(
+                  context,
+                  label: 'Previous Period Usage',
+                  value: FormattingUtils.formatKwh(visual.previousKwh),
+                ),
+                _buildStatColumn(
+                  context,
+                  label: 'Difference',
+                  value: differenceValue,
+                  valueColor: differenceColor,
+                  valueIcon: visual.usedMore
+                      ? Icons.arrow_upward
+                      : visual.usedLess
+                          ? Icons.arrow_downward
+                          : null,
+                ),
+              ];
+              if (constraints.maxWidth < 520) {
+                return Wrap(
+                  spacing: AppTheme.spacing12,
+                  runSpacing: AppTheme.spacing12,
+                  children: stats
+                      .map(
+                        (child) => SizedBox(
+                          width: (constraints.maxWidth - AppTheme.spacing12) / 2,
+                          child: child,
+                        ),
+                      )
+                      .toList(),
+                );
+              }
+              return Row(
+                children: [
+                  for (var i = 0; i < stats.length; i++) ...[
+                    Expanded(child: stats[i]),
+                    if (i < stats.length - 1) const SizedBox(width: AppTheme.spacing8),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacing12),
+        _buildPeriodSubCard(
+          context,
+          title: 'Current Period',
+          startDate: visual.currentStart,
+          endDate: visual.currentEnd,
+          daysCompared: visual.daysCompared,
+          totalDays: visual.currentTotalDays,
+          kwh: visual.currentKwh,
+          fillColor: AppColors.success,
+          markerLabel: 'Today',
+        ),
+        const SizedBox(height: AppTheme.spacing12),
+        _buildPeriodSubCard(
+          context,
+          title: 'Previous Period (Same Days)',
+          startDate: visual.previousStart,
+          endDate: visual.previousEnd,
+          daysCompared: visual.daysCompared,
+          totalDays: visual.previousTotalDays,
+          kwh: visual.previousKwh,
+          fillColor: AppColors.grey500,
+          markerLabel: 'Day ${visual.daysCompared}',
+        ),
+        const SizedBox(height: AppTheme.spacing12),
+        Container(
+          padding: const EdgeInsets.all(AppTheme.spacing12),
+          decoration: BoxDecoration(
+            color: differenceColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radius8),
+            border: Border.all(color: differenceColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                visual.usedLess
+                    ? Icons.check_circle_outline
+                    : visual.usedMore
+                        ? Icons.info_outline
+                        : Icons.remove_circle_outline,
+                color: differenceColor,
+                size: 18,
+              ),
+              const SizedBox(width: AppTheme.spacing8),
+              Expanded(
+                child: Text(
+                  summary,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: differenceColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatColumn(
+    BuildContext context, {
+    required String label,
+    required String value,
+    Color? valueColor,
+    IconData? valueIcon,
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                ),
+          ),
+          const SizedBox(height: AppTheme.spacing4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (valueIcon != null) ...[
+                Icon(valueIcon, size: 14, color: valueColor ?? AppColors.textPrimary),
+                const SizedBox(width: 2),
+              ],
+              Flexible(
+                child: Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: valueColor ?? AppColors.textPrimary,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+
+  Widget _buildPeriodSubCard(
+    BuildContext context, {
+    required String title,
+    required DateTime? startDate,
+    required DateTime? endDate,
+    required int daysCompared,
+    required int totalDays,
+    required double kwh,
+    required Color fillColor,
+    required String markerLabel,
+  }) {
+    final safeTotal = totalDays > 0 ? totalDays : 1;
+    final rawFraction = daysCompared / safeTotal;
+    final fillFraction = rawFraction.clamp(0.0, 1.0).toDouble();
+    final barText =
+        '$daysCompared ${daysCompared == 1 ? 'day' : 'days'} · ${FormattingUtils.formatKwh(kwh)}';
+    final startLabel = startDate != null ? _dateFormat.format(startDate) : '';
+    final endLabel = endDate != null ? _dateFormat.format(endDate) : '';
+
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(AppTheme.spacing12),
       decoration: BoxDecoration(
-        color: AppColors.grey50,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radius8),
         border: Border.all(color: AppColors.border),
       ),
@@ -633,125 +791,125 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Usage compared',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+            title,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: AppTheme.spacing12),
-          _buildComparisonBar(
-            context,
-            label: visual.currentLabel,
-            dates: visual.currentDates,
-            kwh: visual.currentKwh,
-            fill: visual.currentKwh / scale,
-            color: AppColors.primary,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final barWidth = constraints.maxWidth;
+              final markerLeft = (barWidth * fillFraction).clamp(0.0, barWidth);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: SizedBox(
+                      height: 26,
+                      width: barWidth,
+                      child: Stack(
+                        children: [
+                          Container(color: AppColors.grey200),
+                          FractionallySizedBox(
+                            widthFactor: fillFraction,
+                            child: Container(
+                              color: fillColor,
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing8),
+                              child: Text(
+                                barText,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: barWidth,
+                    height: 14,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
+                          left: (markerLeft - 24).clamp(0.0, (barWidth - 48).clamp(0.0, barWidth)),
+                          top: 0,
+                          child: Text(
+                            markerLabel,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: AppTheme.spacing12),
-          _buildComparisonBar(
-            context,
-            label: visual.previousLabel,
-            dates: visual.previousDates,
-            kwh: visual.previousKwh,
-            fill: visual.previousKwh / scale,
-            color: AppColors.grey500,
-          ),
-          const SizedBox(height: AppTheme.spacing12),
-          Text(
-            summary,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: visual.usedMore
-                      ? AppColors.error
-                      : visual.usedLess
-                          ? AppColors.success
-                          : AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
+          const SizedBox(height: AppTheme.spacing4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                startLabel,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+              ),
+              Text(
+                endLabel,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-
-  Widget _buildComparisonBar(
-    BuildContext context, {
-    required String label,
-    required String dates,
-    required double kwh,
-    required double fill,
-    required Color color,
-  }) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-              Text(
-                FormattingUtils.formatKwh(kwh),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-          if (dates.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              dates,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                  ),
-            ),
-          ],
-          const SizedBox(height: AppTheme.spacing8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 12,
-              child: Stack(
-                children: [
-                  Container(color: AppColors.grey200),
-                  FractionallySizedBox(
-                    widthFactor: fill.clamp(0.0, 1.0),
-                    child: Container(color: color),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
 }
 
 class _ComparisonVisualData {
   const _ComparisonVisualData({
-    required this.currentLabel,
-    required this.currentDates,
+    required this.currentStart,
+    required this.currentEnd,
     required this.currentKwh,
-    required this.previousLabel,
-    required this.previousDates,
+    required this.currentTotalDays,
+    required this.previousStart,
+    required this.previousEnd,
     required this.previousKwh,
+    required this.previousTotalDays,
+    required this.daysCompared,
     required this.varianceKwh,
     required this.usedMore,
     required this.usedLess,
   });
 
-  final String currentLabel;
-  final String currentDates;
+  final DateTime? currentStart;
+  final DateTime? currentEnd;
   final double currentKwh;
-  final String previousLabel;
-  final String previousDates;
+  final int currentTotalDays;
+  final DateTime? previousStart;
+  final DateTime? previousEnd;
   final double previousKwh;
+  final int previousTotalDays;
+  final int daysCompared;
   final double varianceKwh;
   final bool usedMore;
   final bool usedLess;
@@ -791,12 +949,8 @@ class _DetailItem {
   const _DetailItem({
     required this.label,
     required this.value,
-    this.icon,
-    this.valueColor,
   });
 
   final String label;
   final String value;
-  final IconData? icon;
-  final Color? valueColor;
 }

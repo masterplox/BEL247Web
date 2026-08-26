@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/formatting_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
@@ -26,7 +27,7 @@ class AmiSummaryCards extends StatelessWidget {
     final cards = [
       {
         'label': 'Total Usage',
-        'value': totalKWh.toStringAsFixed(1),
+        'value': FormattingUtils.formatKwhNumberExact(totalKWh),
         'unit': 'kWh',
         'icon': Icons.bolt_outlined,
         'color': AppColors.primary,
@@ -34,7 +35,7 @@ class AmiSummaryCards extends StatelessWidget {
       },
       {
         'label': 'Peak Usage',
-        'value': peakKWh.toStringAsFixed(1),
+        'value': FormattingUtils.formatKwhNumberExact(peakKWh),
         'unit': 'kWh',
         'subLabel': _getPeakLabel(),
         'icon': Icons.trending_up_outlined,
@@ -43,7 +44,7 @@ class AmiSummaryCards extends StatelessWidget {
       },
       {
         'label': 'Avg. Usage',
-        'value': avgKWh.toStringAsFixed(1),
+        'value': FormattingUtils.formatKwhNumberExact(avgKWh),
         'unit': 'kWh',
         'subLabel': _getAvgLabel(),
         'icon': Icons.show_chart_outlined,

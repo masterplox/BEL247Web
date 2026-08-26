@@ -64,7 +64,7 @@ class EnvConfig {
 
   static String get appVersion => const String.fromEnvironment(
         'APP_VERSION',
-        defaultValue: '2.1.2',
+        defaultValue: '2.1.3',
       );
 
   static bool get isDevelopment => environment == 'development';

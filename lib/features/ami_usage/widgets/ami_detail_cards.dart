@@ -112,7 +112,7 @@ class _HourlyDetailCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${FormattingUtils.formatKwh(detail.kWh)}',
+                          FormattingUtils.formatKwhExact(detail.kWh),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
@@ -171,7 +171,7 @@ class _DayDetailCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${FormattingUtils.formatKwh(detail.kWh)}',
+                          FormattingUtils.formatKwhExact(detail.kWh),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
@@ -234,7 +234,7 @@ class _MonthDetailCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${FormattingUtils.formatKwh(detail.kWh)}',
+                          FormattingUtils.formatKwhExact(detail.kWh),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,

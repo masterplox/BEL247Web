@@ -96,6 +96,18 @@ class FormattingUtils {
   /// Formats kWh as a whole number with no unit.
   static String formatKwhNumber(double kwh) => kwh.round().toString();
 
+  /// Formats kWh preserving the API's natural precision (e.g. 22.567 -> "22.567 kWh",
+  /// 22.0 -> "22 kWh"). Trailing zeros are trimmed.
+  static String formatKwhExact(double kwh) => '${formatKwhNumberExact(kwh)} kWh';
+
+  /// Formats kWh preserving natural precision, no unit. Trailing zeros trimmed.
+  static String formatKwhNumberExact(double kwh) {
+    final s = kwh.toString();
+    if (!s.contains('.')) return s;
+    final trimmed = s.replaceFirst(RegExp(r'0+$'), '');
+    return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
+  }
+
   // Time formatting
   /// Formats time as "HH:mm"
   static String formatTime(DateTime dateTime) => '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
