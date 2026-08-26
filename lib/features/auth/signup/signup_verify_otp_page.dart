@@ -6,6 +6,7 @@ import 'package:pinput/pinput.dart';
 import '../../../data/models/auth.dart';
 import '../../../core/constants/customer_portal_support_types.dart';
 import '../../../core/widgets/customer_portal_support_button.dart';
+import '../../../core/widgets/fill_viewport_scroll.dart';
 import '../../../theme/colors.dart';
 import '../providers/auth_provider.dart';
 
@@ -87,9 +88,9 @@ class _SignupVerifyOtpPageState extends ConsumerState<SignupVerifyOtpPage> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+        child: FillViewportScroll(
+          padding: const EdgeInsets.all(24),
+          child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(

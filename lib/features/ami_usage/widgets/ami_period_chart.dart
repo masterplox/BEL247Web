@@ -7,6 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
 import '../ami_usage_page.dart';
 import '../state/ami_usage_providers.dart' show DayTou;
+import '../../../core/utils/formatting_utils.dart';
 
 class AmiPeriodChart extends StatelessWidget {
   const AmiPeriodChart({
@@ -195,10 +196,10 @@ class AmiPeriodChart extends StatelessWidget {
                               final dayTou = dateKey != null ? touByDate[dateKey] : null;
                               if (dayTou != null) {
                                 final total = dayTou.offKwh + dayTou.peakKwh + dayTou.midPeakKwh;
-                                final tooltipText = 'Off-Peak: ${dayTou.offKwh.toStringAsFixed(1)} kWh\n'
-                                    'Peak: ${dayTou.peakKwh.toStringAsFixed(1)} kWh\n'
-                                    'Mid-Peak: ${dayTou.midPeakKwh.toStringAsFixed(1)} kWh\n'
-                                    'Total: ${total.toStringAsFixed(1)} kWh\n'
+                                final tooltipText = 'Off-Peak: ${FormattingUtils.formatKwh(dayTou.offKwh)}\n'
+                                    'Peak: ${FormattingUtils.formatKwh(dayTou.peakKwh)}\n'
+                                    'Mid-Peak: ${FormattingUtils.formatKwh(dayTou.midPeakKwh)}\n'
+                                    'Total: ${FormattingUtils.formatKwh(total)}\n'
                                     '───\n$dateStr';
                                 return BarTooltipItem(
                                   tooltipText,
@@ -210,7 +211,7 @@ class AmiPeriodChart extends StatelessWidget {
                                 );
                               }
                               final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                              final tooltipText = '${kWh.toStringAsFixed(1)} kWh\n$dateStr';
+                              final tooltipText = '${FormattingUtils.formatKwh(kWh)}\n$dateStr';
                               return BarTooltipItem(
                                 tooltipText,
                                 const TextStyle(
@@ -221,7 +222,7 @@ class AmiPeriodChart extends StatelessWidget {
                               );
                             } catch (e) {
                               final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                              final tooltipText = '${kWh.toStringAsFixed(1)} kWh';
+                              final tooltipText = '${FormattingUtils.formatKwh(kWh)}';
                               return BarTooltipItem(
                                 tooltipText,
                                 const TextStyle(

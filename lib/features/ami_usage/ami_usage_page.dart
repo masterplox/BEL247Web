@@ -7,6 +7,7 @@ import '../../core/providers/account_verification_providers.dart';
 import '../../core/providers/feature_providers.dart';
 import '../../core/utils/account_connection_utils.dart';
 import '../../core/widgets/app_empty_state.dart';
+import '../../core/widgets/fill_viewport_scroll.dart';
 import '../../data/models/ami_bucket_parser.dart';
 import '../../data/models/ami_data.dart';
 import '../../data/models/api_response_dtos.dart';
@@ -20,6 +21,7 @@ import 'widgets/ami_detail_cards.dart'
 import 'widgets/ami_filter_controls.dart';
 import 'widgets/ami_period_chart.dart';
 import 'widgets/ami_summary_cards.dart';
+import '../../core/utils/formatting_utils.dart';
 
 enum FilterType { day, week, month, year }
 
@@ -285,8 +287,10 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       //   centerTitle: false,
       //   elevation: 0,
       // ),
-      body: SingleChildScrollView(
-        child: Container(
+      body: FillViewportScroll(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Container(
           padding: EdgeInsets.all(
             MediaQuery.of(context).size.width < AppTheme.tabletBreakpoint
                 ? AppTheme.spacing16
@@ -381,6 +385,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -725,7 +730,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             ),
             const SizedBox(height: AppTheme.spacing8),
             Text(
-              '${kwh.toStringAsFixed(1)} kWh',
+              FormattingUtils.formatKwh(kwh),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 22,

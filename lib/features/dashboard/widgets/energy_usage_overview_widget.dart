@@ -9,6 +9,7 @@ import '../../../core/widgets/app_text.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class EnergyUsageOverviewWidget extends StatefulWidget {
   const EnergyUsageOverviewWidget({
@@ -152,12 +153,12 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
                   final index = group.x.toInt();
                   if (index >= 0 && index < dates.length) {
                     return BarTooltipItem(
-                      '${dateFormatter.format(dates[index])}\n${kwh.toStringAsFixed(1)} kWh',
+                      '${dateFormatter.format(dates[index])}\n${FormattingUtils.formatKwh(kwh)}',
                       const TextStyle(), // Will be styled by buildBarTooltipData
                     );
                   }
                   return BarTooltipItem(
-                    '${kwh.toStringAsFixed(1)} kWh',
+                    '${FormattingUtils.formatKwh(kwh)}',
                     const TextStyle(), // Will be styled by buildBarTooltipData
                   );
                 },
@@ -346,7 +347,7 @@ class _EnergyUsageOverviewWidgetState extends State<EnergyUsageOverviewWidget> {
             ),
             const SizedBox(height: AppTheme.spacing8),
             AppText(
-              '${value.toStringAsFixed(1)} kWh',
+              '${FormattingUtils.formatKwh(value)}',
               style: AppTextStyle.title,
               color: isHighlighted
                   ? Theme.of(context).colorScheme.primary

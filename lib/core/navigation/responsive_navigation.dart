@@ -11,7 +11,6 @@ import '../providers/engagement_providers.dart';
 import '../providers/meter_data_providers.dart';
 import '../widgets/account_switcher.dart';
 import '../widgets/app_support_dialog.dart';
-import '../widgets/centered_content.dart';
 import '../widgets/connectivity_banner.dart';
 import '../widgets/notice_banner.dart';
 import '../widgets/sidebar_nav_item.dart';
@@ -153,7 +152,7 @@ class _SidebarLayout extends StatelessWidget {
                   navigationNotifier: navigationNotifier,
                 ),
                 Expanded(
-                  child: CenteredContent(child: child),
+                  child: child,
                 ),
               ],
             ),
@@ -182,7 +181,7 @@ class _BottomNavLayout extends StatelessWidget {
           const ConnectivityBanner(),
           const NoticeBanner(),
           Expanded(
-            child: CenteredContent(child: child),
+            child: child,
           ),
         ],
       ),

@@ -374,7 +374,7 @@ class _MeterReadingsChartState extends ConsumerState<MeterReadingsChart> {
                   child: _buildDetailCard(
                     context,
                     'Consumption',
-                    '${readingData.consumption.toStringAsFixed(2)} kWh',
+                    '${FormattingUtils.formatKwh(readingData.consumption)}',
                     Icons.electrical_services,
                     AppColors.primary,
                   ),
@@ -399,7 +399,7 @@ class _MeterReadingsChartState extends ConsumerState<MeterReadingsChart> {
                   child: _buildDetailCard(
                     context,
                     'Avg Usage',
-                    '${readingData.averageUsage.toStringAsFixed(2)} kWh/day',
+                    '${FormattingUtils.formatKwh(readingData.averageUsage)}/day',
                     Icons.trending_up,
                     AppColors.warning,
                   ),
@@ -424,7 +424,7 @@ class _MeterReadingsChartState extends ConsumerState<MeterReadingsChart> {
                   child: _buildDetailCard(
                     context,
                     'Consumption',
-                    '${readingData.consumption.toStringAsFixed(2)} kWh',
+                    '${FormattingUtils.formatKwh(readingData.consumption)}',
                     Icons.electrical_services,
                     AppColors.primary,
                   ),
@@ -445,7 +445,7 @@ class _MeterReadingsChartState extends ConsumerState<MeterReadingsChart> {
                   child: _buildDetailCard(
                     context,
                     'Avg Usage',
-                    '${readingData.averageUsage.toStringAsFixed(2)} kWh/day',
+                    '${FormattingUtils.formatKwh(readingData.averageUsage)}/day',
                     Icons.trending_up,
                     AppColors.warning,
                   ),

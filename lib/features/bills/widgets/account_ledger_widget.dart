@@ -921,6 +921,8 @@ class _AccountLedgerWidgetState extends ConsumerState<AccountLedgerWidget> {
             _buildDetailRow(context, 'Outstanding Balance', billDetail.balanceForward),
             // Charges Breakdown
             _buildDetailRow(context, 'Consumption', billDetail.consumption),
+            _buildDetailRow(context, 'Minimum Bill', billDetail.minimumBill),
+            _buildDetailRow(context, 'Other Charges', billDetail.otherCharge),
             _buildDetailRow(context, 'GST Charge', billDetail.gstCharge),
             const Divider(height: AppTheme.spacing24),
             // Totals

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 /// Base class for detail data
 abstract class AmiDetail {
@@ -111,7 +112,7 @@ class _HourlyDetailCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${detail.kWh.toStringAsFixed(2)} kWh',
+                          '${FormattingUtils.formatKwh(detail.kWh)}',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
@@ -170,7 +171,7 @@ class _DayDetailCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${detail.kWh.toStringAsFixed(2)} kWh',
+                          '${FormattingUtils.formatKwh(detail.kWh)}',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
@@ -233,7 +234,7 @@ class _MonthDetailCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${detail.kWh.toStringAsFixed(2)} kWh',
+                          '${FormattingUtils.formatKwh(detail.kWh)}',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,

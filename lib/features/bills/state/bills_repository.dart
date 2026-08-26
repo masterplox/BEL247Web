@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/config/env.dart';
@@ -9,6 +10,7 @@ import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../data/services/api_client.dart';
 import '../../../data/services/http_client.dart';
+import '../../../data/services/token_storage_service.dart';
 import '../../../data/sources/mock/mock_app_data_service.dart';
 import '../../../data/sources/mock/mock_bill_repository.dart';
 
@@ -303,90 +305,123 @@ class BillsRepository {
 
   /// Request an activation code for bill download access.
   ///
-  /// POST /Bills/V5/BillDownloadActivationCode
-  /// For activation code requests, the code itself is returned in the
-  /// `message` field.
+  /// POST /Bills/V5/BillDownloadActivationCode?billNumber={billNumber}
   Future<BaseApiResponseDto> requestBillDownloadActivationCode({
     required String billNumber,
   }) async {
     try {
-      final response = await _apiClient.post<Map<String, dynamic>>(
+      final response = await _apiClient.post<dynamic>(
         ApiEndpoints.billDownloadActivationCode,
-        data: {
-          'BillNumber': billNumber,
-        },
         authenticated: true,
+        queryParameters: <String, dynamic>{'billNumber': billNumber},
       );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return BaseApiResponseDto.fromJson(response.data!);
+      final payload = response.data;
+      if (response.statusCode == 200 && payload is Map) {
+        return BaseApiResponseDto.fromJson(
+          Map<String, dynamic>.from(payload),
+        );
       }
-
-      Logger.warning(
-        'Bill download activationCode request failed. Status: ${response.statusCode}',
-        tag: 'BillsRepository',
-      );
       return BaseApiResponseDto(
         status: response.statusCode ?? 500,
         message: 'Failed to send activation code.',
       );
-    } catch (e, stackTrace) {
+    } on DioException catch (e) {
       Logger.error(
         'Error requesting bill download activation code',
         error: e,
-        stackTrace: stackTrace,
         tag: 'BillsRepository',
       );
-      return const BaseApiResponseDto(
-        status: 500,
-        message: 'Unexpected error while sending activation code.',
+      return BaseApiResponseDto(
+        status: e.response?.statusCode ?? 500,
+        message: _billDownloadErrorMessage(
+          e,
+          'Unexpected error while sending activation code.',
+        ),
       );
     }
   }
 
   /// Validate bill download activation code.
   ///
-  /// POST /Bills/V5/BillDownloadAuthenticationCode
-  /// For activation, the human-readable result is returned in the `message`
-  /// field.
+  /// POST /Bills/V5/BillDownloadAuthenticateCode
+  /// Headers: Username, Token
+  /// Body (Swagger `data`): { code, billNumber }
   Future<BaseApiResponseDto> validateBillDownloadActivationCode({
     required String billNumber,
     required String code,
   }) async {
+    final session = await TokenStorageService.getUserSession();
+    final username = session?.preferences['username']?.toString().trim() ?? '';
+    final token = await TokenStorageService.getAccessToken() ?? '';
+    final body = <String, dynamic>{
+      'code': code,
+      'billNumber': billNumber,
+    };
+
+    if (username.isEmpty || token.isEmpty) {
+      return const BaseApiResponseDto(
+        status: 401,
+        message: 'Sign in is required to verify bill download access.',
+      );
+    }
+
     try {
-      final response = await _apiClient.post<Map<String, dynamic>>(
+      final response = await _apiClient.post<dynamic>(
         ApiEndpoints.billDownloadAuthenticationCode,
-        data: {
-          'BillNumber': billNumber,
-          'Code': code,
-        },
         authenticated: true,
+        data: body,
+        options: Options(
+          headers: <String, dynamic>{
+            'Username': username,
+            'Token': token,
+          },
+        ),
       );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return BaseApiResponseDto.fromJson(response.data!);
+      final payload = response.data;
+      if (response.statusCode == 200 && payload is Map) {
+        return BaseApiResponseDto.fromJson(
+          Map<String, dynamic>.from(payload),
+        );
       }
-
-      Logger.warning(
-        'Bill download authenticationCode request failed. Status: ${response.statusCode}',
-        tag: 'BillsRepository',
-      );
       return BaseApiResponseDto(
         status: response.statusCode ?? 500,
         message: 'Failed to verify activation code.',
       );
-    } catch (e, stackTrace) {
+    } on DioException catch (e) {
       Logger.error(
         'Error validating bill download activation code',
         error: e,
-        stackTrace: stackTrace,
         tag: 'BillsRepository',
       );
-      return const BaseApiResponseDto(
-        status: 500,
-        message: 'Unexpected error while verifying activation code.',
+      return BaseApiResponseDto(
+        status: e.response?.statusCode ?? 500,
+        message: _billDownloadErrorMessage(
+          e,
+          'Unexpected error while verifying activation code.',
+        ),
       );
     }
+  }
+
+  static String _billDownloadErrorMessage(Object error, String fallback) {
+    if (error is DioException) {
+      Logger.warning(
+        'Bill download Dio error type=${error.type} status=${error.response?.statusCode} data=${error.response?.data}',
+        tag: 'BillsRepository',
+      );
+      final data = error.response?.data;
+      if (data is Map) {
+        final apiMessage = data['message'] ?? data['Message'];
+        if (apiMessage != null && apiMessage.toString().trim().isNotEmpty) {
+          return apiMessage.toString();
+        }
+      }
+      final status = error.response?.statusCode;
+      if (status != null) {
+        return 'Activation request failed (HTTP $status).';
+      }
+    }
+    return fallback;
   }
 
   /// Extract payment method from transaction description

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../data/models/auth.dart';
 import '../../../core/widgets/credential_guidelines_dialog.dart';
+import '../../../core/widgets/fill_viewport_scroll.dart';
 import '../../../theme/colors.dart';
 import '../providers/auth_provider.dart';
 
@@ -101,9 +102,9 @@ class _SignupCredentialsPageState extends ConsumerState<SignupCredentialsPage> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+        child: FillViewportScroll(
+          padding: const EdgeInsets.all(24),
+          child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(

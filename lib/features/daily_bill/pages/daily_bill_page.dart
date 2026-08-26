@@ -276,7 +276,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         : '';
     return _buildStatCard(
       title: 'Peak Interval',
-      value: peak != null ? peak.kwh.toStringAsFixed(2) : '0.0',
+      value: peak != null ? FormattingUtils.formatKwhNumber(peak.kwh) : '0',
       subtitle: 'kWh\nat $timeStr',
       color: Theme.of(context).textTheme.bodyLarge?.color,
       icon: Icons.trending_up,
@@ -290,7 +290,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         : '';
     return _buildStatCard(
       title: 'Lowest Interval',
-      value: low != null ? low.kwh.toStringAsFixed(2) : '0.0',
+      value: low != null ? FormattingUtils.formatKwhNumber(low.kwh) : '0',
       subtitle: 'kWh\nat $timeStr',
       color: Theme.of(context).textTheme.bodyLarge?.color,
       icon: Icons.trending_down,
@@ -303,7 +303,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
         : current.averageHourlyUsage;
     return _buildStatCard(
       title: 'Average/Interval',
-      value: avg.toStringAsFixed(2),
+      value: FormattingUtils.formatKwhNumber(avg),
       subtitle: 'kWh',
       color: Theme.of(context).textTheme.bodyLarge?.color,
       icon: Icons.timeline,
@@ -345,7 +345,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
             // ),
             // const SizedBox(height: AppTheme.spacing8),
             Text(
-              '${projectedUsage.toStringAsFixed(1)} kWh expected over 30 days',
+              '${FormattingUtils.formatKwh(projectedUsage)} expected over 30 days',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             // Dollar amounts are hidden in this version. They will be shown in a future release.
@@ -388,7 +388,7 @@ class _DailyBillPageState extends ConsumerState<DailyBillPage> {
             const SizedBox(height: AppTheme.spacing12),
             _breakdownRow(
               context,
-              'Energy Charge (${current.totalKwh.toStringAsFixed(1)} kWh × BZ\$0.35)',
+              'Energy Charge (${FormattingUtils.formatKwh(current.totalKwh)} × BZ\$0.35)',
               b.energyCharge,
             ),
             _breakdownRow(context, 'Service Fee', b.serviceFee),

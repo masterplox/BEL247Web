@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../theme/colors.dart';
+import '../../../core/widgets/fill_viewport_scroll.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/contact_code_delivery_form.dart';
 
@@ -47,9 +48,9 @@ class _SignupContactPageState extends ConsumerState<SignupContactPage> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+        child: FillViewportScroll(
+          padding: const EdgeInsets.all(24),
+          child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(

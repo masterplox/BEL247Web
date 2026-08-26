@@ -634,8 +634,8 @@ class _HourlyChart extends StatelessWidget {
               // final cost = kwh * 0.35;
               return BarTooltipItem(
                 // Dollar amounts are hidden in this version. They will be shown in a future release.
-                // '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh\nCost: BZ\$${cost.toStringAsFixed(2)}',
-                '${_formatHour(hour)}\nUsage: ${kwh.toStringAsFixed(2)} kWh',
+                // '${_formatHour(hour)}\nUsage: ${FormattingUtils.formatKwh(kwh)}\nCost: BZ\$${cost.toStringAsFixed(2)}',
+                '${_formatHour(hour)}\nUsage: ${FormattingUtils.formatKwh(kwh)}',
                 const TextStyle(), // Will be styled by buildBarTooltipData
               );
             },
@@ -698,7 +698,7 @@ class _SummaryRow extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true),
+                        child: _statTile(context, 'Total kWh', FormattingUtils.formatKwhNumber(total), highlighted: true),
                       ),
                       const SizedBox(width: AppTheme.spacing12),
                       // Dollar amounts are hidden in this version. They will be shown in a future release.
@@ -711,11 +711,11 @@ class _SummaryRow extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _statTile(context, 'Peak Usage', '${peak.toStringAsFixed(2)} kWh'),
+                        child: _statTile(context, 'Peak Usage', '${FormattingUtils.formatKwh(peak)}'),
                       ),
                       const SizedBox(width: AppTheme.spacing12),
                       Expanded(
-                        child: _statTile(context, 'Average usage', '${avg.toStringAsFixed(2)} kWh'),
+                        child: _statTile(context, 'Average usage', '${FormattingUtils.formatKwh(avg)}'),
                       ),
                     ],
                   ),
@@ -725,14 +725,14 @@ class _SummaryRow extends StatelessWidget {
               // On tablet/desktop, use a single row
               return Row(
                 children: [
-                  Expanded(child: _statTile(context, 'Total kWh', total.toStringAsFixed(1), highlighted: true)),
+                  Expanded(child: _statTile(context, 'Total kWh', FormattingUtils.formatKwhNumber(total), highlighted: true)),
                   const SizedBox(width: AppTheme.spacing16),
                   // Dollar amounts are hidden in this version. They will be shown in a future release.
                   // Expanded(child: _statTile(context, 'Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
                   // const SizedBox(width: AppTheme.spacing16),
-                  Expanded(child: _statTile(context, 'Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
+                  Expanded(child: _statTile(context, 'Peak Usage', '${FormattingUtils.formatKwh(peak)}')),
                   const SizedBox(width: AppTheme.spacing16),
-                  Expanded(child: _statTile(context, 'Average usage', '${avg.toStringAsFixed(2)} kWh')),
+                  Expanded(child: _statTile(context, 'Average usage', '${FormattingUtils.formatKwh(avg)}')),
                 ],
               );
             }
@@ -871,7 +871,7 @@ class _DailyChart extends StatelessWidget {
               final kwh = rod.toY;
               final date = days[idx].date;
               return BarTooltipItem(
-                '${date.month}/${date.day}\n${kwh.toStringAsFixed(1)} kWh',
+                '${date.month}/${date.day}\n${FormattingUtils.formatKwh(kwh)}',
                 const TextStyle(), // Will be styled by buildBarTooltipData
               );
             },
@@ -1012,7 +1012,7 @@ class _YearlyChart extends StatelessWidget {
                     final value = rod.toY;
                     final monthName = DateFormat('MMMM').format(DateTime(year, monthIndex + 1, 1));
                     return BarTooltipItem(
-                      '$monthName\n${value.toStringAsFixed(1)} kWh',
+                      '$monthName\n${FormattingUtils.formatKwh(value)}',
                       const TextStyle(), // Will be styled by buildBarTooltipData
                     );
                   },
@@ -1153,7 +1153,7 @@ class _SummaryRowFromDays extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true),
+                        child: _SummaryRow._statTileStatic('Total kWh', FormattingUtils.formatKwhNumber(total), highlighted: true),
                       ),
                       const SizedBox(width: AppTheme.spacing12),
                       // Dollar amounts are hidden in this version. They will be shown in a future release.
@@ -1166,11 +1166,11 @@ class _SummaryRowFromDays extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _SummaryRow._statTileStatic('Peak Usage', '${peak.toStringAsFixed(2)} kWh'),
+                        child: _SummaryRow._statTileStatic('Peak Usage', '${FormattingUtils.formatKwh(peak)}'),
                       ),
                       const SizedBox(width: AppTheme.spacing12),
                       Expanded(
-                        child: _SummaryRow._statTileStatic('Average usage', '${avg.toStringAsFixed(2)} kWh'),
+                        child: _SummaryRow._statTileStatic('Average usage', '${FormattingUtils.formatKwh(avg)}'),
                       ),
                     ],
                   ),
@@ -1180,14 +1180,14 @@ class _SummaryRowFromDays extends StatelessWidget {
               // On tablet/desktop, use a single row
               return Row(
                 children: [
-                  Expanded(child: _SummaryRow._statTileStatic('Total kWh', total.toStringAsFixed(1), highlighted: true)),
+                  Expanded(child: _SummaryRow._statTileStatic('Total kWh', FormattingUtils.formatKwhNumber(total), highlighted: true)),
                   const SizedBox(width: AppTheme.spacing16),
                   // Dollar amounts are hidden in this version. They will be shown in a future release.
                   // Expanded(child: _SummaryRow._statTileStatic('Est. Cost', 'BZ\$${estCost.toStringAsFixed(2)}')),
                   // const SizedBox(width: AppTheme.spacing16),
-                  Expanded(child: _SummaryRow._statTileStatic('Peak Usage', '${peak.toStringAsFixed(2)} kWh')),
+                  Expanded(child: _SummaryRow._statTileStatic('Peak Usage', '${FormattingUtils.formatKwh(peak)}')),
                   const SizedBox(width: AppTheme.spacing16),
-                  Expanded(child: _SummaryRow._statTileStatic('Average usage', '${avg.toStringAsFixed(2)} kWh')),
+                  Expanded(child: _SummaryRow._statTileStatic('Average usage', '${FormattingUtils.formatKwh(avg)}')),
                 ],
               );
             }

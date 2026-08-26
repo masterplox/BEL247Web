@@ -6,6 +6,7 @@ import '../providers/feature_providers.dart';
 import '../utils/account_connection_utils.dart';
 import 'app_empty_state.dart';
 import 'app_loading_state.dart';
+import 'fill_viewport_scroll.dart';
 
 /// A reusable scaffold wrapper for pages that depend on a selected account.
 ///
@@ -107,9 +108,9 @@ class AccountAwareScaffold extends ConsumerWidget {
 
       return Scaffold(
         appBar: appBar,
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing16),
+        body: FillViewportScroll(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing16),
+          child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

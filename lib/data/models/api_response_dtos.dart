@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'editable_customer_account_api_json.dart';
+
 part 'api_response_dtos.freezed.dart';
 part 'api_response_dtos.g.dart';
 
@@ -11,8 +13,22 @@ class BaseApiResponseDto with _$BaseApiResponseDto {
     String? message,
   }) = _BaseApiResponseDto;
 
-  factory BaseApiResponseDto.fromJson(Map<String, dynamic> json) =>
-      _$BaseApiResponseDtoFromJson(json);
+  factory BaseApiResponseDto.fromJson(Map<String, dynamic> json) {
+    final rawStatus = json['status'] ?? json['Status'];
+    final rawMessage = json['message'] ?? json['Message'];
+    final status = rawStatus is num
+        ? rawStatus.toInt()
+        : int.tryParse('$rawStatus') ?? 500;
+    return BaseApiResponseDto(
+      status: status,
+      message: rawMessage?.toString(),
+    );
+  }
+}
+
+extension BaseApiResponseDtoX on BaseApiResponseDto {
+  /// BEL bodies use `200` or `0` for success.
+  bool get isSuccess => status == 200 || status == 0;
 }
 
 // ============================================================================
@@ -175,7 +191,9 @@ class EditableCustomerAccountDto with _$EditableCustomerAccountDto {
   }) = _EditableCustomerAccountDto;
 
   factory EditableCustomerAccountDto.fromJson(Map<String, dynamic> json) =>
-      _$EditableCustomerAccountDtoFromJson(json);
+      _$EditableCustomerAccountDtoFromJson(
+        editableCustomerAccountJsonFromApi(json),
+      );
 }
 
 /// Connected accounts response DTO
@@ -187,7 +205,9 @@ class ConnectedAccountsResponseDto with _$ConnectedAccountsResponseDto {
   }) = _ConnectedAccountsResponseDto;
 
   factory ConnectedAccountsResponseDto.fromJson(Map<String, dynamic> json) =>
-      _$ConnectedAccountsResponseDtoFromJson(json);
+      _$ConnectedAccountsResponseDtoFromJson(
+        connectedAccountsResponseJsonFromApi(json),
+      );
 }
 
 /// Customer account detail response DTO

@@ -12,6 +12,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_text.dart';
 import '../../core/widgets/bel_mobile_app_qr_card.dart';
 import '../../core/widgets/customer_portal_support_button.dart';
+import '../../core/widgets/fill_viewport_scroll.dart';
 import '../../data/models/auth.dart';
 import '../../theme/colors.dart';
 import 'providers/auth_provider.dart';
@@ -26,12 +27,15 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   static const String _rememberMeKey = 'login_remember_me';
   static const String _rememberedUsernameKey = 'login_remembered_username';
+  static const String _appCredentialsCaptionDismissedKey =
+      'login_app_credentials_caption_dismissed';
 
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool _showAppCredentialsCaption = true;
 
   @override
   initState() {
@@ -99,9 +103,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+        child: FillViewportScroll(
+          padding: const EdgeInsets.all(24),
+          child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
@@ -135,9 +139,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget _buildMobileLandingView() => Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+          child: FillViewportScroll(
+            padding: const EdgeInsets.all(24),
+            child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
                 child: Column(
@@ -290,7 +294,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               fontWeight: FontWeight.bold,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            if (_showAppCredentialsCaption) ...[
+              const SizedBox(height: 8),
+              _buildAppCredentialsCaption(),
+              const SizedBox(height: 16),
+            ] else
+              const SizedBox(height: 24),
             
             // Username Field
             TextFormField(
@@ -403,6 +412,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
 
+  Widget _buildAppCredentialsCaption() => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Expanded(
+            child: AppText(
+              'Already using the BEL 24-7 app? Sign in with the same username and password.',
+              style: AppTextStyle.caption,
+              color: AppColors.textSecondary,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.close,
+              size: 16,
+              color: AppColors.textSecondary.withValues(alpha: 0.85),
+            ),
+            onPressed: _dismissAppCredentialsCaption,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            tooltip: 'Dismiss',
+          ),
+        ],
+      );
+
   /// Inline error below the password field (info-style section card).
   Widget _buildLoginErrorSection(String error) => AppCard(
         elevation: 0,
@@ -496,10 +530,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final savedRememberMe = await StorageService.getBool(_rememberMeKey) ?? false;
       final savedUsername = await StorageService.getString(_rememberedUsernameKey) ?? '';
 
+      final captionDismissed =
+          await StorageService.getBool(_appCredentialsCaptionDismissedKey) ??
+              false;
+
       if (!mounted) return;
       setState(() {
         _rememberMe = savedRememberMe;
         _usernameController.text = savedRememberMe ? savedUsername : '';
+        _showAppCredentialsCaption = !captionDismissed;
       });
     } catch (e, stackTrace) {
       Logger.error('Failed to load remembered login', error: e, stackTrace: stackTrace);
@@ -521,6 +560,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       await StorageService.remove(_rememberedUsernameKey);
     } catch (e, stackTrace) {
       Logger.error('Failed to clear remembered login', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _dismissAppCredentialsCaption() async {
+    setState(() {
+      _showAppCredentialsCaption = false;
+    });
+    try {
+      await StorageService.storeBool(_appCredentialsCaptionDismissedKey, true);
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to save app credentials caption dismiss',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 

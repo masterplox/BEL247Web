@@ -135,16 +135,18 @@ class ApiEndpoints {
       '/Bills/V1/Url/PDFString/$billNumber/$customerNumber/$accountNumber';
 
   /// Deliver activation code for bill download access
-  /// POST /Bills/V5/BillDownloadActivationCode
+  /// POST /Bills/V5/BillDownloadActivationCode?billNumber={billNumber}
   /// Auth: Yes (1)
-  /// Body: { BillNumber }
-  static String get billDownloadActivationCode => '/Bills/V5/BillDownloadActivationCode';
+  static String get billDownloadActivationCode =>
+      '/Bills/V5/BillDownloadActivationCode';
 
   /// Validate activation code for bill download access
-  /// POST /Bills/V5/BillDownloadAuthenticationCode
-  /// Auth: Yes (1)
-  /// Body: { Code, BillNumber }
-  static String get billDownloadAuthenticationCode => '/Bills/V5/BillDownloadAuthenticationCode';
+  /// POST /Bills/V5/BillDownloadAuthenticateCode
+  /// Auth: Yes
+  /// Headers: Username, Token
+  /// Body: { code, billNumber }
+  static String get billDownloadAuthenticationCode =>
+      '/Bills/V5/BillDownloadAuthenticateCode';
 
   // ============================================================================
   // Payment/Transaction Endpoints

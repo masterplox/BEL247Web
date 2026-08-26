@@ -657,6 +657,9 @@ final noticeBannerProvider = StateNotifierProvider<NoticeBannerNotifier, NoticeB
   (ref) => NoticeBannerNotifier(),
 );
 
+/// Account id for which the non-AMI notice was dismissed this session.
+final nonAmiNoticeDismissedAccountIdProvider = StateProvider<String?>((ref) => null);
+
 /// Account Switcher State
 class AccountSwitcherState {
   const AccountSwitcherState({

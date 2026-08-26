@@ -79,15 +79,18 @@ class ApiClient {
   /// [endpoint] - Just the endpoint path (e.g., ApiEndpoints.login)
   /// [data] - Request body data
   /// [authenticated] - Whether to include Bearer token (default: false for login, true for other requests)
+  /// [queryParameters] - Optional query parameters
   /// [options] - Optional Dio request options
   Future<Response<T>> post<T>(
     String endpoint, {
     dynamic data,
     bool authenticated = true,
+    Map<String, dynamic>? queryParameters,
     Options? options,
   }) async => _client.post<T>(
       endpoint,
       data: data,
+      queryParameters: queryParameters,
       options: _mergeOptions(options, authenticated),
     );
 

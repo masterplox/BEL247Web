@@ -6,6 +6,7 @@ import '../../../core/utils/widget_builder_utils.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class HourlyConsumptionChart extends ConsumerStatefulWidget {
   const HourlyConsumptionChart({
@@ -253,7 +254,7 @@ class _HourlyConsumptionChartState extends ConsumerState<HourlyConsumptionChart>
             final hour = spot.x.toInt();
             final kwh = spot.y;
             return LineTooltipItem(
-              '$hour:00\n${kwh.toStringAsFixed(1)} kWh',
+              '$hour:00\n${FormattingUtils.formatKwh(kwh)}',
               const TextStyle(), // Will be styled by buildLineTooltipData
             );
           }).toList(),

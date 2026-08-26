@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class DailyBillWidget extends ConsumerWidget {
   const DailyBillWidget({
@@ -183,7 +184,7 @@ class DailyBillWidget extends ConsumerWidget {
           ),
           Text(
             peakUsage != null
-                ? '${peakUsage.kwh.toStringAsFixed(1)} kWh'
+                ? '${FormattingUtils.formatKwh(peakUsage.kwh)}'
                 : '',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
@@ -227,7 +228,7 @@ class DailyBillWidget extends ConsumerWidget {
           ),
           Text(
             lowUsage != null
-                ? '${lowUsage.kwh.toStringAsFixed(1)} kWh'
+                ? '${FormattingUtils.formatKwh(lowUsage.kwh)}'
                 : '',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,

@@ -90,8 +90,11 @@ class FormattingUtils {
   /// Formats an amount as currency without sign handling
   static String formatCurrency(double amount) => 'BZ\$${amount.toStringAsFixed(2)}';
 
-  /// Formats kWh consumption
-  static String formatKwh(double kwh) => '${kwh.toStringAsFixed(2)} kWh';
+  /// Formats kWh as a whole number with unit (e.g. "738 kWh").
+  static String formatKwh(double kwh) => '${formatKwhNumber(kwh)} kWh';
+
+  /// Formats kWh as a whole number with no unit.
+  static String formatKwhNumber(double kwh) => kwh.round().toString();
 
   // Time formatting
   /// Formats time as "HH:mm"

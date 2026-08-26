@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class PeakLowIntervalWidget extends StatelessWidget {
   const PeakLowIntervalWidget({
@@ -161,7 +162,7 @@ class PeakLowIntervalWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${peak.kwh.toStringAsFixed(1)} kWh',
+                '${FormattingUtils.formatKwh(peak.kwh)}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -207,7 +208,7 @@ class PeakLowIntervalWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${low.kwh.toStringAsFixed(1)} kWh',
+                '${FormattingUtils.formatKwh(low.kwh)}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

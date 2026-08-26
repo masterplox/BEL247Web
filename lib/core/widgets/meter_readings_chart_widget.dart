@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/utils/formatting_utils.dart';
+import '../utils/formatting_utils.dart';
 import '../../core/widgets/app_line_chart.dart';
 import '../../core/widgets/app_text.dart';
 import '../../data/models/api_response_dtos.dart';
@@ -260,10 +260,10 @@ class MeterReadingsChartWidget extends ConsumerWidget {
                   // Build detailed tooltip text with all fields
                   final tooltipText = [
                     '$label - $monthName',
-                    'Consumption: ${value.toStringAsFixed(2)} kWh',
+                    'Consumption: ${FormattingUtils.formatKwh(value)}',
                     // Dollar amounts are hidden in this version. They will be shown in a future release.
                     // 'Amount: BZ\$${monthData.amount.toStringAsFixed(2)}',
-                    'Avg Usage: ${monthData.averageUsage.toStringAsFixed(2)} kWh/day',
+                    'Avg Usage: ${FormattingUtils.formatKwh(monthData.averageUsage)}/day',
                     'Days: ${monthData.days}',
                   ].join('\n');
                   

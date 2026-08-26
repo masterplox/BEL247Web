@@ -10,6 +10,7 @@ import '../../../theme/colors.dart';
 import '../state/ami_dashboard_usage_providers.dart'
     show amiDashboardMonthlyTotalsProvider, usageDashboardCardsProvider;
 import '../state/billing_period_providers.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 /// Dashboard usage trend chart for AMI meters.
 ///
@@ -389,7 +390,7 @@ class _AmiConsumptionChartWidgetState extends ConsumerState<AmiConsumptionChartW
             final index = barSpot.x.toInt();
             if (index >= 0 && index < chartData.length) {
               final consumption = chartData[index]['consumption'] as double;
-              final tooltipText = '${consumption.toStringAsFixed(1)} kWh';
+              final tooltipText = '${FormattingUtils.formatKwh(consumption)}';
               return LineTooltipItem(
                 tooltipText,
                 const TextStyle(color: Colors.white, fontSize: 12),

@@ -820,7 +820,7 @@ class AccountSummaryWidget extends ConsumerWidget {
                   child: _buildYTDItem(
                     context,
                     'Avg Daily',
-                    '${usageSummary.yearToDate.averageDaily.toStringAsFixed(1)} kWh',
+                    '${FormattingUtils.formatKwh(usageSummary.yearToDate.averageDaily)}',
                   ),
                 ),
               ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/formatting_utils.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialog.dart';
 // Dollar amounts are hidden in this version. They will be shown in a future release.
@@ -137,18 +138,29 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         _StatCardData(
           label: 'This Billing Period',
           subLabel: subLabel.isEmpty ? null : subLabel,
-          value: stats.currentPeriodKWh.toStringAsFixed(0),
+          value: FormattingUtils.formatKwhNumber(stats.currentPeriodKWh),
           unit: 'kWh',
           icon: Icons.bolt,
           color: AppColors.primary,
           detailTitle: 'Current Billing Period Usage',
           detailSubtitle: 'The billing period you are currently in',
           detailItems: [
-            if (stats.currentPeriodLabel.isNotEmpty)
-              _DetailItem(label: 'Billing Period', value: stats.currentPeriodLabel),
+            if (stats.currentStartDate != null && stats.currentEndDate != null)
+              _DetailItem(
+                label: 'Billing Period',
+                value: _formatPeriodRange(
+                  stats.currentStartDate,
+                  stats.currentEndDate,
+                ),
+              )
+            else if (stats.currentPeriodLabel.isNotEmpty)
+              _DetailItem(
+                label: 'Billing Period',
+                value: stats.currentPeriodLabel,
+              ),
             _DetailItem(
               label: 'Consumption',
-              value: '${stats.currentPeriodKWh.toStringAsFixed(2)} kWh',
+              value: FormattingUtils.formatKwh(stats.currentPeriodKWh),
             ),
             // Dollar amounts are hidden in this version. They will be shown in a future release.
             // _DetailItem(
@@ -159,19 +171,12 @@ class AmiUsageStatsWidget extends ConsumerWidget {
             if (stats.daysElapsed > 0)
               _DetailItem(
                 label: 'Daily Average',
-                value:
-                    '${stats.currentDailyAverageKWh.toStringAsFixed(1)} kWh',
+                value: FormattingUtils.formatKwh(stats.currentDailyAverageKWh),
               ),
             if (stats.daysInPeriod > 0)
               _DetailItem(
                 label: 'Billing Days',
                 value: '${stats.daysElapsed} of ${stats.daysInPeriod} days',
-              ),
-            if (stats.currentStartDate != null && stats.currentEndDate != null)
-              _DetailItem(
-                label: 'Period Dates',
-                value:
-                    '${_dateFormat.format(stats.currentStartDate!)} - ${_dateFormat.format(stats.currentEndDate!)}',
               ),
           ],
           billedPeriods: stats.billedPeriods,
@@ -195,9 +200,9 @@ class AmiUsageStatsWidget extends ConsumerWidget {
           subLabel:
               stats.comparisonLabel.isEmpty ? null : stats.comparisonLabel,
           value: usedLess
-              ? '-${variance.abs().toStringAsFixed(0)}'
+              ? '-${FormattingUtils.formatKwhNumber(variance.abs())}'
               : usedMore
-                  ? '+${variance.abs().toStringAsFixed(0)}'
+                  ? '+${FormattingUtils.formatKwhNumber(variance.abs())}'
                   : '0',
           unit: 'kWh',
           icon: Icons.trending_up,
@@ -209,14 +214,17 @@ class AmiUsageStatsWidget extends ConsumerWidget {
             _DetailItem(
               label: 'Current Period',
               value: [
-                if (stats.currentPeriodLabel.isNotEmpty)
-                  stats.currentPeriodLabel,
-                '${stats.currentPeriodKWh.toStringAsFixed(2)} kWh',
-              ].join(' • '),
+                _formatPeriodRange(
+                  stats.currentStartDate,
+                  stats.currentEndDate,
+                  fallback: stats.currentPeriodLabel,
+                ),
+                FormattingUtils.formatKwh(stats.currentPeriodKWh),
+              ].where((part) => part.isNotEmpty).join(' • '),
             ),
             _DetailItem(
               label: 'Previous Period to Date',
-              value: '${stats.previousPeriodToDateKWh.toStringAsFixed(2)} kWh',
+              value: FormattingUtils.formatKwh(stats.previousPeriodToDateKWh),
             ),
             if (stats.daysElapsed > 0)
               _DetailItem(
@@ -225,7 +233,11 @@ class AmiUsageStatsWidget extends ConsumerWidget {
               ),
             _DetailItem(
               label: 'Difference',
-              value: '${variance.toStringAsFixed(2)} kWh',
+              value: usedLess
+                  ? '-${FormattingUtils.formatKwh(variance.abs())}'
+                  : usedMore
+                      ? '+${FormattingUtils.formatKwh(variance.abs())}'
+                      : FormattingUtils.formatKwh(0),
               icon: usedMore
                   ? Icons.arrow_upward
                   : usedLess
@@ -235,6 +247,21 @@ class AmiUsageStatsWidget extends ConsumerWidget {
             ),
           ],
           billedPeriods: stats.billedPeriods,
+          comparisonVisual: _ComparisonVisualData(
+            currentLabel: 'Current period',
+            currentDates: _formatPeriodRange(
+              stats.currentStartDate,
+              stats.currentEndDate,
+              fallback: stats.currentPeriodLabel,
+            ),
+            currentKwh: stats.currentPeriodKWh,
+            previousLabel: 'Same days, previous period',
+            previousDates: _previousComparisonDates(stats),
+            previousKwh: stats.previousPeriodToDateKWh,
+            varianceKwh: variance,
+            usedMore: usedMore,
+            usedLess: usedLess,
+          ),
         ),
       );
     }
@@ -245,7 +272,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
           label: 'Peak Billing Period',
           subLabel:
               stats.peakPeriodLabel.isEmpty ? null : stats.peakPeriodLabel,
-          value: stats.peakBilledKWh.toStringAsFixed(0),
+          value: FormattingUtils.formatKwhNumber(stats.peakBilledKWh),
           unit: 'kWh',
           icon: Icons.local_fire_department,
           color: AppColors.warning,
@@ -256,7 +283,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
               _DetailItem(label: 'Billing Period', value: stats.peakPeriodLabel),
             _DetailItem(
               label: 'Consumption',
-              value: '${stats.peakBilledKWh.toStringAsFixed(2)} kWh',
+              value: FormattingUtils.formatKwh(stats.peakBilledKWh),
             ),
           ],
           billedPeriods: stats.billedPeriods,
@@ -270,7 +297,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
         _StatCardData(
           label: 'Average Usage',
           subLabel: stats.avgRangeLabel.isEmpty ? null : stats.avgRangeLabel,
-          value: stats.avgBilledKWh.toStringAsFixed(0),
+          value: FormattingUtils.formatKwhNumber(stats.avgBilledKWh),
           unit: 'kWh',
           icon: Icons.bar_chart,
           color: const Color(0xFF8B5CF6),
@@ -281,7 +308,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
               _DetailItem(label: 'Date Scope', value: stats.avgRangeLabel),
             _DetailItem(
               label: 'Avg. per Billing Period',
-              value: '${stats.avgBilledKWh.toStringAsFixed(2)} kWh',
+              value: FormattingUtils.formatKwh(stats.avgBilledKWh),
             ),
             if (stats.periodsAnalyzed > 0)
               _DetailItem(
@@ -443,7 +470,13 @@ class AmiUsageStatsWidget extends ConsumerWidget {
               ),
             ),
           ),
+          if (stat.comparisonVisual != null) ...[
+            const SizedBox(height: AppTheme.spacing8),
+            _buildComparisonVisual(context, stat.comparisonVisual!),
+          ],
           if (stat.billedPeriods.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spacing8),
+            const Divider(),
             const SizedBox(height: AppTheme.spacing8),
             Text(
               'Billed Periods',
@@ -531,7 +564,7 @@ class AmiUsageStatsWidget extends ConsumerWidget {
             ),
           ),
           Text(
-            '${period.billedKWh.toStringAsFixed(2)} kWh',
+            FormattingUtils.formatKwh(period.billedKWh),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isPeak ? AppColors.warning : null,
@@ -541,6 +574,187 @@ class AmiUsageStatsWidget extends ConsumerWidget {
       ),
     );
   }
+
+  String _formatPeriodRange(
+    DateTime? start,
+    DateTime? end, {
+    String fallback = '',
+  }) {
+    if (start != null && end != null) {
+      return '${_dateFormat.format(start)} - ${_dateFormat.format(end)}';
+    }
+    return fallback;
+  }
+
+  String _previousComparisonDates(UsageDashboardCardsResult stats) {
+    for (final period in stats.billedPeriods) {
+      final sameAsCurrent = stats.currentStartDate != null &&
+          period.startDate != null &&
+          DateUtils.isSameDay(period.startDate, stats.currentStartDate);
+      if (sameAsCurrent) continue;
+      final range = _formatPeriodRange(period.startDate, period.endDate);
+      if (range.isNotEmpty) return range;
+      if (period.rangeLabel.isNotEmpty) return period.rangeLabel;
+      if (period.label.isNotEmpty) return period.label;
+    }
+    return stats.comparisonLabel;
+  }
+
+  Widget _buildComparisonVisual(
+    BuildContext context,
+    _ComparisonVisualData visual,
+  ) {
+    final maxKwh = [
+      visual.currentKwh,
+      visual.previousKwh,
+    ].fold<double>(0, (highest, value) => value > highest ? value : highest);
+    final scale = maxKwh <= 0 ? 1.0 : maxKwh;
+
+    String summary;
+    if (visual.usedMore) {
+      summary =
+          'You used ${FormattingUtils.formatKwh(visual.varianceKwh.abs())} more than the same days in the previous period.';
+    } else if (visual.usedLess) {
+      summary =
+          'You used ${FormattingUtils.formatKwh(visual.varianceKwh.abs())} less than the same days in the previous period.';
+    } else {
+      summary = 'Usage matches the same days in the previous period.';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.spacing12),
+      decoration: BoxDecoration(
+        color: AppColors.grey50,
+        borderRadius: BorderRadius.circular(AppTheme.radius8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Usage compared',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+          ),
+          const SizedBox(height: AppTheme.spacing12),
+          _buildComparisonBar(
+            context,
+            label: visual.currentLabel,
+            dates: visual.currentDates,
+            kwh: visual.currentKwh,
+            fill: visual.currentKwh / scale,
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: AppTheme.spacing12),
+          _buildComparisonBar(
+            context,
+            label: visual.previousLabel,
+            dates: visual.previousDates,
+            kwh: visual.previousKwh,
+            fill: visual.previousKwh / scale,
+            color: AppColors.grey500,
+          ),
+          const SizedBox(height: AppTheme.spacing12),
+          Text(
+            summary,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: visual.usedMore
+                      ? AppColors.error
+                      : visual.usedLess
+                          ? AppColors.success
+                          : AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComparisonBar(
+    BuildContext context, {
+    required String label,
+    required String dates,
+    required double kwh,
+    required double fill,
+    required Color color,
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              Text(
+                FormattingUtils.formatKwh(kwh),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+          if (dates.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              dates,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+            ),
+          ],
+          const SizedBox(height: AppTheme.spacing8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 12,
+              child: Stack(
+                children: [
+                  Container(color: AppColors.grey200),
+                  FractionallySizedBox(
+                    widthFactor: fill.clamp(0.0, 1.0),
+                    child: Container(color: color),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+}
+
+class _ComparisonVisualData {
+  const _ComparisonVisualData({
+    required this.currentLabel,
+    required this.currentDates,
+    required this.currentKwh,
+    required this.previousLabel,
+    required this.previousDates,
+    required this.previousKwh,
+    required this.varianceKwh,
+    required this.usedMore,
+    required this.usedLess,
+  });
+
+  final String currentLabel;
+  final String currentDates;
+  final double currentKwh;
+  final String previousLabel;
+  final String previousDates;
+  final double previousKwh;
+  final double varianceKwh;
+  final bool usedMore;
+  final bool usedLess;
 }
 
 class _StatCardData {
@@ -556,6 +770,7 @@ class _StatCardData {
     this.detailSubtitle,
     this.billedPeriods = const [],
     this.highlightPeak = false,
+    this.comparisonVisual,
   });
 
   final String label;
@@ -569,6 +784,7 @@ class _StatCardData {
   final List<_DetailItem> detailItems;
   final List<BilledPeriodSummary> billedPeriods;
   final bool highlightPeak;
+  final _ComparisonVisualData? comparisonVisual;
 }
 
 class _DetailItem {

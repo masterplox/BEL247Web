@@ -6,6 +6,7 @@ import '../../../core/utils/widget_builder_utils.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class DailyConsumptionChart extends ConsumerWidget {
   const DailyConsumptionChart({
@@ -136,8 +137,8 @@ class DailyConsumptionChart extends ConsumerWidget {
                   final data = consumptionData![index];
                   return LineTooltipItem(
                     // Dollar amounts are hidden in this version. They will be shown in a future release.
-                    // '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh\n\$${data.cost.toStringAsFixed(2)}',
-                    '${data.date.day}/${data.date.month}\n${data.totalKwh.toStringAsFixed(1)} kWh',
+                    // '${data.date.day}/${data.date.month}\n${FormattingUtils.formatKwh(data.totalKwh)}\n\$${data.cost.toStringAsFixed(2)}',
+                    '${data.date.day}/${data.date.month}\n${FormattingUtils.formatKwh(data.totalKwh)}',
                     const TextStyle(), // Will be styled by buildLineTooltipData
                   );
                 }

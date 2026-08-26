@@ -3,7 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// App version from Flutter (`pubspec.yaml`), without the `+` build suffix.
 ///
-/// `PackageInfo.version` is the `2.1.1` part; `buildNumber` is the value after
+/// `PackageInfo.version` is the `2.1.2` part; `buildNumber` is the value after
 /// `+`. We only surface the version numbers.
 final appVersionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();

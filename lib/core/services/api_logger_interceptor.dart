@@ -567,7 +567,10 @@ class ApiLoggerInterceptor extends Interceptor {
     final masked = <String, dynamic>{};
     for (final entry in headers.entries) {
       final key = entry.key.toLowerCase();
-      if (key == 'authorization' || key == 'x-api-key' || key == 'cookie') {
+      if (key == 'authorization' ||
+          key == 'x-api-key' ||
+          key == 'cookie' ||
+          key == 'token') {
         masked[entry.key] = '***MASKED***';
       } else if (entry.value is List) {
         // Handle List values (from response headers)

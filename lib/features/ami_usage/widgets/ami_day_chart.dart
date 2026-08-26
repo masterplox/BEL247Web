@@ -5,6 +5,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../data/models/ami_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class AmiDayChart extends StatelessWidget {
   const AmiDayChart({
@@ -101,7 +102,7 @@ class AmiDayChart extends StatelessWidget {
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           final hour = data[group.x.toInt()];
                           if (hour.missing) return null;
-                          final tooltipText = '${hour.kWh.toStringAsFixed(2)} kWh\n${hour.time}';
+                          final tooltipText = '${FormattingUtils.formatKwh(hour.kWh)}\n${hour.time}';
                           return BarTooltipItem(
                             tooltipText,
                             const TextStyle(

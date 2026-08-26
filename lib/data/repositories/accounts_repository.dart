@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -130,14 +133,15 @@ class AccountsRepository {
         body['Email'] = email;
       }
 
-      final response = await _apiClient.post<Map<String, dynamic>>(
+      final response = await _apiClient.post<dynamic>(
         ApiEndpoints.fullAccessActivationCode,
         data: body,
         authenticated: true,
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        return BaseApiResponseDto.fromJson(response.data!);
+      final payload = _asJsonMap(response.data);
+      if (response.statusCode == 200 && payload != null) {
+        return BaseApiResponseDto.fromJson(payload);
       }
 
       Logger.warning(
@@ -155,9 +159,12 @@ class AccountsRepository {
         stackTrace: stackTrace,
         tag: 'AccountsRepository',
       );
-      return const BaseApiResponseDto(
+      return BaseApiResponseDto(
         status: 500,
-        message: 'Unexpected error while sending activation code.',
+        message: _activationErrorMessage(
+          e,
+          'Unexpected error while sending activation code.',
+        ),
       );
     }
   }
@@ -191,14 +198,15 @@ class AccountsRepository {
         body['Email'] = email;
       }
 
-      final response = await _apiClient.post<Map<String, dynamic>>(
+      final response = await _apiClient.post<dynamic>(
         ApiEndpoints.fullAccessActivate,
         data: body,
         authenticated: true,
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        return BaseApiResponseDto.fromJson(response.data!);
+      final payload = _asJsonMap(response.data);
+      if (response.statusCode == 200 && payload != null) {
+        return BaseApiResponseDto.fromJson(payload);
       }
 
       Logger.warning(
@@ -216,11 +224,66 @@ class AccountsRepository {
         stackTrace: stackTrace,
         tag: 'AccountsRepository',
       );
-      return const BaseApiResponseDto(
+      return BaseApiResponseDto(
         status: 500,
-        message: 'Unexpected error while verifying activation code.',
+        message: _activationErrorMessage(
+          e,
+          'Unexpected error while verifying activation code.',
+        ),
       );
     }
+  }
+
+  static String _activationErrorMessage(Object error, String fallback) {
+    if (error is DioException) {
+      final fromBody = _messageFromResponseData(error.response?.data);
+      if (fromBody != null) {
+        return fromBody;
+      }
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.connectionError:
+          return 'Could not reach the server. Check your connection and try again.';
+        default:
+          break;
+      }
+    }
+    return fallback;
+  }
+
+  static String? _messageFromResponseData(dynamic data) {
+    final map = _asJsonMap(data);
+    if (map == null) {
+      return null;
+    }
+    final message = map['message'] ?? map['Message'];
+    if (message != null && message.toString().trim().isNotEmpty) {
+      return message.toString();
+    }
+    return null;
+  }
+
+  static Map<String, dynamic>? _asJsonMap(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    if (data is Map) {
+      return data.map((key, value) => MapEntry(key.toString(), value));
+    }
+    if (data is String) {
+      final trimmed = data.trim();
+      if (trimmed.isEmpty) {
+        return null;
+      }
+      try {
+        return _asJsonMap(jsonDecode(trimmed));
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   /// Parse balance string to double

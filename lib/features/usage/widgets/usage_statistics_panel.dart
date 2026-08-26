@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/consumption.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/colors.dart';
+import '../../../core/utils/formatting_utils.dart';
 
 class UsageStatisticsPanel extends ConsumerWidget {
   const UsageStatisticsPanel({
@@ -30,7 +31,7 @@ class UsageStatisticsPanel extends ConsumerWidget {
         _buildStatRow(
           context,
           'Total Consumption',
-          '${stats.totalUsage.toStringAsFixed(1)} kWh',
+          '${FormattingUtils.formatKwh(stats.totalUsage)}',
           Icons.electrical_services,
           AppColors.primary,
         ),
@@ -47,7 +48,7 @@ class UsageStatisticsPanel extends ConsumerWidget {
         _buildStatRow(
           context,
           'Peak Usage',
-          '${stats.peakUsage.toStringAsFixed(1)} kWh',
+          '${FormattingUtils.formatKwh(stats.peakUsage)}',
           Icons.trending_up,
           AppColors.warning,
         ),
@@ -55,7 +56,7 @@ class UsageStatisticsPanel extends ConsumerWidget {
         _buildStatRow(
           context,
           'Average Usage',
-          '${stats.averageUsage.toStringAsFixed(1)} kWh',
+          '${FormattingUtils.formatKwh(stats.averageUsage)}',
           Icons.trending_flat,
           AppColors.info,
         ),

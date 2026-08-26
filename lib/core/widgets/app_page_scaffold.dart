@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import 'app_page_header.dart';
 import 'centered_content.dart';
+import 'fill_viewport_scroll.dart';
 
 /// A reusable page scaffold that standardizes:
 /// - Optional [AppBar]
@@ -72,7 +73,7 @@ class AppPageScaffold extends StatelessWidget {
     );
 
     if (enableScroll) {
-      content = SingleChildScrollView(child: content);
+      content = FillViewportScroll(child: content);
     }
 
     return Scaffold(
