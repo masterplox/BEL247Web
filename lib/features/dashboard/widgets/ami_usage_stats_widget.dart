@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -799,38 +801,103 @@ class AmiUsageStatsWidget extends ConsumerWidget {
           const SizedBox(height: AppTheme.spacing12),
           LayoutBuilder(
             builder: (context, constraints) {
+              const barTextStyle = TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              );
+              const horizontalPad = AppTheme.spacing8;
               final barWidth = constraints.maxWidth;
-              final markerLeft = (barWidth * fillFraction).clamp(0.0, barWidth);
+              final fillWidth = (barWidth * fillFraction).clamp(0.0, barWidth);
+              final markerLeft = fillWidth;
+
+              final textPainter = TextPainter(
+                text: TextSpan(text: barText, style: barTextStyle),
+                textDirection: ui.TextDirection.ltr,
+                maxLines: 1,
+              )..layout();
+              final requiredTextWidth = textPainter.width + horizontalPad * 2;
+              final fitsInsideFill = requiredTextWidth <= fillWidth;
+              final outsideAvailable = barWidth - fillWidth - horizontalPad * 2;
+              final placeOutside = !fitsInsideFill && outsideAvailable > 0;
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: SizedBox(
-                      height: 26,
-                      width: barWidth,
-                      child: Stack(
-                        children: [
-                          Container(color: AppColors.grey200),
-                          FractionallySizedBox(
-                            widthFactor: fillFraction,
-                            child: Container(
-                              color: fillColor,
+                  SizedBox(
+                    width: barWidth,
+                    height: 26,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Stack(
+                            children: [
+                              Container(color: AppColors.grey200),
+                              FractionallySizedBox(
+                                widthFactor: fillFraction,
+                                child: Container(color: fillColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (fitsInsideFill)
+                          Positioned(
+                            left: horizontalPad,
+                            top: 0,
+                            bottom: 0,
+                            width: (fillWidth - horizontalPad * 2)
+                                .clamp(0.0, barWidth),
+                            child: Align(
                               alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacing8),
                               child: Text(
                                 barText,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.clip,
+                                style: barTextStyle.copyWith(color: Colors.white),
+                              ),
+                            ),
+                          )
+                        else if (placeOutside)
+                          Positioned(
+                            left: fillWidth + horizontalPad,
+                            top: 0,
+                            bottom: 0,
+                            right: horizontalPad,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                barText,
+                                maxLines: 1,
+                                softWrap: false,
                                 overflow: TextOverflow.ellipsis,
+                                style: barTextStyle.copyWith(
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Positioned.fill(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: horizontalPad,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  barText,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: barTextStyle.copyWith(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -841,7 +908,8 @@ class AmiUsageStatsWidget extends ConsumerWidget {
                       clipBehavior: Clip.none,
                       children: [
                         Positioned(
-                          left: (markerLeft - 24).clamp(0.0, (barWidth - 48).clamp(0.0, barWidth)),
+                          left: (markerLeft - 24)
+                              .clamp(0.0, (barWidth - 48).clamp(0.0, barWidth)),
                           top: 0,
                           child: Text(
                             markerLabel,
