@@ -102,7 +102,7 @@ class AmiDayChart extends StatelessWidget {
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           final hour = data[group.x.toInt()];
                           if (hour.missing) return null;
-                          final tooltipText = '${FormattingUtils.formatKwh(hour.kWh)}\n${hour.time}';
+                          final tooltipText = '${FormattingUtils.formatKwhExact(hour.kWh)}\n${hour.time}';
                           return BarTooltipItem(
                             tooltipText,
                             const TextStyle(

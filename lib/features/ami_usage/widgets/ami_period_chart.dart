@@ -196,10 +196,10 @@ class AmiPeriodChart extends StatelessWidget {
                               final dayTou = dateKey != null ? touByDate[dateKey] : null;
                               if (dayTou != null) {
                                 final total = dayTou.offKwh + dayTou.peakKwh + dayTou.midPeakKwh;
-                                final tooltipText = 'Off-Peak: ${FormattingUtils.formatKwh(dayTou.offKwh)}\n'
-                                    'Peak: ${FormattingUtils.formatKwh(dayTou.peakKwh)}\n'
-                                    'Mid-Peak: ${FormattingUtils.formatKwh(dayTou.midPeakKwh)}\n'
-                                    'Total: ${FormattingUtils.formatKwh(total)}\n'
+                                final tooltipText = 'Off-Peak: ${FormattingUtils.formatKwhExact(dayTou.offKwh)}\n'
+                                    'Peak: ${FormattingUtils.formatKwhExact(dayTou.peakKwh)}\n'
+                                    'Mid-Peak: ${FormattingUtils.formatKwhExact(dayTou.midPeakKwh)}\n'
+                                    'Total: ${FormattingUtils.formatKwhExact(total)}\n'
                                     '───\n$dateStr';
                                 return BarTooltipItem(
                                   tooltipText,
@@ -211,7 +211,7 @@ class AmiPeriodChart extends StatelessWidget {
                                 );
                               }
                               final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                              final tooltipText = '${FormattingUtils.formatKwh(kWh)}\n$dateStr';
+                              final tooltipText = '${FormattingUtils.formatKwhExact(kWh)}\n$dateStr';
                               return BarTooltipItem(
                                 tooltipText,
                                 const TextStyle(
@@ -222,7 +222,7 @@ class AmiPeriodChart extends StatelessWidget {
                               );
                             } catch (e) {
                               final kWh = double.tryParse(reading.kWhUsed) ?? 0.0;
-                              final tooltipText = '${FormattingUtils.formatKwh(kWh)}';
+                              final tooltipText = FormattingUtils.formatKwhExact(kWh);
                               return BarTooltipItem(
                                 tooltipText,
                                 const TextStyle(
