@@ -10,7 +10,6 @@ import '../../../data/models/consumption.dart';
 import '../../../data/models/user.dart';
 import '../../../data/services/api_client.dart';
 import '../../../data/services/http_client.dart';
-import '../../../data/services/token_storage_service.dart';
 import '../../../data/sources/mock/mock_app_data_service.dart';
 import '../../../data/sources/mock/mock_bill_repository.dart';
 
@@ -344,15 +343,12 @@ class BillsRepository {
   /// Validate bill download activation code.
   ///
   /// POST /Bills/V5/BillDownloadAuthenticateCode
-  /// Headers: Username, Token
+  /// Auth: JWT (attached by ApiClient via `authenticated: true`)
   /// Body: { "data": { "Code": ..., "BillNumber": ... } }
   Future<BaseApiResponseDto> validateBillDownloadActivationCode({
     required String billNumber,
     required String code,
   }) async {
-    final session = await TokenStorageService.getUserSession();
-    final username = session?.preferences['username']?.toString().trim() ?? '';
-    final token = await TokenStorageService.getAccessToken() ?? '';
     final body = <String, dynamic>{
       'data': <String, dynamic>{
         'Code': code,
@@ -360,24 +356,11 @@ class BillsRepository {
       },
     };
 
-    if (username.isEmpty || token.isEmpty) {
-      return const BaseApiResponseDto(
-        status: 401,
-        message: 'Sign in is required to verify bill download access.',
-      );
-    }
-
     try {
       final response = await _apiClient.post<dynamic>(
         ApiEndpoints.billDownloadAuthenticationCode,
         authenticated: true,
         data: body,
-        options: Options(
-          headers: <String, dynamic>{
-            'Username': username,
-            'Token': token,
-          },
-        ),
       );
       final payload = response.data;
       if (response.statusCode == 200 && payload is Map) {
