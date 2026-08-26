@@ -345,7 +345,7 @@ class BillsRepository {
   ///
   /// POST /Bills/V5/BillDownloadAuthenticateCode
   /// Headers: Username, Token
-  /// Body (Swagger `data`): { code, billNumber }
+  /// Body: { "data": { "Code": ..., "BillNumber": ... } }
   Future<BaseApiResponseDto> validateBillDownloadActivationCode({
     required String billNumber,
     required String code,
@@ -354,8 +354,10 @@ class BillsRepository {
     final username = session?.preferences['username']?.toString().trim() ?? '';
     final token = await TokenStorageService.getAccessToken() ?? '';
     final body = <String, dynamic>{
-      'code': code,
-      'billNumber': billNumber,
+      'data': <String, dynamic>{
+        'Code': code,
+        'BillNumber': billNumber,
+      },
     };
 
     if (username.isEmpty || token.isEmpty) {

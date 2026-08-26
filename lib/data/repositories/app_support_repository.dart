@@ -3,7 +3,8 @@ import '../../core/constants/api_endpoints.dart';
 import '../../core/utils/logger.dart';
 import '../services/api_client.dart';
 
-/// POST /General/V5/AppSupportRequestGen
+/// POST /General/V5/WebPortalAppSupportRequest (signed in)
+/// POST /General/V5/WebPortalAppSupportRequestGen (signed out)
 class AppSupportRepository {
   AppSupportRepository([ApiClient? apiClient]) : _apiClient = apiClient ?? ApiClient.instance;
 
@@ -28,8 +29,11 @@ class AppSupportRepository {
       return (true, 'Thank you for submitting an App Support request.');
     }
     try {
+      final endpoint = authenticated
+          ? ApiEndpoints.appSupportRequest
+          : ApiEndpoints.appSupportRequestGen;
       final response = await _apiClient.post<dynamic>(
-        ApiEndpoints.appSupportRequest,
+        endpoint,
         data: <String, dynamic>{
           'ContactFullName': contactFullName,
           'PhoneNumber': phoneNumber,

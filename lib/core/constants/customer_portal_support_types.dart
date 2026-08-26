@@ -1,4 +1,4 @@
-/// Support categories for Customer Portal Support (AppSupportRequestGen).
+/// Support categories for Customer Portal Support (WebPortalAppSupportRequest / RequestGen).
 class CustomerPortalSupportTypes {
   CustomerPortalSupportTypes._();
 

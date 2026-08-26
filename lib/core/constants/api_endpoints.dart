@@ -144,7 +144,7 @@ class ApiEndpoints {
   /// POST /Bills/V5/BillDownloadAuthenticateCode
   /// Auth: Yes
   /// Headers: Username, Token
-  /// Body: { code, billNumber }
+  /// Body: { "data": { "Code": ..., "BillNumber": ... } }
   static String get billDownloadAuthenticationCode =>
       '/Bills/V5/BillDownloadAuthenticateCode';
 
@@ -268,10 +268,15 @@ class ApiEndpoints {
   /// Body: { PageEvent, EventType, EventSubtype, EventDetails }
   static String get deviceEvent => '/ApiEvent/V1/Event';
 
-  /// Submit general support / feedback request
-  /// POST /General/V5/AppSupportRequestGen
+  /// Submit support / feedback request (signed-in users).
+  /// POST /General/V5/WebPortalAppSupportRequest
   /// Auth: Yes
-  static String get appSupportRequest => '/General/V5/AppSupportRequestGen';
+  static String get appSupportRequest => '/General/V5/WebPortalAppSupportRequest';
+
+  /// Submit support / feedback request (signed-out / public).
+  /// POST /General/V5/WebPortalAppSupportRequestGen
+  /// Auth: No
+  static String get appSupportRequestGen => '/General/V5/WebPortalAppSupportRequestGen';
 
   /// Build full URL from endpoint path
   /// 
