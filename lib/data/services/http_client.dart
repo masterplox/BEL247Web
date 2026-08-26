@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/config/env.dart';
 import '../../core/services/api_logger_interceptor.dart';
@@ -40,7 +41,7 @@ class HttpClient {
     dio.interceptors.add(_AuthInterceptor(dio));
     dio.interceptors.add(_RetryInterceptor(dio));
     dio.interceptors.add(ApiLoggerInterceptor(
-      enabled: true, // Always enabled to see all API calls
+      enabled: kDebugMode,
       logRequestHeaders: true,
       logResponseHeaders: false,
       maskSensitiveData: true, // Mask passwords and tokens for security

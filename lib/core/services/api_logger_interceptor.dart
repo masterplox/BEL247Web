@@ -185,7 +185,7 @@ class ApiLoggerInterceptor extends Interceptor {
 
   /// Browser console: request group
   void _browserRequest(String method, String url, RequestOptions options) {
-    if (!kIsWeb) return;
+    if (!kIsWeb || !kDebugMode) return;
     _jsGroupCollapsed('📤 [$method] $url'.toJS);
     if (options.queryParameters.isNotEmpty) {
       final params = _maskSensitiveData
@@ -216,7 +216,7 @@ class ApiLoggerInterceptor extends Interceptor {
     Duration duration,
     dynamic data,
   ) {
-    if (!kIsWeb) return;
+    if (!kIsWeb || !kDebugMode) return;
     final emoji = _getStatusEmoji(statusCode);
     _jsGroupCollapsed(
         '$emoji [$method] $statusCode | ${duration.inMilliseconds}ms | $url'
@@ -237,7 +237,7 @@ class ApiLoggerInterceptor extends Interceptor {
   /// Browser console: error group
   void _browserError(
       String method, String url, DioException err, Duration duration) {
-    if (!kIsWeb) return;
+    if (!kIsWeb || !kDebugMode) return;
     final statusCode = err.response?.statusCode;
     _jsGroup(
         '❌ [$method] ${statusCode ?? 'ERR'} | ${duration.inMilliseconds}ms | $url'

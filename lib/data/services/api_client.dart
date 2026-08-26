@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/config/env.dart';
 import '../../core/services/api_logger_interceptor.dart';
@@ -44,7 +45,7 @@ class ApiClient {
     dio.interceptors.add(_ConditionalAuthInterceptor(dio));
     dio.interceptors.add(_RetryInterceptor(dio));
     dio.interceptors.add(ApiLoggerInterceptor(
-      enabled: true,
+      enabled: kDebugMode,
       logRequestHeaders: true,
       logResponseHeaders: false,
       maskSensitiveData: true,
