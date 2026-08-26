@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/bills/state/bills_providers.dart';
 import '../constants/customer_portal_support_types.dart';
 import '../providers/engagement_providers.dart';
 import '../providers/feature_providers.dart';
@@ -72,29 +71,6 @@ class _CustomerPortalSupportFormState
           '${session.firstName} ${session.lastName}'.trim();
       _emailController.text = session.email;
       _phoneController.text = session.preferences['phone'] as String? ?? '';
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _prefillFromAccountDetails();
-    });
-  }
-
-  Future<void> _prefillFromAccountDetails() async {
-    if (ref.read(authNotifierProvider).userSession == null) return;
-    try {
-      final details = await ref.read(accountDetailsProvider.future);
-      if (!mounted || details == null) return;
-      setState(() {
-        final accountEmail = details.emailAddress?.trim() ?? '';
-        if (accountEmail.isNotEmpty) {
-          _emailController.text = accountEmail;
-        }
-        final accountPhone = details.cell?.trim() ?? '';
-        if (accountPhone.isNotEmpty) {
-          _phoneController.text = accountPhone;
-        }
-      });
-    } catch (_) {
-      // Logged-in users still keep session values if account details fail.
     }
   }
 
