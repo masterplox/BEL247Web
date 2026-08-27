@@ -37,6 +37,43 @@ void main() {
       expect(peakHour.kWh, 2.6814);
     });
 
+    test('reads payload totals without mixing TOU peakKWh and statsPeakKWh', () {
+      const payload = {
+        'intervals': [
+          {'hour': 0, 'kWh': 0.4056, 'touPeriod': 'off_peak'},
+          {'hour': 11, 'kWh': 2.1696, 'touPeriod': 'peak'},
+          {'hour': 20, 'kWh': 3.3162, 'touPeriod': 'peak'},
+          {'hour': 21, 'kWh': 2.2998, 'touPeriod': 'mid_peak'},
+        ],
+        'offPeakKWh': 6.0,
+        'peakKWh': 11.0,
+        'midPeakKWh': 5.0,
+        'totalKWh': 21.0,
+        'estimatedCost': 7.0,
+        'avgKWh': 1.0,
+        'statsPeakKWh': 3.0,
+        'peakHour': 20,
+        'errorCode': 0,
+        'errorMessage': 'Success',
+      };
+
+      final result = AmiBucketParser.parseDailyIntervals(
+        payload,
+        meterId: '0226031929',
+        targetDate: DateTime(2026, 8, 26),
+      );
+
+      expect(result.intervals, hasLength(4));
+      expect(result.summary.offPeakKwh, 6.0);
+      expect(result.summary.peakKwh, 11.0);
+      expect(result.summary.midPeakKwh, 5.0);
+      expect(result.summary.totalKwh, 21.0);
+      expect(result.summary.estimatedCost, 7.0);
+      expect(result.summary.avgKwh, 1.0);
+      expect(result.summary.statsPeakKwh, 3.0);
+      expect(result.summary.peakHour, 20);
+    });
+
     test('still parses the older mock intervalDateTime shape', () {
       const payload = {
         'status': 200,
@@ -148,6 +185,44 @@ void main() {
       expect(result.summary.avgKwh, 23.0);
       expect(result.summary.peakKwh, 28.0);
       expect(result.summary.peakDate, DateTime(2026, 7, 13));
+      expect(result.summary.hasTouTotals, isFalse);
+    });
+
+    test('reads payload TOU totals without mixing them with statsPeakKWh', () {
+      const payload = {
+        'dailyUsages': [
+          {
+            'usageDate': '2026-08-24T00:00:00',
+            'dailyKWh': 20.0,
+            'offPeakKWh': 5.0,
+            'peakKWh': 10.0,
+            'midPeakKWh': 5.0,
+          },
+        ],
+        'offPeakKWh': 6.0,
+        'peakKWh': 11.0,
+        'midPeakKWh': 5.0,
+        'totalKWh': 21.0,
+        'estimatedCost': 7.0,
+        'avgKWh': 3.0,
+        'statsPeakKWh': 20.0,
+        'peakDate': '2026-08-24T00:00:00',
+      };
+
+      final result = AmiBucketParser.parseDailyRange(
+        payload,
+        startDate: DateTime(2026, 8, 24),
+        endDate: DateTime(2026, 8, 24),
+      );
+
+      expect(result.summary.offPeakKwh, 6.0);
+      expect(result.summary.peakKwh, 11.0);
+      expect(result.summary.midPeakKwh, 5.0);
+      expect(result.summary.totalKwh, 21.0);
+      expect(result.summary.estimatedCost, 7.0);
+      expect(result.summary.avgKwh, 3.0);
+      expect(result.summary.statsPeakKwh, 20.0);
+      expect(result.summary.hasTouTotals, isTrue);
     });
 
     test('anchors placeholder dates to peakDate when the row count is not the range', () {
@@ -306,10 +381,41 @@ void main() {
       expect(result.summary.avgKwh, 470.0);
       expect(result.summary.peakKwh, 699.0);
       expect(result.summary.peakMonth, 6);
+      expect(result.summary.hasTouTotals, isFalse);
       expect(
         entries.fold<double>(0, (sum, e) => sum + e.offPeakKwh),
         closeTo(860.3982, 0.0001),
       );
+    });
+
+    test('reads payload TOU totals without mixing them with statsPeakKWh', () {
+      const payload = {
+        'monthlyUsages': [
+          {
+            'monthNumber': 6,
+            'monthlyKWh': 698.0,
+            'offPeakKWh': 300.0,
+            'peakKWh': 270.0,
+            'midPeakKWh': 128.0,
+          },
+        ],
+        'offPeakKWh': 860.0,
+        'peakKWh': 719.0,
+        'midPeakKWh': 303.0,
+        'totalKWh': 1882.0,
+        'estimatedCost': 602.0,
+        'avgKWh': 470.0,
+        'statsPeakKWh': 699.0,
+        'peakMonth': 6,
+      };
+
+      final result = AmiBucketParser.parseMonthlyTotals(payload, year: 2026);
+      expect(result.summary.offPeakKwh, 860.0);
+      expect(result.summary.peakKwh, 719.0);
+      expect(result.summary.midPeakKwh, 303.0);
+      expect(result.summary.statsPeakKwh, 699.0);
+      expect(result.summary.hasTouTotals, isTrue);
+      expect(result.summary.peakMonth, 6);
     });
 
     test('still parses the older year/month/monthlyUsageKwh mock shape', () {

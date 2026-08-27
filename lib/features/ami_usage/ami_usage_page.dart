@@ -14,7 +14,7 @@ import '../../data/models/api_response_dtos.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/colors.dart';
 import 'ami_usage_date_limits.dart';
-import 'state/ami_usage_providers.dart' show amiDailyIntervalsProvider, amiDailyRangeRowsProvider, amiMonthlyTotalsProvider, amiMonthlyTotalsResultProvider, amiTouRangeDataProvider, dayTouFromMonthlyRows, touTotalFromMonthlyRows, DayTou;
+import 'state/ami_usage_providers.dart' show amiDailyIntervalsProvider, amiDailyRangeRowsProvider, amiMonthlyTotalsResultProvider, amiTouRangeDataProvider, dayTouFromMonthlyRows, touFromBucketSummary, touTotalFromMonthlyRows, DayTou;
 import 'widgets/ami_day_chart.dart';
 import 'widgets/ami_detail_cards.dart'
     show AmiDetail, AmiDetailCard, HourlyDetail, DayDetail, MonthDetail;
@@ -271,12 +271,20 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           )))
         : null;
     final yearTouAsync = _filterType == FilterType.year
-        ? ref.watch(amiMonthlyTotalsProvider((meterId: meterId, year: _yearDate.year)))
+        ? ref.watch(amiMonthlyTotalsResultProvider(
+            (meterId: meterId, year: _yearDate.year),
+          ))
         : null;
     final touTotal = touRangeAsync?.whenOrNull(data: (v) => v.total) ??
-        yearTouAsync?.whenOrNull(data: touTotalFromMonthlyRows);
+        yearTouAsync?.whenOrNull(
+          data: (result) =>
+              touFromBucketSummary(result.summary) ??
+              touTotalFromMonthlyRows(result.months),
+        );
     final touPerDay = touRangeAsync?.whenOrNull(data: (v) => v.perDay) ??
-        yearTouAsync?.whenOrNull(data: dayTouFromMonthlyRows) ??
+        yearTouAsync?.whenOrNull(
+          data: (result) => dayTouFromMonthlyRows(result.months),
+        ) ??
         const <DayTou>[];
     final isTouLoading = (rangeStart != null && rangeEnd != null) &&
         touRangeAsync?.whenOrNull(data: (v) => v.total) == null;
@@ -413,6 +421,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       dynamic stats,
       String dateLabel,
       AmiDetail? selectedDetail,
+      TouConsumption? dayTou,
     }) data,
     required int meterId,
     required List<DayTou> touPerDay,
@@ -426,22 +435,18 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             totalKWh: _getSummaryTotalKwh(
               data.stats,
               filterType: _filterType,
-              touPerDay: touPerDay,
             ),
             peakKWh: _getSummaryPeakKwh(
               data.stats,
               filterType: _filterType,
-              touPerDay: touPerDay,
             ),
             peakTime: _getSummaryPeakLabel(
               data.stats,
               filterType: _filterType,
-              touPerDay: touPerDay,
             ),
             avgKWh: _getSummaryAvgKwh(
               data.stats,
               filterType: _filterType,
-              touPerDay: touPerDay,
             ),
             filterType: _filterType,
           ),
@@ -547,9 +552,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           _buildTimeOfUseSection(
             context,
             filterType: _filterType,
-            dayTou: _filterType == FilterType.day
-                ? computeTouFromHourly(data.hourlyData)
-                : null,
+            dayTou: _filterType == FilterType.day ? data.dayTou : null,
             rangeTou: _filterType == FilterType.day ? null : touTotal,
           ),
         ],
@@ -730,7 +733,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             ),
             const SizedBox(height: AppTheme.spacing8),
             Text(
-              FormattingUtils.formatKwhExact(kwh),
+              FormattingUtils.formatKwhMax3(kwh),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 22,
@@ -772,109 +775,41 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
   double _getSummaryTotalKwh(
     dynamic stats, {
     required FilterType filterType,
-    required List<DayTou> touPerDay,
   }) {
     if (filterType == FilterType.day) {
       return (stats as HourlyStats).totalKWh;
     }
-    final dailyStats = stats as DailyStats;
-    if ((filterType == FilterType.week || filterType == FilterType.month) &&
-        dailyStats.totalKWh == 0 &&
-        touPerDay.isNotEmpty) {
-      final totals = touPerDay
-          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
-          .toList();
-      final total = totals.fold<double>(0, (a, b) => a + b);
-      return double.parse(total.toStringAsFixed(2));
-    }
-    return dailyStats.totalKWh;
+    return (stats as DailyStats).totalKWh;
   }
 
   double _getSummaryAvgKwh(
     dynamic stats, {
     required FilterType filterType,
-    required List<DayTou> touPerDay,
   }) {
     if (filterType == FilterType.day) {
       return (stats as HourlyStats).avgKWh;
     }
-    final dailyStats = stats as DailyStats;
-    if ((filterType == FilterType.week || filterType == FilterType.month) &&
-        dailyStats.totalKWh == 0 &&
-        touPerDay.isNotEmpty) {
-      final totals = touPerDay
-          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
-          .toList();
-      if (totals.isEmpty) return 0;
-      final total = totals.fold<double>(0, (a, b) => a + b);
-      final avg = total / totals.length;
-      return double.parse(avg.toStringAsFixed(2));
-    }
-    return dailyStats.avgKWh;
+    return (stats as DailyStats).avgKWh;
   }
 
   double _getSummaryPeakKwh(
     dynamic stats, {
     required FilterType filterType,
-    required List<DayTou> touPerDay,
   }) {
     if (filterType == FilterType.day) {
       return (stats as HourlyStats).peakKWh;
     }
-    final dailyStats = stats as DailyStats;
-    if ((filterType == FilterType.week || filterType == FilterType.month) &&
-        dailyStats.totalKWh == 0 &&
-        touPerDay.isNotEmpty) {
-      final totals = touPerDay
-          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
-          .toList();
-      if (totals.isEmpty) return 0;
-      final peak = totals.reduce((a, b) => a > b ? a : b);
-      return double.parse(peak.toStringAsFixed(2));
-    }
-    return dailyStats.peakKWh;
+    return (stats as DailyStats).peakKWh;
   }
 
   String _getSummaryPeakLabel(
     dynamic stats, {
     required FilterType filterType,
-    required List<DayTou> touPerDay,
   }) {
     if (filterType == FilterType.day) {
       return (stats as HourlyStats).peakTime;
     }
-    final dailyStats = stats as DailyStats;
-    if ((filterType == FilterType.week || filterType == FilterType.month) &&
-        dailyStats.totalKWh == 0 &&
-        touPerDay.isNotEmpty) {
-      final totals = touPerDay
-          .map((d) => d.offKwh + d.peakKwh + d.midPeakKwh)
-          .toList();
-      if (totals.isEmpty) return '-';
-      final peak = totals.reduce((a, b) => a > b ? a : b);
-      final peakIndex = totals.indexOf(peak);
-      final peakDate = touPerDay[peakIndex].date;
-      return _formatShortDateForSummary(peakDate);
-    }
-    return dailyStats.peakDate;
-  }
-
-  String _formatShortDateForSummary(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+    return (stats as DailyStats).peakDate;
   }
 
   DailyStats _applyBucketSummary(
@@ -893,10 +828,29 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
     }
     return DailyStats(
       totalKWh: summary.totalKwh ?? computed.totalKWh,
-      estimatedCost: computed.estimatedCost,
+      estimatedCost: summary.estimatedCost ?? computed.estimatedCost,
       avgKWh: summary.avgKwh ?? computed.avgKWh,
-      peakKWh: summary.peakKwh ?? computed.peakKWh,
+      peakKWh: summary.statsPeakKwh ??
+          (summary.hasTouTotals
+              ? computed.peakKWh
+              : (summary.peakKwh ?? computed.peakKWh)),
       peakDate: peakDate,
+    );
+  }
+
+  HourlyStats _applyIntervalsSummary(
+    HourlyStats computed,
+    AmiIntervalsSummary summary,
+  ) {
+    final peakHour = summary.peakHour ?? computed.peakHour;
+    return HourlyStats(
+      totalKWh: summary.totalKwh ?? computed.totalKWh,
+      estimatedCost: summary.estimatedCost ?? computed.estimatedCost,
+      avgKWh: summary.avgKwh ?? computed.avgKWh,
+      peakKWh: summary.statsPeakKwh ?? computed.peakKWh,
+      peakTime:
+          summary.peakHour != null ? hourLabel(peakHour) : computed.peakTime,
+      peakHour: peakHour,
     );
   }
 
@@ -940,6 +894,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       dynamic stats,
       String dateLabel,
       AmiDetail? selectedDetail,
+      TouConsumption? dayTou,
     })
   >
   _watchDataProvider(int meterId) {
@@ -951,14 +906,21 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
       );
 
       return intervalsAsync.when(
-        data: (intervals) {
+        data: (result) {
           // aggregateToHourly always returns all 24 hours; hours with no
           // interval data are automatically marked missing: true.
-          final intervalData = intervals.map(_dtoToIntervalReading).toList();
+          final intervalData =
+              result.intervals.map(_dtoToIntervalReading).toList();
           final hourlyData = aggregateToHourly(intervalData);
 
-          final stats = calculateHourlyStats(hourlyData);
+          final stats = _applyIntervalsSummary(
+            calculateHourlyStats(hourlyData),
+            result.summary,
+          );
           final dateLabel = _formatDateLong(_dayDate);
+          final dayTou = computeTouFromHourly(
+            hourlyData.where((h) => !h.missing).toList(),
+          );
 
           HourlyDetail? selectedDetail;
           if (_selectedIndex != null && _selectedIndex! < hourlyData.length) {
@@ -978,6 +940,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             stats: stats,
             dateLabel: dateLabel,
             selectedDetail: selectedDetail,
+            dayTou: dayTou,
           ));
         },
         loading: () => const AsyncValue.loading(),
@@ -1050,6 +1013,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             stats: stats,
             dateLabel: dateLabel,
             selectedDetail: selectedDetail,
+            dayTou: null,
           ));
         },
         loading: () => const AsyncValue.loading(),
@@ -1124,6 +1088,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             stats: stats,
             dateLabel: dateLabel,
             selectedDetail: selectedDetail,
+            dayTou: null,
           ));
         },
         loading: () => const AsyncValue.loading(),
@@ -1155,6 +1120,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             stats: stats,
             dateLabel: _yearDate.year.toString(),
             selectedDetail: null,
+            dayTou: null,
           ));
         }
 
@@ -1219,6 +1185,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
             stats: stats,
             dateLabel: _yearDate.year.toString(),
             selectedDetail: null,
+            dayTou: null,
           ));
         }
 
@@ -1260,6 +1227,7 @@ class _AmiUsagePageState extends ConsumerState<AmiUsagePage> {
           stats: stats,
           dateLabel: _yearDate.year.toString(),
           selectedDetail: selectedDetail,
+          dayTou: null,
         ));
       },
       loading: () => const AsyncValue.loading(),

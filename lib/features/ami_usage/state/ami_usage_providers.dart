@@ -10,16 +10,12 @@ final amiUsageRepositoryProvider = Provider<AmiUsageRepository>((ref) => const A
 
 /// Daily intervals provider - fetches interval data for a specific date
 /// Used for daily filter view
-final amiDailyIntervalsProvider = FutureProvider.family<List<IntervalUsageEntryDto>, ({int meterId, DateTime targetDate})>((ref, params) async {
-  final targetDateStr = params.targetDate.toIso8601String().split('T')[0];
-  
+final amiDailyIntervalsProvider = FutureProvider.family<DailyIntervalsResult, ({int meterId, DateTime targetDate})>((ref, params) async {
   final repository = ref.watch(amiUsageRepositoryProvider);
-  final result = await repository.fetchDailyIntervals(
+  return repository.fetchDailyIntervals(
     meterId: params.meterId,
     targetDate: params.targetDate,
   );
-  
-  return result;
 });
 
 /// Daily range provider - fetches daily usage for a date range
@@ -120,6 +116,16 @@ TouConsumption touTotalFromDailyRows(List<DailyBucketRow> rows) {
   );
 }
 
+/// Payload-level TOU totals. Null when the endpoint did not send them.
+TouConsumption? touFromBucketSummary(AmiBucketSummary summary) {
+  if (!summary.hasTouTotals) return null;
+  return TouConsumption(
+    offPeakKwh: summary.offPeakKwh ?? 0,
+    peakKwh: summary.peakKwh ?? 0,
+    midPeakKwh: summary.midPeakKwh ?? 0,
+  );
+}
+
 DateTime? _usageDateOnly(String raw) {
   final dateStr = raw.trim().split(RegExp('[T ]')).first;
   final parsed = DateTime.tryParse(dateStr);
@@ -133,7 +139,8 @@ final amiTouRangeDataProvider = FutureProvider.family<
     ({int meterId, DateTime startDate, DateTime endDate})>((ref, params) async {
   final result = await ref.watch(amiDailyRangeRowsProvider(params).future);
   return (
-    total: touTotalFromDailyRows(result.days),
+    total: touFromBucketSummary(result.summary) ??
+        touTotalFromDailyRows(result.days),
     perDay: dayTouFromDailyRows(result.days),
   );
 });

@@ -108,6 +108,17 @@ class FormattingUtils {
     return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
   }
 
+  /// Formats kWh with at most 3 decimal places (e.g. 5.308999... -> "5.309 kWh").
+  static String formatKwhMax3(double kwh) => '${formatKwhNumberMax3(kwh)} kWh';
+
+  /// Formats kWh with at most 3 decimal places, no unit. Trailing zeros trimmed.
+  static String formatKwhNumberMax3(double kwh) {
+    var s = kwh.toStringAsFixed(3);
+    s = s.replaceFirst(RegExp(r'0+$'), '');
+    if (s.endsWith('.')) s = s.substring(0, s.length - 1);
+    return s;
+  }
+
   // Time formatting
   /// Formats time as "HH:mm"
   static String formatTime(DateTime dateTime) => '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';

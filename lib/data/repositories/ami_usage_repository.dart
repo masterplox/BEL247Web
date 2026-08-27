@@ -32,10 +32,10 @@ class AmiUsageRepository {
   }
 
   /// Fetch daily interval kWh details for a meter and date
-  /// GET /V1/MeterUsage/DailyIntervals?meterId={meterId}&targetDate={targetDate}
-  /// 
-  /// Used for daily filter - shows 15-minute interval data for a specific date
-  Future<List<IntervalUsageEntryDto>> fetchDailyIntervals({
+  /// GET /AMI/DailyIntervalsBucket?meterId={meterId}&targetDate={targetDate}
+  ///
+  /// Used for daily filter - hourly bars plus payload-level totals and TOU.
+  Future<DailyIntervalsResult> fetchDailyIntervals({
     required int meterId,
     required DateTime targetDate,
   }) async {
@@ -48,7 +48,7 @@ class AmiUsageRepository {
         final jsonData = await DataLoader.loadJsonFromAssets(
           MockAssetPaths.amiIntervalUsage,
         );
-        return AmiBucketParser.parseIntervals(
+        return AmiBucketParser.parseDailyIntervals(
           jsonData,
           meterId: meterId.toString(),
           targetDate: targetDate,
@@ -65,13 +65,13 @@ class AmiUsageRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        return AmiBucketParser.parseIntervals(
+        return AmiBucketParser.parseDailyIntervals(
           response.data,
           meterId: _meterIdQuery(meterId),
           targetDate: targetDate,
         );
       } else {
-        return [];
+        return const DailyIntervalsResult();
       }
     } catch (e, stackTrace) {
       Logger.error(
@@ -80,7 +80,7 @@ class AmiUsageRepository {
         stackTrace: stackTrace,
         tag: 'AmiUsageRepository',
       );
-      return [];
+      return const DailyIntervalsResult();
     }
   }
 
@@ -176,8 +176,8 @@ class AmiUsageRepository {
           (day) => fetchDailyIntervals(meterId: meterId, targetDate: day),
         ),
       );
-      for (final dayIntervals in chunkResults) {
-        results.addAll(dayIntervals);
+      for (final dayResult in chunkResults) {
+        results.addAll(dayResult.intervals);
       }
     }
     return results;

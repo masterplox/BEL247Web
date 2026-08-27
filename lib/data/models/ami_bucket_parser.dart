@@ -23,20 +23,71 @@ class DailyBucketRow {
 }
 
 /// Payload-level totals from DailyRangeBucket / MonthlyTotalsBucket.
+///
+/// When the payload includes [offPeakKwh] or [midPeakKwh], [peakKwh] is the
+/// time-of-use Peak period total and [statsPeakKwh] is the peak day/month.
+/// Older payloads send only [peakKwh] as the peak day/month.
 class AmiBucketSummary {
   const AmiBucketSummary({
-    this.totalKwh,
-    this.avgKwh,
+    this.offPeakKwh,
     this.peakKwh,
+    this.midPeakKwh,
+    this.totalKwh,
+    this.estimatedCost,
+    this.avgKwh,
+    this.statsPeakKwh,
     this.peakDate,
     this.peakMonth,
   });
 
-  final double? totalKwh;
-  final double? avgKwh;
+  final double? offPeakKwh;
   final double? peakKwh;
+  final double? midPeakKwh;
+  final double? totalKwh;
+  final double? estimatedCost;
+  final double? avgKwh;
+  final double? statsPeakKwh;
   final DateTime? peakDate;
   final int? peakMonth;
+
+  bool get hasTouTotals => offPeakKwh != null || midPeakKwh != null;
+}
+
+/// Payload-level totals from DailyIntervalsBucket.
+///
+/// [peakKwh] is the time-of-use Peak period total. The single-hour peak is
+/// [statsPeakKwh] at [peakHour]. Do not mix those two fields.
+class AmiIntervalsSummary {
+  const AmiIntervalsSummary({
+    this.offPeakKwh,
+    this.peakKwh,
+    this.midPeakKwh,
+    this.totalKwh,
+    this.estimatedCost,
+    this.avgKwh,
+    this.statsPeakKwh,
+    this.peakHour,
+  });
+
+  final double? offPeakKwh;
+  final double? peakKwh;
+  final double? midPeakKwh;
+  final double? totalKwh;
+  final double? estimatedCost;
+  final double? avgKwh;
+  final double? statsPeakKwh;
+  final int? peakHour;
+}
+
+/// Parsed DailyIntervalsBucket: hourly rows plus the endpoint summary fields.
+class DailyIntervalsResult {
+  const DailyIntervalsResult({
+    this.intervals = const [],
+    this.summary = const AmiIntervalsSummary(),
+  });
+
+  final List<IntervalUsageEntryDto> intervals;
+  final AmiIntervalsSummary summary;
 }
 
 /// Parsed DailyRangeBucket: per-day rows plus the endpoint summary fields.
@@ -97,7 +148,19 @@ class AmiBucketParser {
     dynamic json, {
     required String meterId,
     required DateTime targetDate,
+  }) =>
+      parseDailyIntervals(
+        json,
+        meterId: meterId,
+        targetDate: targetDate,
+      ).intervals;
+
+  static DailyIntervalsResult parseDailyIntervals(
+    dynamic json, {
+    required String meterId,
+    required DateTime targetDate,
   }) {
+    final payload = _asStringMap(json) ?? const <String, dynamic>{};
     final rows = extractList(json);
     final dateStr = _dateOnly(targetDate);
     final entries = <IntervalUsageEntryDto>[];
@@ -109,7 +172,10 @@ class AmiBucketParser {
       );
       if (entry != null) entries.add(entry);
     }
-    return entries;
+    return DailyIntervalsResult(
+      intervals: entries,
+      summary: _parseIntervalsSummary(payload),
+    );
   }
 
   static DailyRangeResult parseDailyRange(
@@ -125,10 +191,12 @@ class AmiBucketParser {
       _readString(payload, const ['peakDate', 'PeakDate']),
     );
     final peakKwh = _readDouble(payload, const [
+      'statsPeakKWh',
+      'StatsPeakKWh',
+      'statsPeakKwh',
       'peakKWh',
       'PeakKWh',
       'peakKwh',
-      'statsPeakKWh',
     ]);
     final inferredDates = _inferDailyDates(
       rows: rows,
@@ -191,6 +259,9 @@ class AmiBucketParser {
 
     final peakMonth = _readInt(payload, const ['peakMonth', 'PeakMonth']);
     final peakKwh = _readDouble(payload, const [
+      'statsPeakKWh',
+      'StatsPeakKWh',
+      'statsPeakKwh',
       'peakKWh',
       'PeakKWh',
       'peakKwh',
@@ -250,26 +321,87 @@ class AmiBucketParser {
 
   static AmiBucketSummary _parseSummary(Map<String, dynamic> payload) =>
       AmiBucketSummary(
+        offPeakKwh: _readDouble(payload, const [
+          'offPeakKWh',
+          'OffPeakKWh',
+          'offPeakKwh',
+        ]),
+        peakKwh: _readDouble(payload, const [
+          'peakKWh',
+          'PeakKWh',
+          'peakKwh',
+        ]),
+        midPeakKwh: _readDouble(payload, const [
+          'midPeakKWh',
+          'MidPeakKWh',
+          'midPeakKwh',
+        ]),
         totalKwh: _readDouble(payload, const [
           'totalKWh',
           'TotalKWh',
           'totalKwh',
+        ]),
+        estimatedCost: _readDouble(payload, const [
+          'estimatedCost',
+          'EstimatedCost',
         ]),
         avgKwh: _readDouble(payload, const [
           'avgKWh',
           'AvgKWh',
           'avgKwh',
         ]),
-        peakKwh: _readDouble(payload, const [
-          'peakKWh',
-          'PeakKWh',
-          'peakKwh',
+        statsPeakKwh: _readDouble(payload, const [
           'statsPeakKWh',
+          'StatsPeakKWh',
+          'statsPeakKwh',
         ]),
         peakDate: _tryParseDate(
           _readString(payload, const ['peakDate', 'PeakDate']),
         ),
         peakMonth: _readInt(payload, const ['peakMonth', 'PeakMonth']),
+      );
+
+  /// DailyIntervalsBucket uses [peakKWh] for the TOU Peak total and
+  /// [statsPeakKWh] for the single-hour peak. Do not fall back between them.
+  static AmiIntervalsSummary _parseIntervalsSummary(
+    Map<String, dynamic> payload,
+  ) =>
+      AmiIntervalsSummary(
+        offPeakKwh: _readDouble(payload, const [
+          'offPeakKWh',
+          'OffPeakKWh',
+          'offPeakKwh',
+        ]),
+        peakKwh: _readDouble(payload, const [
+          'peakKWh',
+          'PeakKWh',
+          'peakKwh',
+        ]),
+        midPeakKwh: _readDouble(payload, const [
+          'midPeakKWh',
+          'MidPeakKWh',
+          'midPeakKwh',
+        ]),
+        totalKwh: _readDouble(payload, const [
+          'totalKWh',
+          'TotalKWh',
+          'totalKwh',
+        ]),
+        estimatedCost: _readDouble(payload, const [
+          'estimatedCost',
+          'EstimatedCost',
+        ]),
+        avgKwh: _readDouble(payload, const [
+          'avgKWh',
+          'AvgKWh',
+          'avgKwh',
+        ]),
+        statsPeakKwh: _readDouble(payload, const [
+          'statsPeakKWh',
+          'StatsPeakKWh',
+          'statsPeakKwh',
+        ]),
+        peakHour: _readInt(payload, const ['peakHour', 'PeakHour']),
       );
 
   /// Pulls the first usable list of row objects from a bucket or mock payload.
