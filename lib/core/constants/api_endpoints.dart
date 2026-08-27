@@ -269,14 +269,14 @@ class ApiEndpoints {
   static String get deviceEvent => '/ApiEvent/V1/Event';
 
   /// Submit support / feedback request (signed-in users).
-  /// POST /General/V5/WebPortalAppSupportRequest
+  /// POST /General/V5/WebPortalSupportRequest
   /// Auth: Yes
-  static String get appSupportRequest => '/General/V5/WebPortalAppSupportRequest';
+  static String get appSupportRequest => '/General/V5/WebPortalSupportRequest';
 
   /// Submit support / feedback request (signed-out / public).
-  /// POST /General/V5/WebPortalAppSupportRequestGen
+  /// POST /General/V5/WebPortalSupportRequestGen
   /// Auth: No
-  static String get appSupportRequestGen => '/General/V5/WebPortalAppSupportRequestGen';
+  static String get appSupportRequestGen => '/General/V5/WebPortalSupportRequestGen';
 
   /// Build full URL from endpoint path
   /// 
